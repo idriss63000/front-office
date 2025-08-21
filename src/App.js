@@ -420,12 +420,21 @@ export default function App() {
   useEffect(() => {
     const initFirebase = async () => {
         try {
-            /* global __app_id, __firebase_config, __initial_auth_token */
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            let firebaseConfig;
+            let appId;
+            let initialAuthToken;
 
-            if (!firebaseConfig) throw new Error("Configuration Firebase manquante.");
+            if (typeof process !== 'undefined' && process.env.REACT_APP_FIREBASE_CONFIG) {
+                firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
+                appId = process.env.REACT_APP_APP_ID;
+                initialAuthToken = null; 
+            } else if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            } else {
+                throw new Error("Configuration Firebase manquante.");
+            }
             
             appIdRef.current = appId;
 
