@@ -276,7 +276,7 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts }) => (
   </>
 );
 
-const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db }) => {
+const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
   const [accepted, setAccepted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const pdfRef = useRef();
@@ -306,7 +306,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
 
       // Enregistrer le devis dans Firestore
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
       const quotesPath = `/artifacts/${appId}/public/data/devis`;
       const quoteToSave = {
           ...data,
@@ -320,7 +319,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pdfWidth - 20;
       const imgHeight = imgWidth / (canvas.width / canvas.height);
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
@@ -397,6 +395,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [appliedDiscounts, setAppliedDiscounts] = useState({ materiel: null, abonnement: null });
   const dbRef = useRef(null);
+  const appIdRef = useRef(null);
 
   const calculation = useMemo(() => {
     if (!config) return null;
@@ -421,11 +420,14 @@ export default function App() {
   useEffect(() => {
     const initFirebase = async () => {
         try {
+            /* global __app_id, __firebase_config, __initial_auth_token */
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
             if (!firebaseConfig) throw new Error("Configuration Firebase manquante.");
+            
+            appIdRef.current = appId;
 
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
@@ -433,14 +435,18 @@ export default function App() {
             const auth = getAuth(app);
             setLogLevel('debug');
 
-            if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
-            else await signInAnonymously(auth);
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
 
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
             const docSnap = await getDoc(configDocRef);
-            if (docSnap.exists()) setConfig(docSnap.data());
-            else {
+            if (docSnap.exists()) {
+                setConfig(docSnap.data());
+            } else {
                 await setDoc(configDocRef, initialConfigData);
                 setConfig(initialConfigData);
             }
@@ -469,7 +475,7 @@ export default function App() {
       case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
       case 8: return <Confirmation reset={reset} />;
       default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} />;
     }
