@@ -1,8 +1,26 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp, setLogLevel } from 'firebase/firestore';
+
+/*
+ * =================================================================================
+ * NOTE IMPORTANTE POUR LA CONFIGURATION
+ * =================================================================================
+ * Si vous voyez une erreur concernant "auth/configuration-not-found",
+ * cela signifie que la connexion anonyme doit être activée dans Firebase.
+ *
+ * ÉTAPES À SUIVRE DANS LA CONSOLE FIREBASE :
+ * 1. Allez sur https://console.firebase.google.com/ et ouvrez votre projet.
+ * 2. Dans le menu de gauche, cliquez sur "Authentication".
+ * 3. En haut, cliquez sur l'onglet "Sign-in method" (Méthode de connexion).
+ * 4. Dans la liste, cliquez sur "Anonyme".
+ * 5. Activez l'option et cliquez sur "Enregistrer".
+ *
+ * Une fois cette étape réalisée, votre application fonctionnera.
+ * =================================================================================
+ */
 
 // --- Icônes (SVG) ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
@@ -420,22 +438,21 @@ export default function App() {
   useEffect(() => {
     const initFirebase = async () => {
         try {
-            let firebaseConfig;
-            let appId;
-            let initialAuthToken;
+            // --- COLLEZ VOTRE CONFIGURATION FIREBASE ICI ---
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.firebasestorage.app",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            // -------------------------------------------
 
-            if (typeof process !== 'undefined' && process.env.REACT_APP_FIREBASE_CONFIG) {
-                firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
-                appId = process.env.REACT_APP_APP_ID;
-                initialAuthToken = null; 
-            } else if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            } else {
-                throw new Error("Configuration Firebase manquante.");
-            }
-            
+            const appId = firebaseConfig.appId;
+            if (!appId) throw new Error("L'appId est manquant dans la configuration Firebase.");
+
             appIdRef.current = appId;
 
             const app = initializeApp(firebaseConfig);
@@ -443,12 +460,8 @@ export default function App() {
             dbRef.current = db;
             const auth = getAuth(app);
             setLogLevel('debug');
-
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
-                await signInAnonymously(auth);
-            }
+            
+            await signInAnonymously(auth);
 
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
@@ -461,7 +474,11 @@ export default function App() {
             }
         } catch (err) {
             console.error("Erreur d'initialisation:", err);
-            setError("Impossible de charger la configuration.");
+            if (err.code === 'auth/configuration-not-found') {
+                setError("ERREUR : La connexion anonyme doit être activée dans votre console Firebase. Allez dans Authentication -> Sign-in method -> Anonyme -> Activer.");
+            } else {
+                setError("Impossible de charger la configuration. Vérifiez les clés Firebase.");
+            }
         } finally {
             setIsLoading(false);
         }
