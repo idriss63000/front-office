@@ -424,14 +424,18 @@ export default function App() {
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
             const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
             if (!firebaseConfig) throw new Error("Configuration Firebase manquante.");
+
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             dbRef.current = db;
             const auth = getAuth(app);
             setLogLevel('debug');
+
             if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken);
             else await signInAnonymously(auth);
+
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
             const docSnap = await getDoc(configDocRef);
@@ -441,6 +445,7 @@ export default function App() {
                 setConfig(initialConfigData);
             }
         } catch (err) {
+            console.error("Erreur d'initialisation:", err);
             setError("Impossible de charger la configuration.");
         } finally {
             setIsLoading(false);
