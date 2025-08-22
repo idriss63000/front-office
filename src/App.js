@@ -1,33 +1,15 @@
-// Correction finale
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp, setLogLevel } from 'firebase/firestore';
 
-/*
- * =================================================================================
- * NOTE IMPORTANTE POUR LA CONFIGURATION
- * =================================================================================
- * Si vous voyez une erreur concernant "auth/configuration-not-found",
- * cela signifie que la connexion anonyme doit être activée dans Firebase.
- *
- * ÉTAPES À SUIVRE DANS LA CONSOLE FIREBASE :
- * 1. Allez sur https://console.firebase.google.com/ et ouvrez votre projet.
- * 2. Dans le menu de gauche, cliquez sur "Authentication".
- * 3. En haut, cliquez sur l'onglet "Sign-in method" (Méthode de connexion).
- * 4. Dans la liste, cliquez sur "Anonyme".
- * 5. Activez l'option et cliquez sur "Enregistrer".
- *
- * Une fois cette étape réalisée, votre application fonctionnera.
- * =================================================================================
- */
-
 // --- Icônes (SVG) ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const LogInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>;
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -53,7 +35,35 @@ const initialConfigData = {
 
 // --- Composants des étapes ---
 
-const CustomerInfo = ({ data, setData, nextStep }) => {
+const SalespersonLogin = ({ data, setData, nextStep }) => {
+  const handleChange = (e) => setData({ ...data, salesperson: e.target.value });
+  const isFormValid = () => data.salesperson && data.salesperson.trim() !== '';
+
+  return (
+    <div className="space-y-6 text-center">
+      <LogInIcon className="mx-auto h-12 w-12 text-gray-400" />
+      <h2 className="text-2xl font-bold text-gray-800">Identification du commercial</h2>
+      <p className="text-gray-600">Veuillez entrer votre nom pour continuer.</p>
+      <input 
+        name="salesperson" 
+        value={data.salesperson} 
+        onChange={handleChange} 
+        placeholder="Votre nom" 
+        className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
+      />
+      <button 
+        onClick={nextStep} 
+        disabled={!isFormValid()} 
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300"
+      >
+        Commencer le devis
+      </button>
+    </div>
+  );
+};
+
+
+const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
   const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
@@ -67,11 +77,15 @@ const CustomerInfo = ({ data, setData, nextStep }) => {
         <input type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="Téléphone" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
         <input type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="Email" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
       </div>
-      <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
+      </div>
     </div>
   );
 };
 
+// ... (Les autres composants restent identiques) ...
 const CustomerType = ({ setData, nextStep, prevStep }) => {
   const setType = (type) => {
     setData(prev => ({ ...prev, type }));
@@ -400,6 +414,7 @@ const Confirmation = ({ reset }) => (
 export default function App() {
   const initialData = {
     step: 1,
+    salesperson: '', // Ajout du champ pour le commercial
     client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
     type: 'residentiel',
     offer: null,
@@ -495,29 +510,31 @@ export default function App() {
   };
 
   const renderStep = () => {
+    // Le nombre total d'étapes est maintenant de 9
     switch (data.step) {
-      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} />;
-      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
-      case 8: return <Confirmation reset={reset} />;
-      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} />;
+      case 1: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
+      case 2: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 4: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 7: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 8: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
+      case 9: return <Confirmation reset={reset} />;
+      default: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
     }
   };
 
   if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
   if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
-  const progress = (data.step / 8) * 100;
+  const progress = (data.step / 9) * 100; // Mettre à jour le nombre total d'étapes
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
       <div className="w-full max-w-2xl">
         <div className="mb-6">
-            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 9</span></div>
             <div className="w-full bg-gray-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">{renderStep()}</div>
