@@ -4,29 +4,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp, setLogLevel } from 'firebase/firestore';
 
-/*
- * =================================================================================
- * NOTE IMPORTANTE POUR LA CONFIGURATION
- * =================================================================================
- * Si vous voyez une erreur concernant "auth/configuration-not-found",
- * cela signifie que la connexion anonyme doit être activée dans Firebase.
- *
- * ÉTAPES À SUIVRE DANS LA CONSOLE FIREBASE :
- * 1. Allez sur https://console.firebase.google.com/ et ouvrez votre projet.
- * 2. Dans le menu de gauche, cliquez sur "Authentication".
- * 3. En haut, cliquez sur l'onglet "Sign-in method" (Méthode de connexion).
- * 4. Dans la liste, cliquez sur "Anonyme".
- * 5. Activez l'option et cliquez sur "Enregistrer".
- *
- * Une fois cette étape réalisée, votre application fonctionnera.
- * =================================================================================
- */
-
 // --- Icônes (SVG) ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -222,11 +205,17 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
       }
   };
 
+  const removeDiscount = (type) => {
+    setAppliedDiscounts(prev => ({ ...prev, [type]: null }));
+    setDiscountCodes(prev => ({ ...prev, [type]: '' }));
+    setError('');
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 text-center">Résumé du devis</h2>
       <div id="summary-content">
-        <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} />
+        <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
       </div>
 
        <div className="space-y-4">
@@ -249,7 +238,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
   );
 };
 
-const QuoteForPDF = ({ data, config, calculation, appliedDiscounts }) => (
+const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscount }) => (
   <>
     <div className="p-4 sm:p-6 bg-gray-50 rounded-lg border">
       <h3 className="font-bold text-lg mb-4">Client</h3>
@@ -273,7 +262,13 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts }) => (
         return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
       })}
       <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.materiel && <div className="flex justify-between text-green-600"><span>Réduction ({appliedDiscounts.materiel.code})</span><span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span></div>}
+      {appliedDiscounts.materiel && <div className="flex justify-between items-center text-green-600">
+        <div className="flex items-center gap-2">
+            <span>Réduction ({appliedDiscounts.materiel.code})</span>
+            <button onClick={() => removeDiscount('materiel')} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
+        </div>
+        <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span>
+      </div>}
       <hr className="my-2"/><div className="flex justify-between"><span>Frais d'installation</span><span>{config.settings.installationFee.toFixed(2)} €</span></div>
       <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
       <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
@@ -288,7 +283,13 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts }) => (
           return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo.mensualite.toFixed(2)} €</span></div> : null;
       })}
       <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.abonnement && <div className="flex justify-between text-green-600"><span>Réduction ({appliedDiscounts.abonnement.code})</span><span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span></div>}
+      {appliedDiscounts.abonnement && <div className="flex justify-between items-center text-green-600">
+        <div className="flex items-center gap-2">
+            <span>Réduction ({appliedDiscounts.abonnement.code})</span>
+            <button onClick={() => removeDiscount('abonnement')} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
+        </div>
+        <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span>
+      </div>}
       <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
     </div>
   </>
@@ -323,7 +324,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       const input = pdfRef.current;
       if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
 
-      // Enregistrer le devis dans Firestore
       const quotesPath = `/artifacts/${appId}/public/data/devis`;
       const quoteToSave = {
           ...data,
@@ -379,7 +379,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       </div>
       <div className="absolute left-[-9999px] top-0 w-[210mm]">
           <div ref={pdfRef}>
-              <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} />
+              <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
           </div>
       </div>
     </div>
@@ -438,7 +438,6 @@ export default function App() {
   useEffect(() => {
     const initFirebase = async () => {
         try {
-            // --- COLLEZ VOTRE CONFIGURATION FIREBASE ICI ---
             const firebaseConfig = {
               apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
               authDomain: "application-devis-f2a31.firebaseapp.com",
@@ -448,7 +447,6 @@ export default function App() {
               appId: "1:960846329322:web:5802132e187aa131906e93",
               measurementId: "G-1F9T98PGS9"
             };
-            // -------------------------------------------
 
             const appId = firebaseConfig.appId;
             if (!appId) throw new Error("L'appId est manquant dans la configuration Firebase.");
