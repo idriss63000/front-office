@@ -255,7 +255,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
   const applyDiscount = (type) => {
       setError('');
       const code = discountCodes[type].toUpperCase();
-      const discount = config.discounts.find(d => d.code === code && d.type === type && d.active);
+      const discount = config.discounts.find(d => d.code === code && (d.type === type || (type === 'materiel' && d.type === 'prix_fixe')) && d.active);
       
       if (discount) {
           setAppliedDiscounts(prev => ({...prev, [type]: discount}));
@@ -309,7 +309,7 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
 
     <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
       <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
-      {data.offer && <div className="flex justify-between"><span>{config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.price.toFixed(2) || '0.00'} €</span></div>}
+      {data.offer && <div className="flex justify-between"><span>{config.offers[data.offer].name}</span><span>{calculation.offerPrice.toFixed(2)} €</span></div>}
       {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
@@ -477,16 +477,28 @@ export default function App() {
 
   const calculation = useMemo(() => {
     if (!config || !data.type) return null;
-    let oneTimeSubtotal = 0;
+
+    let offerPrice = 0;
     if (data.offer && config.offers[data.offer]) {
-        oneTimeSubtotal += config.offers[data.offer][data.type]?.price || 0;
+        offerPrice = config.offers[data.offer][data.type]?.price || 0;
     }
+
+    // Appliquer le code "prix_fixe" s'il existe et correspond à l'offre
+    if (appliedDiscounts.materiel?.type === 'prix_fixe' && appliedDiscounts.materiel?.targetOffer === data.offer) {
+        offerPrice = appliedDiscounts.materiel.value;
+    }
+
+    let oneTimeSubtotal = offerPrice;
     data.packs.forEach(p => { 
         if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; 
     });
     data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
     
-    let oneTimeDiscountAmount = appliedDiscounts.materiel ? appliedDiscounts.materiel.value : 0;
+    let oneTimeDiscountAmount = 0;
+    if (appliedDiscounts.materiel?.type === 'materiel') {
+        oneTimeDiscountAmount = appliedDiscounts.materiel.value;
+    }
+    
     const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
     const totalWithInstall = subtotalAfterDiscount + config.settings.installationFee;
     const vatRate = config.settings.vat[data.type] || 0;
@@ -504,7 +516,7 @@ export default function App() {
     let monthlyDiscountAmount = appliedDiscounts.abonnement ? appliedDiscounts.abonnement.value : 0;
     const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
 
-    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal };
+    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice };
   }, [data, appliedDiscounts, config]);
 
   useEffect(() => {
