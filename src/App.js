@@ -249,24 +249,30 @@ const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
 };
 
 const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscounts, setAppliedDiscounts }) => {
-  const [discountCodes, setDiscountCodes] = useState({ materiel: '', abonnement: '' });
+  const [discountCode, setDiscountCode] = useState('');
   const [error, setError] = useState('');
 
-  const applyDiscount = (type) => {
+  const applyDiscount = () => {
       setError('');
-      const code = discountCodes[type].toUpperCase();
-      const discount = config.discounts.find(d => d.code === code && (d.type === type || (type === 'materiel' && d.type === 'prix_fixe')) && d.active);
+      const code = discountCode.toUpperCase();
+      const discount = config.discounts.find(d => d.code === code && d.active);
       
       if (discount) {
-          setAppliedDiscounts(prev => ({...prev, [type]: discount}));
+          const newDiscounts = appliedDiscounts.filter(d => {
+              if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
+                  return d.type !== 'prix_fixe' && d.type !== 'materiel';
+              }
+              return d.type !== discount.type;
+          });
+          setAppliedDiscounts([...newDiscounts, discount]);
+          setDiscountCode('');
       } else {
-          setError(`Code de réduction (${type}) invalide ou inactif.`);
+          setError(`Code de réduction invalide ou inactif.`);
       }
   };
 
-  const removeDiscount = (type) => {
-    setAppliedDiscounts(prev => ({ ...prev, [type]: null }));
-    setDiscountCodes(prev => ({ ...prev, [type]: '' }));
+  const removeDiscount = (discountId) => {
+    setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
     setError('');
   };
 
@@ -279,12 +285,8 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
 
        <div className="space-y-4">
             <div className="flex gap-2">
-                <input type="text" value={discountCodes.materiel} onChange={(e) => setDiscountCodes({...discountCodes, materiel: e.target.value})} placeholder="Code réduction matériel" className="p-3 border rounded-lg w-full"/>
-                <button onClick={() => applyDiscount('materiel')} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">OK</button>
-            </div>
-            <div className="flex gap-2">
-                <input type="text" value={discountCodes.abonnement} onChange={(e) => setDiscountCodes({...discountCodes, abonnement: e.target.value})} placeholder="Code réduction abonnement" className="p-3 border rounded-lg w-full"/>
-                <button onClick={() => applyDiscount('abonnement')} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">OK</button>
+                <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border rounded-lg w-full"/>
+                <button onClick={applyDiscount} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">Appliquer</button>
             </div>
         </div>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -321,14 +323,23 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
         return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
       })}
       <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.materiel && <div className="flex justify-between items-center text-green-600">
-        <div className="flex items-center gap-2">
-            <span>Réduction ({appliedDiscounts.materiel.code})</span>
-            <button onClick={() => removeDiscount('materiel')} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
-        </div>
-        <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span>
-      </div>}
-      <hr className="my-2"/><div className="flex justify-between"><span>Frais d'installation</span><span>{config.settings.installationFee.toFixed(2)} €</span></div>
+      
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
+            return (
+                <div key={discount.id} className="flex justify-between items-center text-green-600">
+                    <div className="flex items-center gap-2">
+                        <span>Réduction ({discount.code})</span>
+                        <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
+                    </div>
+                    <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span>
+                </div>
+            )
+        }
+        return null;
+      })}
+      
+      <hr className="my-2"/><div className="flex justify-between"><span>Frais d'installation</span><span>{calculation.installationFee.toFixed(2)} €</span></div>
       <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
       <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
       <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
@@ -342,13 +353,20 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
           return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
       })}
       <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.abonnement && <div className="flex justify-between items-center text-green-600">
-        <div className="flex items-center gap-2">
-            <span>Réduction ({appliedDiscounts.abonnement.code})</span>
-            <button onClick={() => removeDiscount('abonnement')} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
-        </div>
-        <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span>
-      </div>}
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'abonnement') {
+            return (
+                <div key={discount.id} className="flex justify-between items-center text-green-600">
+                    <div className="flex items-center gap-2">
+                        <span>Réduction ({discount.code})</span>
+                        <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
+                    </div>
+                    <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span>
+                </div>
+            )
+        }
+        return null;
+      })}
       <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
     </div>
   </>
@@ -471,7 +489,7 @@ export default function App() {
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [appliedDiscounts, setAppliedDiscounts] = useState({ materiel: null, abonnement: null });
+  const [appliedDiscounts, setAppliedDiscounts] = useState([]);
   const dbRef = useRef(null);
   const appIdRef = useRef(null);
 
@@ -483,9 +501,9 @@ export default function App() {
         offerPrice = config.offers[data.offer][data.type]?.price || 0;
     }
 
-    // Appliquer le code "prix_fixe" s'il existe et correspond à l'offre
-    if (appliedDiscounts.materiel?.type === 'prix_fixe' && appliedDiscounts.materiel?.targetOffer === data.offer) {
-        offerPrice = appliedDiscounts.materiel.value;
+    const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
+    if (fixedPriceDiscount) {
+        offerPrice = fixedPriceDiscount.value;
     }
 
     let oneTimeSubtotal = offerPrice;
@@ -494,13 +512,15 @@ export default function App() {
     });
     data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
     
-    let oneTimeDiscountAmount = 0;
-    if (appliedDiscounts.materiel?.type === 'materiel') {
-        oneTimeDiscountAmount = appliedDiscounts.materiel.value;
-    }
+    const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
+    let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
     
     const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
-    const totalWithInstall = subtotalAfterDiscount + config.settings.installationFee;
+    
+    const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
+    const installationFee = installDiscount ? 0 : config.settings.installationFee;
+
+    const totalWithInstall = subtotalAfterDiscount + installationFee;
     const vatRate = config.settings.vat[data.type] || 0;
     const vatAmount = totalWithInstall * vatRate;
     const oneTimeTotal = totalWithInstall + vatAmount;
@@ -513,10 +533,11 @@ export default function App() {
         if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; 
     });
     
-    let monthlyDiscountAmount = appliedDiscounts.abonnement ? appliedDiscounts.abonnement.value : 0;
+    const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
+    let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
     const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
 
-    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice };
+    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
   }, [data, appliedDiscounts, config]);
 
   useEffect(() => {
@@ -570,7 +591,7 @@ export default function App() {
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
   const reset = () => {
     setData(initialData);
-    setAppliedDiscounts({ materiel: null, abonnement: null });
+    setAppliedDiscounts([]);
   };
 
   const renderStep = () => {
