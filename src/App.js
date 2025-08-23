@@ -10,17 +10,39 @@ const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+const LogInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>;
+
 
 // --- Données par défaut ---
 const initialConfigData = {
   offers: {
-    initiale: { name: 'Offre Initiale', price: 1500, mensualite: 29.99 },
-    optimale: { name: 'Offre Optimale', price: 2500, mensualite: 49.99 },
+    initiale: { 
+      name: 'Offre Initiale', 
+      residentiel: { price: 1500, mensualite: 29.99 },
+      professionnel: { price: 1800, mensualite: 39.99 }
+    },
+    optimale: { 
+      name: 'Offre Optimale', 
+      residentiel: { price: 2500, mensualite: 49.99 },
+      professionnel: { price: 2900, mensualite: 59.99 }
+    },
   },
   packs: {
-    argent: { name: 'Pack Argent', price: 500, mensualite: 10 },
-    or: { name: 'Pack Or', price: 1000, mensualite: 20 },
-    platine: { name: 'Pack Platine', price: 1500, mensualite: 30 },
+    argent: { 
+      name: 'Pack Argent', 
+      residentiel: { price: 500, mensualite: 10 },
+      professionnel: { price: 600, mensualite: 15 }
+    },
+    or: { 
+      name: 'Pack Or', 
+      residentiel: { price: 1000, mensualite: 20 },
+      professionnel: { price: 1200, mensualite: 25 }
+    },
+    platine: { 
+      name: 'Pack Platine', 
+      residentiel: { price: 1500, mensualite: 30 },
+      professionnel: { price: 1800, mensualite: 35 }
+    },
   },
   extraItems: [],
   discounts: [],
@@ -35,7 +57,35 @@ const initialConfigData = {
 
 // --- Composants des étapes ---
 
-const CustomerInfo = ({ data, setData, nextStep }) => {
+const SalespersonLogin = ({ data, setData, nextStep }) => {
+  const handleChange = (e) => setData({ ...data, salesperson: e.target.value });
+  const isFormValid = () => data.salesperson && data.salesperson.trim() !== '';
+
+  return (
+    <div className="space-y-6 text-center">
+      <LogInIcon className="mx-auto h-12 w-12 text-gray-400" />
+      <h2 className="text-2xl font-bold text-gray-800">Identification du commercial</h2>
+      <p className="text-gray-600">Veuillez entrer votre nom pour continuer.</p>
+      <input 
+        name="salesperson" 
+        value={data.salesperson} 
+        onChange={handleChange} 
+        placeholder="Votre nom" 
+        className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
+      />
+      <button 
+        onClick={nextStep} 
+        disabled={!isFormValid()} 
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300"
+      >
+        Commencer le devis
+      </button>
+    </div>
+  );
+};
+
+
+const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
   const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
@@ -49,7 +99,10 @@ const CustomerInfo = ({ data, setData, nextStep }) => {
         <input type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="Téléphone" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
         <input type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="Email" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
       </div>
-      <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
+      </div>
     </div>
   );
 };
@@ -87,13 +140,16 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 text-center">Choisissez votre offre</h2>
       <div className="flex flex-col md:flex-row gap-4 justify-center">
-        {Object.entries(config.offers).map(([key, offer]) => (
-          <button key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-lg text-left hover:border-blue-500 hover:bg-blue-50 transition w-full">
-            <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-            <p className="text-2xl font-light mt-2">{offer.price} €</p>
-            <p className="text-lg font-semibold text-gray-700 mt-1">+ {offer.mensualite} €/mois</p>
-          </button>
-        ))}
+        {Object.entries(config.offers).map(([key, offer]) => {
+          const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
+          return (
+            <button key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-lg text-left hover:border-blue-500 hover:bg-blue-50 transition w-full">
+              <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
+              <p className="text-2xl font-light mt-2">{priceInfo.price} €</p>
+              <p className="text-lg font-semibold text-gray-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
+            </button>
+          )
+        })}
       </div>
       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition mt-4">Précédent</button>
     </div>
@@ -123,14 +179,17 @@ const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 text-center">Ajouter des packs supplémentaires</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {Object.entries(config.packs).map(([key, pack]) => (
-          <button key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-lg text-center transition hover:border-blue-500 hover:bg-blue-50">
-            <h3 className="text-lg font-bold text-gray-800">{pack.name}</h3>
-            <p className="text-md font-light mt-1">{pack.price} €</p>
-            <p className="text-sm font-semibold text-gray-600">+ {pack.mensualite} €/mois</p>
-            <span className="mt-2 inline-block bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full">Ajouter</span>
-          </button>
-        ))}
+        {Object.entries(config.packs).map(([key, pack]) => {
+          const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
+          return (
+            <button key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-lg text-center transition hover:border-blue-500 hover:bg-blue-50">
+              <h3 className="text-lg font-bold text-gray-800">{pack.name}</h3>
+              <p className="text-md font-light mt-1">{priceInfo.price} €</p>
+              <p className="text-sm font-semibold text-gray-600">+ {priceInfo.mensualite} €/mois</p>
+              <span className="mt-2 inline-block bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full">Ajouter</span>
+            </button>
+          )
+        })}
       </div>
       <hr />
       <div>
@@ -250,11 +309,11 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
 
     <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
       <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
-      {data.offer && <div className="flex justify-between"><span>{config.offers[data.offer].name}</span><span>{config.offers[data.offer].price.toFixed(2)} €</span></div>}
+      {data.offer && <div className="flex justify-between"><span>{config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.price.toFixed(2) || '0.00'} €</span></div>}
       {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
-          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo.price.toFixed(2)} €</span></div>{packInstance.details && <p className="text-xs text-gray-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
+          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-gray-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
       })}
       {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
       {data.extraItems.map(id => {
@@ -277,10 +336,10 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
     
      <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
       <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
-      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer].mensualite.toFixed(2)} €</span></div>}
+      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
-          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo.mensualite.toFixed(2)} €</span></div> : null;
+          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
       })}
       <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
       {appliedDiscounts.abonnement && <div className="flex justify-between items-center text-green-600">
@@ -399,6 +458,7 @@ const Confirmation = ({ reset }) => (
 export default function App() {
   const initialData = {
     step: 1,
+    salesperson: '',
     client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
     type: 'residentiel',
     offer: null,
@@ -416,22 +476,34 @@ export default function App() {
   const appIdRef = useRef(null);
 
   const calculation = useMemo(() => {
-    if (!config) return null;
+    if (!config || !data.type) return null;
     let oneTimeSubtotal = 0;
-    if (data.offer && config.offers[data.offer]) oneTimeSubtotal += config.offers[data.offer].price;
-    data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key].price; });
+    if (data.offer && config.offers[data.offer]) {
+        oneTimeSubtotal += config.offers[data.offer][data.type]?.price || 0;
+    }
+    data.packs.forEach(p => { 
+        if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; 
+    });
     data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    
     let oneTimeDiscountAmount = appliedDiscounts.materiel ? appliedDiscounts.materiel.value : 0;
     const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
     const totalWithInstall = subtotalAfterDiscount + config.settings.installationFee;
     const vatRate = config.settings.vat[data.type] || 0;
     const vatAmount = totalWithInstall * vatRate;
     const oneTimeTotal = totalWithInstall + vatAmount;
+
     let monthlySubtotal = 0;
-    if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer].mensualite;
-    data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key].mensualite; });
+    if (data.offer && config.offers[data.offer]) {
+        monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
+    }
+    data.packs.forEach(p => { 
+        if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; 
+    });
+    
     let monthlyDiscountAmount = appliedDiscounts.abonnement ? appliedDiscounts.abonnement.value : 0;
     const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
+
     return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal };
   }, [data, appliedDiscounts, config]);
 
@@ -449,8 +521,6 @@ export default function App() {
             };
 
             const appId = firebaseConfig.appId;
-            if (!appId) throw new Error("L'appId est manquant dans la configuration Firebase.");
-
             appIdRef.current = appId;
 
             const app = initializeApp(firebaseConfig);
@@ -473,9 +543,9 @@ export default function App() {
         } catch (err) {
             console.error("Erreur d'initialisation:", err);
             if (err.code === 'auth/configuration-not-found') {
-                setError("ERREUR : La connexion anonyme doit être activée dans votre console Firebase. Allez dans Authentication -> Sign-in method -> Anonyme -> Activer.");
+                setError("ERREUR : La connexion anonyme doit être activée dans votre console Firebase.");
             } else {
-                setError("Impossible de charger la configuration. Vérifiez les clés Firebase.");
+                setError("Impossible de charger la configuration.");
             }
         } finally {
             setIsLoading(false);
@@ -492,29 +562,31 @@ export default function App() {
   };
 
   const renderStep = () => {
+    const totalSteps = 9;
     switch (data.step) {
-      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} />;
-      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
-      case 8: return <Confirmation reset={reset} />;
-      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} />;
+      case 1: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
+      case 2: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 4: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 7: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 8: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
+      case 9: return <Confirmation reset={reset} />;
+      default: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
     }
   };
 
   if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
   if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
-  const progress = (data.step / 8) * 100;
+  const progress = (data.step / 9) * 100;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
       <div className="w-full max-w-2xl">
         <div className="mb-6">
-            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 9</span></div>
             <div className="w-full bg-gray-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">{renderStep()}</div>
