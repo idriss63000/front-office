@@ -18,11 +18,13 @@ const initialConfigData = {
   offers: {
     initiale: { 
       name: 'Offre Initiale', 
+      description: '',
       residentiel: { price: 1500, mensualite: 29.99 },
       professionnel: { price: 1800, mensualite: 39.99 }
     },
     optimale: { 
       name: 'Offre Optimale', 
+      description: '',
       residentiel: { price: 2500, mensualite: 49.99 },
       professionnel: { price: 2900, mensualite: 59.99 }
     },
@@ -145,6 +147,7 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
           return (
             <button key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-lg text-left hover:border-blue-500 hover:bg-blue-50 transition w-full">
               <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
+              <p className="text-sm text-gray-600 mt-2">{offer.description}</p>
               <p className="text-2xl font-light mt-2">{priceInfo.price} €</p>
               <p className="text-lg font-semibold text-gray-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
             </button>
@@ -311,7 +314,15 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
 
     <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
       <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
-      {data.offer && <div className="flex justify-between"><span>{config.offers[data.offer].name}</span><span>{calculation.offerPrice.toFixed(2)} €</span></div>}
+      {data.offer && (
+        <div>
+            <div className="flex justify-between">
+                <span>{config.offers[data.offer].name}</span>
+                <span>{calculation.offerPrice.toFixed(2)} €</span>
+            </div>
+            <p className="text-xs text-gray-500 italic pl-4">{config.offers[data.offer].description}</p>
+        </div>
+      )}
       {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
