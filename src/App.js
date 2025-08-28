@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp, setLogLevel } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel } from 'firebase/firestore';
 
 // --- Icônes (SVG) ---
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
@@ -11,6 +11,10 @@ const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24"
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const LogInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>;
+const FileTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
+const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
 
 
 // --- Données par défaut ---
@@ -59,9 +63,9 @@ const initialConfigData = {
 
 // --- Composants des étapes ---
 
-const SalespersonLogin = ({ data, setData, nextStep }) => {
-  const handleChange = (e) => setData({ ...data, salesperson: e.target.value });
-  const isFormValid = () => data.salesperson && data.salesperson.trim() !== '';
+const SalespersonLogin = ({ onLogin }) => {
+  const [salesperson, setSalesperson] = useState('');
+  const isFormValid = () => salesperson && salesperson.trim() !== '';
 
   return (
     <div className="space-y-6 text-center">
@@ -69,18 +73,17 @@ const SalespersonLogin = ({ data, setData, nextStep }) => {
       <h2 className="text-2xl font-bold text-gray-800">Identification du commercial</h2>
       <p className="text-gray-600">Veuillez entrer votre nom pour continuer.</p>
       <input 
-        name="salesperson" 
-        value={data.salesperson} 
-        onChange={handleChange} 
+        value={salesperson} 
+        onChange={(e) => setSalesperson(e.target.value)} 
         placeholder="Votre nom" 
         className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
       />
       <button 
-        onClick={nextStep} 
+        onClick={() => onLogin(salesperson)} 
         disabled={!isFormValid()} 
         className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300"
       >
-        Commencer le devis
+        Accéder à mon espace
       </button>
     </div>
   );
@@ -561,19 +564,102 @@ const Confirmation = ({ reset }) => (
 
 // --- Composant principal de l'application ---
 export default function App() {
-  const initialData = {
-    step: 1,
-    salesperson: '',
-    client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-    type: 'residentiel',
-    offer: null,
-    packs: [],
-    extraItems: [],
-    installationDate: null,
-    followUpDate: null,
+  const [currentView, setCurrentView] = useState('login'); // 'login', 'home', 'quote', 'appointmentList', 'appointmentDetail', 'newAppointment'
+  const [salesperson, setSalesperson] = useState('');
+  const [quoteData, setQuoteData] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  const handleLogin = (name) => {
+    setSalesperson(name);
+    setCurrentView('home');
   };
 
-  const [data, setData] = useState(initialData);
+  const startNewQuote = (initialClientData = null) => {
+    const initialData = {
+      step: initialClientData ? 2 : 1, // Skip client info if provided
+      salesperson: salesperson,
+      client: initialClientData || { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
+      type: 'residentiel',
+      offer: null,
+      packs: [],
+      extraItems: [],
+      installationDate: null,
+      followUpDate: null,
+    };
+    setQuoteData(initialData);
+    setCurrentView('quote');
+  };
+  
+  const handleBackToHome = () => {
+      setCurrentView('home');
+      setQuoteData(null); 
+  }
+
+  const viewAppointment = (appointment) => {
+      setSelectedAppointment(appointment);
+      setCurrentView('appointmentDetail');
+  }
+
+  if (currentView === 'login') {
+    return (
+      <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-8">
+          <SalespersonLogin onLogin={handleLogin} />
+        </div>
+      </div>
+    );
+  }
+  
+  if (currentView === 'home') {
+      return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />
+  }
+
+  if (currentView === 'quote') {
+    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
+  }
+  
+  if (currentView === 'appointmentList') {
+      return <AppointmentList salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} />;
+  }
+  
+  if (currentView === 'appointmentDetail') {
+      return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
+  }
+  
+  if (currentView === 'newAppointment') {
+      return <NewAppointment salesperson={salesperson} onBack={() => setCurrentView('home')} onAppointmentCreated={() => setCurrentView('appointmentList')} />;
+  }
+  
+  return <div>Vue non reconnue</div>;
+}
+
+
+const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+            <div className="w-full max-w-2xl text-center">
+                <h1 className="text-3xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
+                <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                        <CalendarIcon />
+                        <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
+                    </button>
+                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                        <CalendarIcon />
+                        <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
+                    </button>
+                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                        <FileTextIcon />
+                        <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const QuoteProcess = ({ data, setData, onBackToHome }) => {
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -677,37 +763,32 @@ export default function App() {
 
   const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
-  const reset = () => {
-    setData(initialData);
-    setAppliedDiscounts([]);
-  };
-
+  
   const renderStep = () => {
-    const totalSteps = 9;
+    const totalSteps = 8; // Adjusted for quote flow
     switch (data.step) {
-      case 1: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
-      case 2: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-      case 3: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-      case 4: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 5: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 6: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 7: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 8: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
-      case 9: return <Confirmation reset={reset} />;
-      default: return <SalespersonLogin data={data} setData={setData} nextStep={nextStep} />;
+      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
+      case 8: return <Confirmation reset={onBackToHome} />;
+      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
     }
   };
 
   if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
   if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
-  const progress = (data.step / 9) * 100;
+  const progress = (data.step / 8) * 100;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
       <div className="w-full max-w-2xl">
         <div className="mb-6">
-            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 9</span></div>
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
             <div className="w-full bg-gray-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">{renderStep()}</div>
