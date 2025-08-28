@@ -469,10 +469,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
       pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
 
-      const subject = encodeURIComponent(`Votre devis`);
-      const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
-      window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
-
       if (data.installationDate || data.followUpDate) {
         const eventDate = data.installationDate || data.followUpDate;
         const title = data.installationDate 
@@ -494,6 +490,10 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
 
         window.open(calendarUrl, '_blank');
       }
+
+      const subject = encodeURIComponent(`Votre devis`);
+      const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
+      window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
 
       nextStep();
 
