@@ -289,7 +289,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
         <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
       </div>
 
-       <div className="space-y-4">
+        <div className="space-y-4">
             <div className="flex gap-2">
                 <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border rounded-lg w-full"/>
                 <button onClick={applyDiscount} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">Appliquer</button>
@@ -479,17 +479,17 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
             : `Relance - ${data.client.prenom} ${data.client.nom}`;
         
         const details = `Client: ${data.client.prenom} ${data.client.nom}\n` +
-                      `Téléphone: ${data.client.telephone}\n` +
-                      `Email: ${data.client.email}\n` +
-                      `Adresse: ${data.client.adresse}`;
+                        `Téléphone: ${data.client.telephone}\n` +
+                        `Email: ${data.client.email}\n` +
+                        `Adresse: ${data.client.adresse}`;
 
         const formattedDate = formatDateForGoogle(eventDate);
 
         const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE` +
-                          `&text=${encodeURIComponent(title)}` +
-                          `&dates=${formattedDate}` +
-                          `&details=${encodeURIComponent(details)}` +
-                          `&location=${encodeURIComponent(data.client.adresse)}`;
+                            `&text=${encodeURIComponent(title)}` +
+                            `&dates=${formattedDate}` +
+                            `&details=${encodeURIComponent(details)}` +
+                            `&location=${encodeURIComponent(data.client.adresse)}`;
 
         window.open(calendarUrl, '_blank');
       }
@@ -629,16 +629,57 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
   );
 };
 
+// --- MODIFICATION ICI ---
+// Le composant NewAppointment a été mis à jour pour inclure la redirection vers Google Agenda
 const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [clientName, setClientName] = useState('');
   const [date, setDate] = useState('');
+  const [address, setAddress] = useState(''); 
+  const [phone, setPhone] = useState(''); 
+
+  // Fonction pour formater la date pour l'URL de Google Agenda
+  const formatDateForGoogle = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    // On crée un événement sur toute la journée. Pour un créneau horaire, il faudrait des champs heure de début/fin.
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
+    return `${formatDate(date)}/${formatDate(nextDay)}`;
+  };
 
   const handleSave = () => {
-    // Ici, vous ajouteriez la logique pour sauvegarder le RDV dans Firebase
-    console.log('Nouveau RDV:', { salesperson, clientName, date });
-    alert('Rendez-vous créé !');
+    // 1. Logique pour sauvegarder le RDV dans Firebase (à implémenter)
+    console.log('Nouveau RDV:', { 
+        salesperson, 
+        clientName, 
+        date,
+        address, 
+        phone 
+    });
+
+    // 2. Création de l'URL pour l'événement Google Calendar
+    const title = `Rendez-vous - ${clientName}`;
+    const details = `Prospect: ${clientName}\n` +
+                    `Téléphone: ${phone}\n` +
+                    `Commercial: ${salesperson}`;
+    const formattedDate = formatDateForGoogle(date);
+
+    const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE` +
+                        `&text=${encodeURIComponent(title)}` +
+                        `&dates=${formattedDate}` +
+                        `&details=${encodeURIComponent(details)}` +
+                        `&location=${encodeURIComponent(address)}`;
+
+    // 3. Ouvre le lien dans un nouvel onglet
+    window.open(calendarUrl, '_blank');
+
+    // 4. Confirmation et redirection
+    alert('Rendez-vous créé ! Un onglet s\'est ouvert pour l\'ajouter à votre agenda.');
     onAppointmentCreated(); // Redirige vers la liste
   };
+
+  const isFormValid = () => clientName && date && address && phone;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
@@ -647,23 +688,39 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
              <ArrowLeftIcon /> Accueil
           </button>
           <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-             <h2 className="text-2xl font-bold text-gray-800">Créer un nouveau rendez-vous</h2>
-             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du client</label>
-                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
-             </div>
-             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
-             </div>
-             <button onClick={handleSave} disabled={!clientName || !date} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300">
-                Enregistrer le rendez-vous
-             </button>
+            <h2 className="text-2xl font-bold text-gray-800">Créer un nouveau rendez-vous</h2>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom du prospect</label>
+              <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Adresse du rendez-vous</label>
+              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border rounded-lg"/>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de téléphone du prospect</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border rounded-lg"/>
+            </div>
+            
+            <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300">
+              Enregistrer le rendez-vous
+            </button>
           </div>
        </div>
     </div>
   );
 };
+// --- FIN DE LA MODIFICATION ---
+
+
 // --- Composant principal de l'application ---
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); // 'login', 'home', 'quote', 'appointmentList', 'appointmentDetail', 'newAppointment'
@@ -823,7 +880,7 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
               apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
               authDomain: "application-devis-f2a31.firebaseapp.com",
               projectId: "application-devis-f2a31",
-              storageBucket: "application-devis-f2a31.firebasestorage.app",
+              storageBucket: "application-devis-f2a31.appspot.com",
               messagingSenderId: "960846329322",
               appId: "1:960846329322:web:5802132e187aa131906e93",
               measurementId: "G-1F9T98PGS9"
