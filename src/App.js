@@ -561,7 +561,109 @@ const Confirmation = ({ reset }) => (
         <button onClick={reset} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Créer un nouveau devis</button>
     </div>
 );
+// --- NOUVEAUX COMPOSANTS POUR LES RENDEZ-VOUS ---
 
+const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment }) => {
+  // Simule une liste de rendez-vous. Dans une vraie app, ces données viendraient de Firebase.
+  const appointments = [
+    { id: 1, clientName: 'Jean Dupont', date: '2025-09-10', status: 'confirmé' },
+    { id: 2, clientName: 'Marie Curie', date: '2025-09-12', status: 'à confirmer' },
+  ];
+
+  return (
+    <div className="bg-gray-100 min-h-screen font-sans p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Mes rendez-vous</h1>
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+             <ArrowLeftIcon /> Retour
+          </button>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
+          {appointments.map(app => (
+            <div key={app.id} onClick={() => onSelectAppointment(app)} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer flex justify-between items-center">
+              <div>
+                <p className="font-bold text-lg">{app.clientName}</p>
+                <p className="text-sm text-gray-600">Le {new Date(app.date).toLocaleDateString()}</p>
+              </div>
+              <span className={`px-3 py-1 text-xs font-bold rounded-full ${app.status === 'confirmé' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                {app.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
+  if (!appointment) return <div>Rendez-vous non trouvé.</div>;
+
+  const clientDataForQuote = {
+      nom: appointment.clientName.split(' ').slice(1).join(' '),
+      prenom: appointment.clientName.split(' ')[0],
+      // Vous pouvez ajouter d'autres infos si vous les avez
+      email: '', 
+      telephone: '',
+      adresse: ''
+  };
+
+  return (
+    <div className="bg-gray-100 min-h-screen font-sans p-4">
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
+          <ArrowLeftIcon /> Tous les rendez-vous
+        </button>
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-800">{appointment.clientName}</h2>
+          <p className="text-gray-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
+          <hr className="my-6" />
+          <button onClick={() => onStartQuote(clientDataForQuote)} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+            Créer un devis pour ce client
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
+  const [clientName, setClientName] = useState('');
+  const [date, setDate] = useState('');
+
+  const handleSave = () => {
+    // Ici, vous ajouteriez la logique pour sauvegarder le RDV dans Firebase
+    console.log('Nouveau RDV:', { salesperson, clientName, date });
+    alert('Rendez-vous créé !');
+    onAppointmentCreated(); // Redirige vers la liste
+  };
+
+  return (
+    <div className="bg-gray-100 min-h-screen font-sans p-4">
+       <div className="max-w-2xl mx-auto">
+          <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
+             <ArrowLeftIcon /> Accueil
+          </button>
+          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+             <h2 className="text-2xl font-bold text-gray-800">Créer un nouveau rendez-vous</h2>
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du client</label>
+                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
+             </div>
+             <button onClick={handleSave} disabled={!clientName || !date} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300">
+                Enregistrer le rendez-vous
+             </button>
+          </div>
+       </div>
+    </div>
+  );
+};
 // --- Composant principal de l'application ---
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); // 'login', 'home', 'quote', 'appointmentList', 'appointmentDetail', 'newAppointment'
