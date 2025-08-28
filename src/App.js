@@ -404,9 +404,19 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
 );
 
 const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
-  const [accepted, setAccepted] = useState(false);
+  const [status, setStatus] = useState(''); // 'accepted', 'thinking'
   const [isGenerating, setIsGenerating] = useState(false);
   const pdfRef = useRef();
+  
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    if (newStatus === 'accepted') {
+        setData(prev => ({...prev, followUpDate: null}));
+    }
+    if (newStatus === 'thinking') {
+        setData(prev => ({...prev, installationDate: null}));
+    }
+  };
 
   const loadScript = (src) => new Promise((resolve, reject) => {
       if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -467,17 +477,32 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 text-center">Installation et Envoi</h2>
-      <div className="p-6 bg-gray-50 rounded-lg border">
+      <div className="p-6 bg-gray-50 rounded-lg border space-y-4">
+        
         <label className="flex items-center cursor-pointer">
-          <input type="checkbox" checked={accepted} onChange={() => setAccepted(!accepted)} className="h-5 w-5 rounded text-blue-600"/>
-          <span className="ml-4 text-gray-700">Le client a accepté le devis et souhaite planifier l'installation.</span>
+          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600"/>
+          <span className="ml-3 text-gray-700">Le client a accepté le devis.</span>
         </label>
-        {accepted && (
-          <div className="mt-4">
+
+        {status === 'accepted' && (
+          <div className="pl-7 mt-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Date d'installation</label>
             <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
           </div>
         )}
+
+        <label className="flex items-center cursor-pointer">
+          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600"/>
+          <span className="ml-3 text-gray-700">Le client souhaite réfléchir.</span>
+        </label>
+
+        {status === 'thinking' && (
+          <div className="pl-7 mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date de relance</label>
+            <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
+          </div>
+        )}
+
       </div>
        <div className="flex gap-4 mt-6">
         <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300">Précédent</button>
@@ -514,6 +539,7 @@ export default function App() {
     packs: [],
     extraItems: [],
     installationDate: null,
+    followUpDate: null,
   };
 
   const [data, setData] = useState(initialData);
