@@ -1,3 +1,4 @@
+// Correction finale pour Google Agenda
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
