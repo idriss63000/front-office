@@ -561,14 +561,26 @@ const Confirmation = ({ reset }) => (
         <button onClick={reset} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Créer un nouveau devis</button>
     </div>
 );
-// --- NOUVEAUX COMPOSANTS POUR LES RENDEZ-VOUS ---
 
-const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment }) => {
-  // Simule une liste de rendez-vous. Dans une vraie app, ces données viendraient de Firebase.
-  const appointments = [
-    { id: 1, clientName: 'Jean Dupont', date: '2025-09-10', status: 'confirmé' },
-    { id: 2, clientName: 'Marie Curie', date: '2025-09-12', status: 'à confirmer' },
-  ];
+// --- MODIFICATION ICI ---
+// Le composant AppointmentList gère maintenant la mise à jour des statuts.
+const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appointments, onUpdateStatus }) => {
+  
+  // Fonction pour déterminer la couleur du badge de statut
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'confirmé':
+        return 'bg-green-100 text-green-800';
+      case 'en attente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'relance':
+        return 'bg-blue-100 text-blue-800';
+      case 'pas vendu':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
@@ -580,17 +592,34 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment }) => {
           </button>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-          {appointments.map(app => (
-            <div key={app.id} onClick={() => onSelectAppointment(app)} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-              <div>
-                <p className="font-bold text-lg">{app.clientName}</p>
-                <p className="text-sm text-gray-600">Le {new Date(app.date).toLocaleDateString()}</p>
+          {appointments.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">Aucun rendez-vous pour le moment.</p>
+          ) : (
+            appointments.map(app => (
+              <div key={app.id} className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
+                  <p className="font-bold text-lg">{app.clientName}</p>
+                  <p className="text-sm text-gray-600">Le {new Date(app.date).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusClass(app.status)}`}>
+                    {app.status}
+                  </span>
+                  <select 
+                    value={app.status} 
+                    onChange={(e) => onUpdateStatus(app.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()} // Empêche le clic de se propager à la div parente
+                    className="p-1 border rounded-md text-sm bg-white"
+                  >
+                    <option value="en attente">En attente</option>
+                    <option value="relance">Relance</option>
+                    <option value="pas vendu">Pas vendu</option>
+                    <option value="confirmé">Confirmé</option>
+                  </select>
+                </div>
               </div>
-              <span className={`px-3 py-1 text-xs font-bold rounded-full ${app.status === 'confirmé' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                {app.status}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -603,10 +632,9 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
   const clientDataForQuote = {
       nom: appointment.clientName.split(' ').slice(1).join(' '),
       prenom: appointment.clientName.split(' ')[0],
-      // Vous pouvez ajouter d'autres infos si vous les avez
       email: '', 
-      telephone: '',
-      adresse: ''
+      telephone: appointment.phone || '',
+      adresse: appointment.address || ''
   };
 
   return (
@@ -618,6 +646,8 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-800">{appointment.clientName}</h2>
           <p className="text-gray-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="mt-1">Adresse : {appointment.address}</p>
+          <p className="mt-1">Téléphone : {appointment.phone}</p>
           <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
           <hr className="my-6" />
           <button onClick={() => onStartQuote(clientDataForQuote)} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
@@ -629,19 +659,15 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
   );
 };
 
-// --- MODIFICATION ICI ---
-// Le composant NewAppointment a été mis à jour pour inclure la redirection vers Google Agenda
 const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [clientName, setClientName] = useState('');
   const [date, setDate] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
 
-  // Fonction pour formater la date pour l'URL de Google Agenda
   const formatDateForGoogle = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    // On crée un événement sur toute la journée. Pour un créneau horaire, il faudrait des champs heure de début/fin.
     const nextDay = new Date(date);
     nextDay.setDate(date.getDate() + 1);
     const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
@@ -649,34 +675,32 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   };
 
   const handleSave = () => {
-    // 1. Logique pour sauvegarder le RDV dans Firebase (à implémenter)
-    console.log('Nouveau RDV:', { 
-        salesperson, 
-        clientName, 
-        date,
-        address, 
-        phone 
-    });
+    // Création de l'objet rendez-vous
+    const newAppointmentData = {
+      id: Date.now(), // ID unique basé sur le timestamp
+      salesperson,
+      clientName,
+      date,
+      address,
+      phone,
+      status: 'en attente' // Statut par défaut
+    };
 
-    // 2. Création de l'URL pour l'événement Google Calendar
+    // Appel de la fonction parente pour ajouter le RDV à l'état global
+    onAppointmentCreated(newAppointmentData);
+
+    // Création de l'URL pour Google Calendar
     const title = `Rendez-vous - ${clientName}`;
     const details = `Prospect: ${clientName}\n` +
                     `Téléphone: ${phone}\n` +
                     `Commercial: ${salesperson}`;
     const formattedDate = formatDateForGoogle(date);
-
     const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE` +
                         `&text=${encodeURIComponent(title)}` +
                         `&dates=${formattedDate}` +
                         `&details=${encodeURIComponent(details)}` +
                         `&location=${encodeURIComponent(address)}`;
-
-    // 3. Ouvre le lien dans un nouvel onglet
     window.open(calendarUrl, '_blank');
-
-    // 4. Confirmation et redirection
-    alert('Rendez-vous créé ! Un onglet s\'est ouvert pour l\'ajouter à votre agenda.');
-    onAppointmentCreated(); // Redirige vers la liste
   };
 
   const isFormValid = () => clientName && date && address && phone;
@@ -723,10 +747,28 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
 
 // --- Composant principal de l'application ---
 export default function App() {
-  const [currentView, setCurrentView] = useState('login'); // 'login', 'home', 'quote', 'appointmentList', 'appointmentDetail', 'newAppointment'
+  const [currentView, setCurrentView] = useState('login'); 
   const [salesperson, setSalesperson] = useState('');
   const [quoteData, setQuoteData] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  // --- MODIFICATION ICI ---
+  // L'état des rendez-vous est maintenant géré ici
+  const [appointments, setAppointments] = useState([]);
+
+  // Fonction pour ajouter un nouveau rendez-vous
+  const addAppointment = (newAppointment) => {
+    setAppointments(prev => [...prev, newAppointment]);
+  };
+
+  // Fonction pour mettre à jour le statut d'un rendez-vous
+  const updateAppointmentStatus = (appointmentId, newStatus) => {
+    setAppointments(prev => 
+      prev.map(app => 
+        app.id === appointmentId ? { ...app, status: newStatus } : app
+      )
+    );
+  };
+  // --- FIN DE LA MODIFICATION ---
 
   const handleLogin = (name) => {
     setSalesperson(name);
@@ -735,7 +777,7 @@ export default function App() {
 
   const startNewQuote = (initialClientData = null) => {
     const initialData = {
-      step: initialClientData ? 2 : 1, // Skip client info if provided
+      step: initialClientData ? 2 : 1, 
       salesperson: salesperson,
       client: initialClientData || { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
       type: 'residentiel',
@@ -777,17 +819,35 @@ export default function App() {
     return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
   }
   
+  // --- MODIFICATION ICI ---
+  // On passe les nouvelles props au composant AppointmentList
   if (currentView === 'appointmentList') {
-      return <AppointmentList salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} />;
+      return <AppointmentList 
+                appointments={appointments} 
+                salesperson={salesperson} 
+                onNavigate={setCurrentView} 
+                onSelectAppointment={viewAppointment}
+                onUpdateStatus={updateAppointmentStatus}
+             />;
   }
   
   if (currentView === 'appointmentDetail') {
       return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
   }
   
+  // On passe la fonction pour ajouter un RDV au composant NewAppointment
   if (currentView === 'newAppointment') {
-      return <NewAppointment salesperson={salesperson} onBack={() => setCurrentView('home')} onAppointmentCreated={() => setCurrentView('appointmentList')} />;
+      return <NewAppointment 
+                salesperson={salesperson} 
+                onBack={() => setCurrentView('home')} 
+                onAppointmentCreated={(newApp) => {
+                  addAppointment(newApp);
+                  setCurrentView('appointmentList');
+                  alert('Rendez-vous créé ! Un onglet s\'est ouvert pour l\'ajouter à votre agenda.');
+                }} 
+             />;
   }
+  // --- FIN DE LA MODIFICATION ---
   
   return <div>Vue non reconnue</div>;
 }
