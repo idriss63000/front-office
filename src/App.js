@@ -18,13 +18,13 @@ const initialConfigData = {
   offers: {
     initiale: { 
       name: 'Offre Initiale', 
-      description: '',
+      description: 'Description de base pour l\'offre initiale.',
       residentiel: { price: 1500, mensualite: 29.99 },
       professionnel: { price: 1800, mensualite: 39.99 }
     },
     optimale: { 
       name: 'Offre Optimale', 
-      description: '',
+      description: 'Description complète pour l\'offre optimale.',
       residentiel: { price: 2500, mensualite: 49.99 },
       professionnel: { price: 2900, mensualite: 59.99 }
     },
@@ -350,7 +350,27 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
         return null;
       })}
       
-      <hr className="my-2"/><div className="flex justify-between"><span>Frais d'installation</span><span>{calculation.installationFee.toFixed(2)} €</span></div>
+      <hr className="my-2"/>
+      <div className="flex justify-between">
+        <span>Frais d'installation</span>
+        <span>{config.settings.installationFee.toFixed(2)} €</span>
+      </div>
+
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'installation_offerte') {
+            return (
+                <div key={discount.id} className="flex justify-between items-center text-green-600">
+                    <div className="flex items-center gap-2">
+                        <span>Réduction ({discount.code})</span>
+                        <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button>
+                    </div>
+                    <span>- {config.settings.installationFee.toFixed(2)} €</span>
+                </div>
+            )
+        }
+        return null;
+      })}
+
       <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
       <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
       <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
