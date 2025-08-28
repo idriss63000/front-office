@@ -1,4 +1,3 @@
-// Correction finale pour Google Agenda
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
@@ -427,6 +426,15 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       script.onerror = () => reject(new Error(`Script load error for ${src}`));
       document.body.appendChild(script);
   });
+  
+  const formatDateForGoogle = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
+    return `${formatDate(date)}/${formatDate(nextDay)}`;
+  };
 
   const handleGenerateAndSend = async () => {
     setIsGenerating(true);
@@ -464,6 +472,28 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       const subject = encodeURIComponent(`Votre devis`);
       const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
       window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
+
+      if (data.installationDate || data.followUpDate) {
+        const eventDate = data.installationDate || data.followUpDate;
+        const title = data.installationDate 
+            ? `Installation - ${data.client.prenom} ${data.client.nom}`
+            : `Relance - ${data.client.prenom} ${data.client.nom}`;
+        
+        const details = `Client: ${data.client.prenom} ${data.client.nom}\n` +
+                      `Téléphone: ${data.client.telephone}\n` +
+                      `Email: ${data.client.email}\n` +
+                      `Adresse: ${data.client.adresse}`;
+
+        const formattedDate = formatDateForGoogle(eventDate);
+
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE` +
+                          `&text=${encodeURIComponent(title)}` +
+                          `&dates=${formattedDate}` +
+                          `&details=${encodeURIComponent(details)}` +
+                          `&location=${encodeURIComponent(data.client.adresse)}`;
+
+        window.open(calendarUrl, '_blank');
+      }
 
       nextStep();
 
