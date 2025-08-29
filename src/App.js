@@ -508,7 +508,7 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
               <div key={app.id} className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
                   <p className="font-bold text-lg">{app.clientName}</p>
-                  <p className="text-sm text-gray-600">Le {new Date(app.date).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-600">Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusClass(app.status)}`}>{app.status}</span>
@@ -547,7 +547,7 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
         </button>
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-800">{appointment.clientName}</h2>
-          <p className="text-gray-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p className="text-gray-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</p>
           <p className="mt-1">Adresse : {appointment.address}</p>
           <p className="mt-1">Téléphone : {appointment.phone}</p>
           <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
@@ -564,6 +564,7 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
 const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [clientName, setClientName] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
 
@@ -575,7 +576,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
     // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
     // ######################################################################
     const GOOGLE_MAPS_API_KEY = 'AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI'; 
-// ######################################################################
+    // ######################################################################
     
     const scriptId = 'google-maps-script';
 
@@ -614,26 +615,27 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
     }
   }, []);
 
-  const formatDateForGoogle = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const nextDay = new Date(date);
-    nextDay.setDate(date.getDate() + 1);
-    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
-    return `${formatDate(date)}/${formatDate(nextDay)}`;
+  const formatDateTimeForGoogle = (dateString, timeString) => {
+    if (!dateString || !timeString) return '';
+    const startDate = new Date(`${dateString}T${timeString}`);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Ajoute 1 heure
+
+    const toGoogleString = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
   };
 
   const handleSave = () => {
-    const newAppointmentData = { salesperson, clientName, date, address, phone, status: 'en attente', createdAt: serverTimestamp() };
+    const newAppointmentData = { salesperson, clientName, date, time, address, phone, status: 'en attente', createdAt: serverTimestamp() };
     onAppointmentCreated(newAppointmentData);
     const title = `Rendez-vous - ${clientName}`;
     const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
-    const formattedDate = formatDateForGoogle(date);
-    const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
+    const formattedDateTime = formatDateTimeForGoogle(date, time);
+    const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
     window.open(calendarUrl, '_blank');
   };
 
-  const isFormValid = () => clientName && date && address && phone;
+  const isFormValid = () => clientName && date && time && address && phone;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
@@ -647,9 +649,15 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Nom du prospect</label>
               <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Heure</label>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border rounded-lg"/>
+                </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Adresse du rendez-vous</label>
@@ -952,5 +960,6 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
 
 
