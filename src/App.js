@@ -567,6 +567,53 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
 
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
+
+  useEffect(() => {
+    // ######################################################################
+    // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
+    // ######################################################################
+    const GOOGLE_MAPS_API_KEY = 'AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI'; 
+// ######################################################################
+    
+    const scriptId = 'google-maps-script';
+
+    const initAutocomplete = () => {
+      if (addressInputRef.current && !autocompleteRef.current) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'fr' }, // Restreint la recherche à la France
+          }
+        );
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place && place.formatted_address) {
+            setAddress(place.formatted_address);
+          }
+        });
+        autocompleteRef.current = autocomplete;
+      }
+    };
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete();
+      return;
+    }
+
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    }
+  }, []);
+
   const formatDateForGoogle = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -606,7 +653,13 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Adresse du rendez-vous</label>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border rounded-lg"/>
+              <input 
+                ref={addressInputRef}
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)} 
+                placeholder="123 Rue de l'Exemple, 75001 Paris" 
+                className="w-full p-3 border rounded-lg"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de téléphone du prospect</label>
@@ -756,7 +809,6 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
 }
 
 
-// --- MODIFICATION ICI : Déplacement des définitions de composants avant leur utilisation ---
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
   const [salesperson, setSalesperson] = useState('');
@@ -900,3 +952,5 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
+
