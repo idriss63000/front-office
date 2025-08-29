@@ -6,8 +6,6 @@ import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel, onSnapshot } from 'firebase/firestore';
 
 // --- Icônes (SVG) ---
-// AMÉLIORATION: J'ai ajouté une icône pour la nouvelle fonctionnalité de présentation.
-const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
@@ -17,51 +15,48 @@ const LogInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" heigh
 const FileTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 
-
-// --- Données par défaut (sera remplacé par les données de Firebase) ---
-// AMÉLIORATION: Le front-office ne doit pas contenir de configuration par défaut.
-// Il doit toujours se fier aux données venant de la base de données (back-office)
-// pour éviter toute incohérence. Je laisse la structure pour la compatibilité
-// initiale mais elle ne sera utilisée que si le chargement échoue.
-const initialConfigData = {
-  offers: {}, packs: {}, extraItems: [], discounts: [],
-  settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
-};
-
-// --- Composants ---
-
-// NOUVEAU: Composant de modal générique pour remplacer les alertes
-// L'utilisation de `alert()` est bloquante et peu esthétique. Un modal est une bien meilleure expérience utilisateur.
-const Modal = ({ title, message, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <InfoIcon className="h-6 w-6 text-red-600" />
-            </div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">{title}</h3>
-            <div className="mt-2">
-                <p className="text-sm text-gray-500">{message}</p>
-            </div>
-            <div className="mt-4">
-                <button
-                    type="button"
-                    className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700"
-                    onClick={onClose}
-                >
-                    Fermer
+// --- Fenêtre modale générique ---
+const Modal = ({ title, children, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-full overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+                <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
+            </div>
+            <div className="p-6">
+                {children}
             </div>
         </div>
     </div>
 );
 
+// --- Données par défaut ---
+const initialConfigData = {
+  offers: {
+    initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
+    optimale: { name: 'Offre Optimale', description: 'Description complète pour l\'offre optimale.', residentiel: { price: 2500, mensualite: 49.99 }, professionnel: { price: 2900, mensualite: 59.99 } },
+  },
+  packs: {
+    argent: { name: 'Pack Argent', residentiel: { price: 500, mensualite: 10 }, professionnel: { price: 600, mensualite: 15 } },
+    or: { name: 'Pack Or', residentiel: { price: 1000, mensualite: 20 }, professionnel: { price: 1200, mensualite: 25 } },
+    platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
+  },
+  extraItems: [],
+  discounts: [],
+  settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
+};
+
+// --- Composants ---
 
 const SalespersonLogin = ({ onLogin }) => {
   const [salesperson, setSalesperson] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
 
   const handleAttemptLogin = async () => {
     if (!salesperson || salesperson.trim() === '') return;
@@ -71,18 +66,26 @@ const SalespersonLogin = ({ onLogin }) => {
     if (!success) {
       setError('Commercial non reconnu. Veuillez vérifier le nom.');
     }
-    // Pas de `setIsLoading(false)` ici car le changement de vue s'en occupe
+    setIsLoading(false);
+  };
+  
+  const handleShowModal = (title, message) => {
+      setModal({ isOpen: true, title, message });
   };
 
   return (
     <div className="space-y-6 text-center">
+      {modal.isOpen && (
+            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
+                <p>{modal.message}</p>
+            </Modal>
+      )}
       <LogInIcon className="mx-auto h-12 w-12 text-gray-400" />
       <h2 className="text-2xl font-bold text-gray-800">Identification du commercial</h2>
       <p className="text-gray-600">Veuillez entrer votre nom pour continuer.</p>
       <input 
         value={salesperson} 
         onChange={(e) => setSalesperson(e.target.value)} 
-        onKeyPress={(e) => e.key === 'Enter' && handleAttemptLogin()}
         placeholder="Votre nom" 
         className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
       />
@@ -244,7 +247,7 @@ const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
       <div className="space-y-3">
         {config.extraItems.map(item => (
           <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-            <input type="checkbox" checked={(data.extraItems || []).includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600"/>
+            <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600"/>
             <span className="ml-4 text-gray-700">{item.name}</span>
             <span className="ml-auto font-semibold">{item.price} €</span>
           </label>
@@ -382,9 +385,8 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
   const [status, setStatus] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const pdfRef = useRef();
-  // NOUVEAU: State pour gérer le modal d'erreur
-  const [modalError, setModalError] = useState(null);
-  
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
     if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
@@ -407,6 +409,10 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
     nextDay.setDate(date.getDate() + 1);
     const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
     return `${formatDate(date)}/${formatDate(nextDay)}`;
+  };
+
+  const handleShowModal = (title, message) => {
+      setModal({ isOpen: true, title, message });
   };
 
   const handleGenerateAndSend = async () => {
@@ -451,8 +457,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       nextStep();
     } catch(error) {
         console.error("Erreur:", error);
-        // AMÉLIORATION: Remplacer alert() par le modal
-        setModalError({ title: "Erreur", message: "Une erreur est survenue lors de la génération du devis. Veuillez réessayer." });
+        handleShowModal("Erreur", "Une erreur est survenue lors de la génération du PDF ou de l'envoi.");
     } finally {
         setIsGenerating(false);
     }
@@ -460,8 +465,11 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
 
   return (
     <div className="space-y-6">
-      {/* NOUVEAU: Affichage conditionnel du modal d'erreur */}
-      {modalError && <Modal title={modalError.title} message={modalError.message} onClose={() => setModalError(null)} />}
+       {modal.isOpen && (
+            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
+                <p>{modal.message}</p>
+            </Modal>
+        )}
       <h2 className="text-2xl font-bold text-gray-800 text-center">Installation et Envoi</h2>
       <div className="p-6 bg-gray-50 rounded-lg border space-y-4">
         <label className="flex items-center cursor-pointer">
@@ -485,7 +493,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
           </div>
         )}
       </div>
-        <div className="flex gap-4 mt-6">
+       <div className="flex gap-4 mt-6">
         <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300">Précédent</button>
         <button onClick={handleGenerateAndSend} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400">
             {isGenerating ? 'En cours...' : 'Valider et envoyer'}
@@ -596,33 +604,28 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [time, setTime] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
 
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
 
-  // AMÉLIORATION SÉCURITÉ: La clé API Google ne doit JAMAIS être dans le code source.
-  // Elle devrait être stockée dans une variable d'environnement et injectée au moment du build.
-  // Pour un débutant, une approche plus simple est de la laisser ici mais avec un avertissement fort.
   useEffect(() => {
     // ######################################################################
-    // ### ATTENTION : NE JAMAIS EXPOSER VOTRE VRAIE CLÉ API PUBLIQUEMENT ###
-    // ### Utilisez des restrictions (HTTP referrers) dans la console Google Cloud ###
+    // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
     // ######################################################################
-    const GOOGLE_MAPS_API_KEY = ''; // Remplacez par votre clé API
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; 
     // ######################################################################
     
-    if (!GOOGLE_MAPS_API_KEY) {
-        console.warn("La clé API Google Maps n'est pas configurée. L'autocomplétion d'adresse est désactivée.");
-        return;
-    }
-
     const scriptId = 'google-maps-script';
 
     const initAutocomplete = () => {
-      if (window.google && addressInputRef.current && !autocompleteRef.current) {
+      if (addressInputRef.current && !autocompleteRef.current) {
         const autocomplete = new window.google.maps.places.Autocomplete(
           addressInputRef.current,
-          { types: ['address'], componentRestrictions: { country: 'fr' } }
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'fr' }, // Restreint la recherche à la France
+          }
         );
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
@@ -636,7 +639,10 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
 
     if (window.google && window.google.maps && window.google.maps.places) {
       initAutocomplete();
-    } else if (!document.getElementById(scriptId)) {
+      return;
+    }
+
+    if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
@@ -651,7 +657,9 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
     if (!dateString || !timeString) return '';
     const startDate = new Date(`${dateString}T${timeString}`);
     const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Ajoute 1 heure
+
     const toGoogleString = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
     return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
   };
 
@@ -669,6 +677,11 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
+        {modal.isOpen && (
+            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
+                <p>{modal.message}</p>
+            </Modal>
+        )}
        <div className="max-w-2xl mx-auto">
           <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
              <ArrowLeftIcon /> Accueil
@@ -712,19 +725,61 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   );
 };
 
+// NOUVEAU: Composant pour le mode Présentation
+const PresentationMode = ({ onBack, videos }) => {
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            <div className="max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">Présentation Client</h1>
+                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                        <ArrowLeftIcon /> Retour
+                    </button>
+                </div>
+                {videos.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                        <p className="text-gray-500">Aucune vidéo de présentation n'a été configurée dans le back-office.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {videos.map(video => {
+                            // Transformation du lien de partage Google Drive en lien "embed"
+                            const embedUrl = video.url.replace("/view", "/preview");
+                            return (
+                                <div key={video.id} className="bg-white rounded-xl shadow-lg p-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">{video.title}</h2>
+                                    <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg">
+                                        <iframe
+                                            src={embedUrl}
+                                            title={video.title}
+                                            frameBorder="0"
+                                            className="w-full h-full rounded-lg"
+                                            allow="autoplay; encrypted-media"
+                                            allowFullScreen
+                                        ></iframe>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
         <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
             <div className="w-full max-w-4xl text-center">
                 <h1 className="text-3xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
-                {/* AMÉLIORATION: Grille plus grande pour accueillir la nouvelle fonctionnalité */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
                     </button>
-                     <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
                     </button>
@@ -732,10 +787,10 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
-                    {/* NOUVEAU: Bouton pour la présentation vidéo */}
-                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48 md:col-span-3">
+                    {/* NOUVEAU: Bouton pour le mode Présentation */}
+                     <button onClick={() => onNavigate('presentation')} className="md:col-span-3 flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <VideoIcon />
-                        <span className="mt-4 text-lg font-semibold">Lancer la Présentation Client</span>
+                        <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
                 </div>
             </div>
@@ -743,91 +798,15 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     )
 }
 
-// NOUVEAU: Composant pour la vue de présentation vidéo
-const PresentationView = ({ onBack, firebaseRef }) => {
-    const [videos, setVideos] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [selectedVideoUrl, setSelectedVideoUrl] = useState('');
-
-    useEffect(() => {
-        if (!firebaseRef.current) return;
-        const { db, appId } = firebaseRef.current;
-        const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
-        const q = query(collection(db, videosPath));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const videoList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setVideos(videoList);
-            setIsLoading(false);
-        }, err => {
-            console.error(err);
-            setError("Impossible de charger les vidéos de présentation.");
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
-    }, [firebaseRef]);
-
-    // Convertit un lien de partage Google Drive en lien "embed"
-    const getEmbedUrl = (url) => {
-        if (!url) return '';
-        let videoId;
-        // Gère les URLs de type /file/d/.../view
-        let match = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) {
-            videoId = match[1];
-        } else {
-            // Gère les URLs de type /uc?id=...
-            match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) {
-                videoId = match[1];
-            }
-        }
-        return videoId ? `https://drive.google.com/file/d/${videoId}/preview` : '';
-    };
-
-    if (isLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><p>Chargement...</p></div>;
-    if (error) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><p className="text-red-500">{error}</p></div>;
-
-    return (
-        <div className="bg-gray-100 min-h-screen font-sans p-4">
-            <div className="max-w-6xl mx-auto">
-                 <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
-                    <ArrowLeftIcon /> Retour à l'accueil
-                </button>
-                <div className="bg-white rounded-xl shadow-lg p-8">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Présentation Client</h1>
-                    {selectedVideoUrl ? (
-                         <div>
-                            <div className="aspect-video w-full">
-                                <iframe src={getEmbedUrl(selectedVideoUrl)} className="w-full h-full border-0 rounded-lg" allow="fullscreen"></iframe>
-                            </div>
-                             <button onClick={() => setSelectedVideoUrl('')} className="mt-4 w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
-                                Choisir une autre vidéo
-                            </button>
-                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {videos.length > 0 ? videos.map(video => (
-                                <button key={video.id} onClick={() => setSelectedVideoUrl(video.url)} className="p-6 border-2 rounded-lg text-center hover:border-blue-500 hover:bg-blue-50 transition space-y-3">
-                                    <VideoIcon className="mx-auto h-12 w-12 text-blue-500" />
-                                    <h3 className="text-lg font-bold text-gray-800">{video.title}</h3>
-                                </button>
-                            )) : <p className="col-span-full text-center text-gray-500 py-8">Aucune vidéo de présentation n'a été configurée dans le back-office.</p>}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
-const QuoteProcess = ({ data, setData, onBackToHome, firebaseRef }) => {
+const QuoteProcess = ({ data, setData, onBackToHome }) => {
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [appliedDiscounts, setAppliedDiscounts] = useState([]);
-  
+  const dbRef = useRef(null);
+  const appIdRef = useRef(null);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+
   const calculation = useMemo(() => {
     if (!config || !data.type) return null;
     let offerPrice = 0;
@@ -836,7 +815,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, firebaseRef }) => {
     if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
     let oneTimeSubtotal = offerPrice;
     data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
-    (data.extraItems || []).forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
     const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
     let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
     const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
@@ -856,41 +835,58 @@ const QuoteProcess = ({ data, setData, onBackToHome, firebaseRef }) => {
   }, [data, appliedDiscounts, config]);
 
   useEffect(() => {
-    const loadConfig = async () => {
-        if (!firebaseRef.current) {
-            setError("La connexion à la base de données n'est pas prête.");
-            setIsLoading(false);
-            return;
-        }
+    const initFirebase = async () => {
         try {
-            const { db, appId } = firebaseRef.current;
+            if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
+                setError("La configuration Firebase n'est pas disponible. Impossible de charger les données.");
+                setConfig(initialConfigData); // Fallback to default data for UI
+                return;
+            }
+            
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const appId = __app_id;
+            appIdRef.current = appId;
+            
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            dbRef.current = db;
+            const auth = getAuth(app);
+            setLogLevel('debug');
+            
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
             const docSnap = await getDoc(configDocRef);
             if (docSnap.exists()) {
-                // AMÉLIORATION: On s'assure que la config locale est bien synchronisée
-                // avec les données par défaut pour éviter les erreurs si une nouvelle propriété
-                // est ajoutée au code mais pas encore en BDD.
                 const remoteData = docSnap.data();
+                // Merge initialData with remoteData to ensure all keys exist
                 const mergedConfig = {
-                    ...initialConfigData, ...remoteData,
+                    ...initialConfigData,
+                    ...remoteData,
                     settings: { ...initialConfigData.settings, ...remoteData.settings },
                     offers: { ...initialConfigData.offers, ...remoteData.offers },
                     packs: { ...initialConfigData.packs, ...remoteData.packs },
                 };
                 setConfig(mergedConfig);
             } else {
-                setError("La configuration n'a pas été trouvée. Veuillez la configurer dans le back-office.");
+                await setDoc(configDocRef, initialConfigData);
+                setConfig(initialConfigData);
             }
         } catch (err) {
-            console.error("Erreur de chargement de la config:", err);
-            setError("Impossible de charger la configuration.");
+            console.error("Erreur d'initialisation:", err);
+            setError("Impossible de charger la configuration depuis la base de données.");
+            setConfig(initialConfigData);
         } finally {
             setIsLoading(false);
         }
     };
-    loadConfig();
-  }, [firebaseRef]);
+    initFirebase();
+  }, []);
 
   const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
@@ -903,19 +899,32 @@ const QuoteProcess = ({ data, setData, onBackToHome, firebaseRef }) => {
       case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={firebaseRef.current.db} appId={firebaseRef.current.appId} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
       case 8: return <Confirmation reset={onBackToHome} />;
       default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
     }
   };
 
-  if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement de la configuration...</p></div>;
-  if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
+  if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
+  if (error || !config) return (
+      <div className="bg-red-100 min-h-screen flex items-center justify-center p-4">
+          <div className="text-center">
+              <p className="text-red-700 text-center font-bold">Erreur:</p>
+              <p className="text-red-700">{error || "Config introuvable."}</p>
+              <button onClick={onBackToHome} className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700">Retour à l'accueil</button>
+          </div>
+      </div>
+  );
 
   const progress = (data.step / 8) * 100;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+      {modal.isOpen && (
+            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
+                <p>{modal.message}</p>
+            </Modal>
+        )}
       <div className="w-full max-w-2xl">
         <div className="mb-6">
             <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
@@ -934,58 +943,71 @@ export default function App() {
   const [quoteData, setQuoteData] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  // NOUVEAU: State pour les vidéos
+  const [presentationVideos, setPresentationVideos] = useState([]);
+  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
   const firebaseRef = useRef(null);
 
-  // AMÉLIORATION SÉCURITÉ: L'initialisation de Firebase est maintenant sécurisée.
-  // Elle utilise les variables globales fournies par l'environnement d'hébergement.
-  // Cela évite d'exposer vos clés API dans le code source.
   useEffect(() => {
     const initFirebase = async () => {
         try {
-            // Vérifie si les variables globales de configuration sont présentes.
             if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
-                console.error("Configuration Firebase non trouvée. Assurez-vous que les variables globales __firebase_config et __app_id sont bien injectées.");
+                console.error("Configuration Firebase non trouvée.");
+                handleShowModal("Erreur Critique", "La configuration pour se connecter à la base de données est manquante. L'application ne peut pas démarrer.");
                 return;
             }
+
             const firebaseConfig = JSON.parse(__firebase_config);
-            const appId = __app_id;
-            
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             const auth = getAuth(app);
+            const appId = __app_id;
             setLogLevel('debug');
 
-            // Authentification sécurisée avec un token fourni par l'environnement
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
+                await signInWithCustomToken(auth, __initial_auth_token);
             } else {
-              // Fallback sur une connexion anonyme pour le développement local
-              await signInAnonymously(auth);
+                await signInAnonymously(auth);
             }
-
             firebaseRef.current = { db, auth, appId };
-            setIsAuthReady(true);
-
         } catch (error) {
-            console.error("Erreur d'initialisation de Firebase : ", error);
+            console.error("Erreur de connexion Firebase", error);
+            handleShowModal("Erreur de Connexion", "Impossible de se connecter à la base de données. Veuillez vérifier votre connexion internet ou contacter le support.");
         }
     };
     initFirebase();
   }, []);
 
   useEffect(() => {
-    if (!salesperson || !isAuthReady || !firebaseRef.current) return;
+    if (!salesperson || !firebaseRef.current) return;
     const { db, appId } = firebaseRef.current;
+    
+    // --- Listener pour les rendez-vous ---
     const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
-    const q = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const qAppointments = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
+    const unsubscribeAppointments = onSnapshot(qAppointments, (querySnapshot) => {
       const appointmentsList = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       appointmentsList.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setAppointments(appointmentsList);
     }, (error) => console.error("Erreur de lecture des RDV: ", error));
-    return () => unsubscribe();
-  }, [salesperson, isAuthReady]);
+
+    // NOUVEAU: Listener pour les vidéos de présentation
+    const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
+    const qVideos = query(collection(db, videosPath));
+    const unsubscribeVideos = onSnapshot(qVideos, (querySnapshot) => {
+        const videosList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setPresentationVideos(videosList);
+    }, (error) => console.error("Erreur de lecture des vidéos : ", error));
+
+    return () => {
+        unsubscribeAppointments();
+        unsubscribeVideos();
+    };
+  }, [salesperson]);
+
+  const handleShowModal = (title, message) => {
+      setModal({ isOpen: true, title, message });
+  };
 
   const addAppointment = async (newAppointment) => {
     if (!firebaseRef.current) return;
@@ -995,7 +1017,7 @@ export default function App() {
       await addDoc(collection(db, appointmentsPath), newAppointment);
     } catch (error) {
       console.error("Erreur d'ajout du RDV: ", error);
-      // Remplacer alert par un modal dans une future amélioration
+      handleShowModal("Erreur", "Impossible de sauvegarder le rendez-vous.");
     }
   };
 
@@ -1007,11 +1029,15 @@ export default function App() {
       await updateDoc(appointmentDocRef, { status: newStatus });
     } catch (error) {
       console.error("Erreur de mise à jour du statut: ", error);
+      handleShowModal("Erreur", "Impossible de mettre à jour le statut.");
     }
   };
 
   const handleLogin = async (name) => {
-    if (!isAuthReady || !firebaseRef.current) return false;
+    if (!firebaseRef.current) {
+        handleShowModal("Erreur", "La connexion à la base de données n'est pas encore établie. Veuillez patienter.");
+        return false;
+    }
     const { db, appId } = firebaseRef.current;
     const salespersonsPath = `/artifacts/${appId}/public/data/salespersons`;
     const q = query(collection(db, salespersonsPath), where("name", "==", name));
@@ -1027,6 +1053,7 @@ export default function App() {
         }
     } catch (error) {
         console.error("Erreur de vérification du commercial:", error);
+        handleShowModal("Erreur", "Impossible de vérifier le nom du commercial. Vérifiez les permissions Firestore.");
         return false;
     }
   };
@@ -1051,20 +1078,16 @@ export default function App() {
       setSelectedAppointment(appointment);
       setCurrentView('appointmentDetail');
   }
-  
-  // Affiche un écran de chargement tant que Firebase n'est pas prêt
-  if (!isAuthReady) {
-    return (
-        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-            <p className="text-gray-600 animate-pulse">Connexion en cours...</p>
-        </div>
-    );
-  }
 
   if (currentView === 'login') {
     return (
       <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-4 sm:p-8">
+         {modal.isOpen && (
+            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
+                <p>{modal.message}</p>
+            </Modal>
+        )}
+        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-8">
           <SalespersonLogin onLogin={handleLogin} />
         </div>
       </div>
@@ -1076,7 +1099,7 @@ export default function App() {
   }
 
   if (currentView === 'quote') {
-    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} firebaseRef={firebaseRef} />;
+    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
   }
   
   if (currentView === 'appointmentList') {
@@ -1095,14 +1118,15 @@ export default function App() {
               }} 
            />;
   }
-  
-  // NOUVEAU: Gère la nouvelle vue de présentation
+
+  // NOUVEAU: Gestion de la vue "Présentation"
   if (currentView === 'presentation') {
-      return <PresentationView onBack={() => setCurrentView('home')} firebaseRef={firebaseRef} />;
+    return <PresentationMode onBack={() => setCurrentView('home')} videos={presentationVideos} />;
   }
   
   return <div>Vue non reconnue</div>;
 }
+
 
 
 
