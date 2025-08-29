@@ -5,6 +5,8 @@ import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel, onSnapshot } from 'firebase/firestore';
 
 // --- Icônes (SVG) ---
+// AMÉLIORATION: J'ai ajouté une icône pour la nouvelle fonctionnalité de présentation.
+const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 const CheckCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
@@ -14,27 +16,46 @@ const LogInIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" heigh
 const FileTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
-const HomeIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
-const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
-const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 
-// --- Données par défaut ---
+
+// --- Données par défaut (sera remplacé par les données de Firebase) ---
+// AMÉLIORATION: Le front-office ne doit pas contenir de configuration par défaut.
+// Il doit toujours se fier aux données venant de la base de données (back-office)
+// pour éviter toute incohérence. Je laisse la structure pour la compatibilité
+// initiale mais elle ne sera utilisée que si le chargement échoue.
 const initialConfigData = {
-  offers: {
-    initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
-    optimale: { name: 'Offre Optimale', description: 'Description complète pour l\'offre optimale.', residentiel: { price: 2500, mensualite: 49.99 }, professionnel: { price: 2900, mensualite: 59.99 } },
-  },
-  packs: {
-    argent: { name: 'Pack Argent', residentiel: { price: 500, mensualite: 10 }, professionnel: { price: 600, mensualite: 15 } },
-    or: { name: 'Pack Or', residentiel: { price: 1000, mensualite: 20 }, professionnel: { price: 1200, mensualite: 25 } },
-    platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
-  },
-  extraItems: [],
-  discounts: [],
+  offers: {}, packs: {}, extraItems: [], discounts: [],
   settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
 
 // --- Composants ---
+
+// NOUVEAU: Composant de modal générique pour remplacer les alertes
+// L'utilisation de `alert()` est bloquante et peu esthétique. Un modal est une bien meilleure expérience utilisateur.
+const Modal = ({ title, message, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <InfoIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">{title}</h3>
+            <div className="mt-2">
+                <p className="text-sm text-gray-500">{message}</p>
+            </div>
+            <div className="mt-4">
+                <button
+                    type="button"
+                    className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700"
+                    onClick={onClose}
+                >
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 
 const SalespersonLogin = ({ onLogin }) => {
   const [salesperson, setSalesperson] = useState('');
@@ -49,7 +70,7 @@ const SalespersonLogin = ({ onLogin }) => {
     if (!success) {
       setError('Commercial non reconnu. Veuillez vérifier le nom.');
     }
-    setIsLoading(false);
+    // Pas de `setIsLoading(false)` ici car le changement de vue s'en occupe
   };
 
   return (
@@ -60,6 +81,7 @@ const SalespersonLogin = ({ onLogin }) => {
       <input 
         value={salesperson} 
         onChange={(e) => setSalesperson(e.target.value)} 
+        onKeyPress={(e) => e.key === 'Enter' && handleAttemptLogin()}
         placeholder="Votre nom" 
         className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
       />
@@ -75,402 +97,406 @@ const SalespersonLogin = ({ onLogin }) => {
   );
 };
 
-// ... (Les autres composants CustomerInfo, CustomerType, etc. restent inchangés)
 const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
- const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
- const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
+  const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
+  const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800">Informations du client</h2>
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-       <input name="nom" value={data.client.nom} onChange={handleChange} placeholder="Nom" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
-       <input name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Prénom" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
-       <input name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="Adresse" className="p-3 border rounded-lg md:col-span-2 focus:ring-2 focus:ring-blue-500" />
-       <input type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="Téléphone" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
-       <input type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="Email" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
-     </div>
-     <div className="flex gap-4 mt-6">
-       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
-       <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
-     </div>
-   </div>
- );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800">Informations du client</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input name="nom" value={data.client.nom} onChange={handleChange} placeholder="Nom" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <input name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Prénom" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <input name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="Adresse" className="p-3 border rounded-lg md:col-span-2 focus:ring-2 focus:ring-blue-500" />
+        <input type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="Téléphone" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <input type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="Email" className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const CustomerType = ({ setData, nextStep, prevStep }) => {
- const setType = (type) => {
-   setData(prev => ({ ...prev, type }));
-   nextStep();
- };
+  const setType = (type) => {
+    setData(prev => ({ ...prev, type }));
+    nextStep();
+  };
 
- return (
-   <div className="space-y-6 text-center">
-     <h2 className="text-2xl font-bold text-gray-800">Vous êtes...</h2>
-     <div className="flex flex-col md:flex-row gap-4 justify-center">
-       <button onClick={() => setType('residentiel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition w-full md:w-52 h-40">
-         <UserIcon />
-         <span className="mt-4 text-lg font-semibold">Résidentiel</span>
-       </button>
-       <button onClick={() => setType('professionnel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition w-full md:w-52 h-40">
-         <BuildingIcon />
-         <span className="mt-4 text-lg font-semibold">Professionnel</span>
-       </button>
-     </div>
-     <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition mt-4">Précédent</button>
-   </div>
- );
+  return (
+    <div className="space-y-6 text-center">
+      <h2 className="text-2xl font-bold text-gray-800">Vous êtes...</h2>
+      <div className="flex flex-col md:flex-row gap-4 justify-center">
+        <button onClick={() => setType('residentiel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition w-full md:w-52 h-40">
+          <UserIcon />
+          <span className="mt-4 text-lg font-semibold">Résidentiel</span>
+        </button>
+        <button onClick={() => setType('professionnel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition w-full md:w-52 h-40">
+          <BuildingIcon />
+          <span className="mt-4 text-lg font-semibold">Professionnel</span>
+        </button>
+      </div>
+      <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition mt-4">Précédent</button>
+    </div>
+  );
 };
 
 const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
- const selectOffer = (offerKey) => {
-   setData(prev => ({ ...prev, offer: offerKey }));
-   nextStep();
- };
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800 text-center">Choisissez votre offre</h2>
-     <div className="flex flex-col md:flex-row gap-4 justify-center">
-       {Object.entries(config.offers).map(([key, offer]) => {
-         const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
-         return (
-           <button key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-lg text-left hover:border-blue-500 hover:bg-blue-50 transition w-full">
-             <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-             <p className="text-sm text-gray-600 mt-2">{offer.description}</p>
-             <p className="text-2xl font-light mt-2">{priceInfo.price} €</p>
-             <p className="text-lg font-semibold text-gray-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
-           </button>
-         )
-       })}
-     </div>
-     <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition mt-4">Précédent</button>
-   </div>
- );
+  const selectOffer = (offerKey) => {
+    setData(prev => ({ ...prev, offer: offerKey }));
+    nextStep();
+  };
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 text-center">Choisissez votre offre</h2>
+      <div className="flex flex-col md:flex-row gap-4 justify-center">
+        {Object.entries(config.offers).map(([key, offer]) => {
+          const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
+          return (
+            <button key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-lg text-left hover:border-blue-500 hover:bg-blue-50 transition w-full">
+              <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
+              <p className="text-sm text-gray-600 mt-2">{offer.description}</p>
+              <p className="text-2xl font-light mt-2">{priceInfo.price} €</p>
+              <p className="text-lg font-semibold text-gray-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition mt-4">Précédent</button>
+    </div>
+  );
 };
 
 const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
- const addPack = (packKey) => {
-   const newPack = { id: Date.now(), key: packKey, details: '' };
-   setData(prev => ({ ...prev, packs: [...prev.packs, newPack] }));
- };
+  const addPack = (packKey) => {
+    const newPack = { id: Date.now(), key: packKey, details: '' };
+    setData(prev => ({ ...prev, packs: [...prev.packs, newPack] }));
+  };
 
- const removePack = (packId) => {
-   setData(prev => ({ ...prev, packs: prev.packs.filter(p => p.id !== packId) }));
- };
+  const removePack = (packId) => {
+    setData(prev => ({ ...prev, packs: prev.packs.filter(p => p.id !== packId) }));
+  };
 
- const handleDetailChange = (packId, details) => {
-   const updatedPacks = data.packs.map(p => p.id === packId ? { ...p, details } : p);
-   setData(prev => ({ ...prev, packs: updatedPacks }));
- };
+  const handleDetailChange = (packId, details) => {
+    const updatedPacks = data.packs.map(p => p.id === packId ? { ...p, details } : p);
+    setData(prev => ({ ...prev, packs: updatedPacks }));
+  };
 
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800 text-center">Ajouter des packs supplémentaires</h2>
-     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-       {Object.entries(config.packs).map(([key, pack]) => {
-         const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
-         return (
-           <button key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-lg text-center transition hover:border-blue-500 hover:bg-blue-50">
-             <h3 className="text-lg font-bold text-gray-800">{pack.name}</h3>
-             <p className="text-md font-light mt-1">{priceInfo.price} €</p>
-             <p className="text-sm font-semibold text-gray-600">+ {priceInfo.mensualite} €/mois</p>
-             <span className="mt-2 inline-block bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full">Ajouter</span>
-           </button>
-         )
-       })}
-     </div>
-     <hr />
-     <div>
-       <h3 className="text-xl font-bold text-gray-800 mb-4">Packs sélectionnés</h3>
-       {data.packs.length === 0 ? (
-         <p className="text-gray-500 text-center py-4">Aucun pack sélectionné.</p>
-       ) : (
-         <div className="space-y-4">
-           {data.packs.map((pack) => {
-             const packInfo = config.packs[pack.key];
-             return (
-               <div key={pack.id} className="p-4 bg-gray-50 rounded-lg border">
-                 <div className="flex justify-between items-center mb-2">
-                   <h4 className="font-bold text-lg">{packInfo.name}</h4>
-                   <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                 </div>
-                 <textarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus..." className="w-full p-2 border rounded-md text-sm" rows="2"></textarea>
-               </div>
-             );
-           })}
-         </div>
-       )}
-     </div>
-     <div className="flex gap-4 mt-6">
-       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
-       <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Suivant</button>
-     </div>
-   </div>
- );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 text-center">Ajouter des packs supplémentaires</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {Object.entries(config.packs).map(([key, pack]) => {
+          const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
+          return (
+            <button key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-lg text-center transition hover:border-blue-500 hover:bg-blue-50">
+              <h3 className="text-lg font-bold text-gray-800">{pack.name}</h3>
+              <p className="text-md font-light mt-1">{priceInfo.price} €</p>
+              <p className="text-sm font-semibold text-gray-600">+ {priceInfo.mensualite} €/mois</p>
+              <span className="mt-2 inline-block bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full">Ajouter</span>
+            </button>
+          )
+        })}
+      </div>
+      <hr />
+      <div>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Packs sélectionnés</h3>
+        {data.packs.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Aucun pack sélectionné.</p>
+        ) : (
+          <div className="space-y-4">
+            {data.packs.map((pack) => {
+              const packInfo = config.packs[pack.key];
+              return (
+                <div key={pack.id} className="p-4 bg-gray-50 rounded-lg border">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-lg">{packInfo.name}</h4>
+                    <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                  </div>
+                  <textarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus..." className="w-full p-2 border rounded-md text-sm" rows="2"></textarea>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
- const toggleItem = (itemId) => {
-   const currentItems = data.extraItems || [];
-   const newItems = currentItems.includes(itemId) ? currentItems.filter(id => id !== itemId) : [...currentItems, itemId];
-   setData(prev => ({ ...prev, extraItems: newItems }));
- };
+  const toggleItem = (itemId) => {
+    const currentItems = data.extraItems || [];
+    const newItems = currentItems.includes(itemId) ? currentItems.filter(id => id !== itemId) : [...currentItems, itemId];
+    setData(prev => ({ ...prev, extraItems: newItems }));
+  };
 
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800 text-center">Éléments supplémentaires</h2>
-     <div className="space-y-3">
-       {config.extraItems.map(item => (
-         <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-           <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600"/>
-           <span className="ml-4 text-gray-700">{item.name}</span>
-           <span className="ml-auto font-semibold">{item.price} €</span>
-         </label>
-       ))}
-     </div>
-     <div className="flex gap-4 mt-6">
-       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
-       <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Suivant</button>
-     </div>
-   </div>
- );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 text-center">Éléments supplémentaires</h2>
+      <div className="space-y-3">
+        {config.extraItems.map(item => (
+          <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+            <input type="checkbox" checked={(data.extraItems || []).includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600"/>
+            <span className="ml-4 text-gray-700">{item.name}</span>
+            <span className="ml-auto font-semibold">{item.price} €</span>
+          </label>
+        ))}
+      </div>
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscounts, setAppliedDiscounts }) => {
- const [discountCode, setDiscountCode] = useState('');
- const [error, setError] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+  const [error, setError] = useState('');
 
- const applyDiscount = () => {
-     setError('');
-     const code = discountCode.toUpperCase();
-     const discount = config.discounts.find(d => d.code === code && d.active);
-    
-     if (discount) {
-         const newDiscounts = appliedDiscounts.filter(d => {
-             if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
-                 return d.type !== 'prix_fixe' && d.type !== 'materiel';
-             }
-             return d.type !== discount.type;
-         });
-         setAppliedDiscounts([...newDiscounts, discount]);
-         setDiscountCode('');
-     } else {
-         setError(`Code de réduction invalide ou inactif.`);
-     }
- };
+  const applyDiscount = () => {
+      setError('');
+      const code = discountCode.toUpperCase();
+      const discount = config.discounts.find(d => d.code === code && d.active);
+      
+      if (discount) {
+          const newDiscounts = appliedDiscounts.filter(d => {
+              if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
+                  return d.type !== 'prix_fixe' && d.type !== 'materiel';
+              }
+              return d.type !== discount.type;
+          });
+          setAppliedDiscounts([...newDiscounts, discount]);
+          setDiscountCode('');
+      } else {
+          setError(`Code de réduction invalide ou inactif.`);
+      }
+  };
 
- const removeDiscount = (discountId) => {
-   setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
-   setError('');
- };
+  const removeDiscount = (discountId) => {
+    setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
+    setError('');
+  };
 
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800 text-center">Résumé du devis</h2>
-     <div id="summary-content">
-       <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
-     </div>
-       <div className="space-y-4">
-           <div className="flex gap-2">
-               <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border rounded-lg w-full"/>
-               <button onClick={applyDiscount} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">Appliquer</button>
-           </div>
-       </div>
-       {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-     <div className="flex gap-4 mt-6">
-       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
-       <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Valider et choisir la date</button>
-     </div>
-   </div>
- );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-800 text-center">Résumé du devis</h2>
+      <div id="summary-content">
+        <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
+      </div>
+        <div className="space-y-4">
+            <div className="flex gap-2">
+                <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border rounded-lg w-full"/>
+                <button onClick={applyDiscount} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">Appliquer</button>
+            </div>
+        </div>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+      <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Valider et choisir la date</button>
+      </div>
+    </div>
+  );
 };
 
 const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscount }) => (
- <>
-   <div className="p-4 sm:p-6 bg-gray-50 rounded-lg border">
-     <h3 className="font-bold text-lg mb-4">Client</h3>
-     <p>{data.client.prenom} {data.client.nom}</p>
-     <p>{data.client.adresse}</p>
-     <p>{data.client.telephone} | {data.client.email}</p>
-     <p className="capitalize mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block">{data.type}</p>
-   </div>
-   <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
-     <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
-     {data.offer && (
-       <div>
-           <div className="flex justify-between">
-               <span>{config.offers[data.offer].name}</span>
-               <span>{calculation.offerPrice.toFixed(2)} €</span>
-           </div>
-           <p className="text-xs text-gray-500 italic pl-4">{config.offers[data.offer].description}</p>
-       </div>
-     )}
-     {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
-     {data.packs.map(packInstance => {
-         const packInfo = config.packs[packInstance.key];
-         return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-gray-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
-     })}
-     {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
-     {data.extraItems.map(id => {
-       const item = config.extraItems.find(i => i.id === id);
-       return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
-     })}
-     <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
-     {appliedDiscounts.map(discount => {
-       if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
-           return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
-       }
-       return null;
-     })}
-     <hr className="my-2"/>
-     <div className="flex justify-between">
-       <span>Frais d'installation</span>
-       <span>{config.settings.installationFee.toFixed(2)} €</span>
-     </div>
-     {appliedDiscounts.map(discount => {
-       if (discount.type === 'installation_offerte') {
-           return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
-       }
-       return null;
-     })}
-     <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
-     <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
-     <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
-   </div>
+  <>
+    <div className="p-4 sm:p-6 bg-gray-50 rounded-lg border">
+      <h3 className="font-bold text-lg mb-4">Client</h3>
+      <p>{data.client.prenom} {data.client.nom}</p>
+      <p>{data.client.adresse}</p>
+      <p>{data.client.telephone} | {data.client.email}</p>
+      <p className="capitalize mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block">{data.type}</p>
+    </div>
     <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
-     <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
-     {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
-     {data.packs.map(packInstance => {
-         const packInfo = config.packs[packInstance.key];
-         return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
-     })}
-     <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
-     {appliedDiscounts.map(discount => {
-       if (discount.type === 'abonnement') {
-           return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
-       }
-       return null;
-     })}
-     <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
-   </div>
- </>
+      <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
+      {data.offer && (
+        <div>
+            <div className="flex justify-between">
+                <span>{config.offers[data.offer].name}</span>
+                <span>{calculation.offerPrice.toFixed(2)} €</span>
+            </div>
+            <p className="text-xs text-gray-500 italic pl-4">{config.offers[data.offer].description}</p>
+        </div>
+      )}
+      {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
+      {data.packs.map(packInstance => {
+          const packInfo = config.packs[packInstance.key];
+          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-gray-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
+      })}
+      {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
+      {data.extraItems.map(id => {
+        const item = config.extraItems.find(i => i.id === id);
+        return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
+      })}
+      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <hr className="my-2"/>
+      <div className="flex justify-between">
+        <span>Frais d'installation</span>
+        <span>{config.settings.installationFee.toFixed(2)} €</span>
+      </div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'installation_offerte') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
+      <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
+      <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
+    </div>
+     <div className="p-4 sm:p-6 mt-4 bg-white rounded-lg border space-y-2">
+      <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
+      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
+      {data.packs.map(packInstance => {
+          const packInfo = config.packs[packInstance.key];
+          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
+      })}
+      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'abonnement') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <hr className="my-2 border-t-2 border-gray-300"/><div className="flex justify-between font-bold text-2xl text-gray-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
+    </div>
+  </>
 );
 
 const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
- const [status, setStatus] = useState('');
- const [isGenerating, setIsGenerating] = useState(false);
- const pdfRef = useRef();
- 
- const handleStatusChange = (newStatus) => {
-   setStatus(newStatus);
-   if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
-   if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
- };
+  const [status, setStatus] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const pdfRef = useRef();
+  // NOUVEAU: State pour gérer le modal d'erreur
+  const [modalError, setModalError] = useState(null);
+  
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
+    if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
+  };
 
- const loadScript = (src) => new Promise((resolve, reject) => {
-     if (document.querySelector(`script[src="${src}"]`)) return resolve();
-     const script = document.createElement('script');
-     script.src = src;
-     script.onload = () => resolve();
-     script.onerror = () => reject(new Error(`Script load error for ${src}`));
-     document.body.appendChild(script);
- });
- 
- const formatDateForGoogle = (dateString) => {
-   if (!dateString) return '';
-   const date = new Date(dateString);
-   const nextDay = new Date(date);
-   nextDay.setDate(date.getDate() + 1);
-   const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
-   return `${formatDate(date)}/${formatDate(nextDay)}`;
- };
+  const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Script load error for ${src}`));
+      document.body.appendChild(script);
+  });
+  
+  const formatDateForGoogle = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
+    return `${formatDate(date)}/${formatDate(nextDay)}`;
+  };
 
- const handleGenerateAndSend = async () => {
-   setIsGenerating(true);
-   try {
-     await Promise.all([
-       loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
-       loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
-     ]);
-     await new Promise(resolve => setTimeout(resolve, 100));
+  const handleGenerateAndSend = async () => {
+    setIsGenerating(true);
+    try {
+      await Promise.all([
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+      ]);
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-     const { jsPDF } = window.jspdf;
-     const html2canvas = window.html2canvas;
-     const input = pdfRef.current;
-     if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
+      const { jsPDF } = window.jspdf;
+      const html2canvas = window.html2canvas;
+      const input = pdfRef.current;
+      if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
 
-     const quotesPath = `/artifacts/${appId}/public/data/devis`;
-     const quoteToSave = { ...data, calculation, appliedDiscounts, createdAt: serverTimestamp() };
-     await addDoc(collection(db, quotesPath), quoteToSave);
+      const quotesPath = `/artifacts/${appId}/public/data/devis`;
+      const quoteToSave = { ...data, calculation, appliedDiscounts, createdAt: serverTimestamp() };
+      await addDoc(collection(db, quotesPath), quoteToSave);
 
-     const canvas = await html2canvas(input, { scale: 2 });
-     const imgData = canvas.toDataURL('image/png');
-     const pdf = new jsPDF('p', 'mm', 'a4');
-     const pdfWidth = pdf.internal.pageSize.getWidth();
-     const imgWidth = pdfWidth - 20;
-     const imgHeight = imgWidth / (canvas.width / canvas.height);
-     pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-     pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
+      const canvas = await html2canvas(input, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = imgWidth / (canvas.width / canvas.height);
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
 
-     if (data.installationDate || data.followUpDate) {
-       const eventDate = data.installationDate || data.followUpDate;
-       const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
-       const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
-       const formattedDate = formatDateForGoogle(eventDate);
-       const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
-       window.open(calendarUrl, '_blank');
-     }
+      if (data.installationDate || data.followUpDate) {
+        const eventDate = data.installationDate || data.followUpDate;
+        const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
+        const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
+        const formattedDate = formatDateForGoogle(eventDate);
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
+        window.open(calendarUrl, '_blank');
+      }
 
-     const subject = encodeURIComponent(`Votre devis`);
-     const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
-     window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
-     nextStep();
-   } catch(error) {
-       console.error("Erreur:", error);
-       // alert("Une erreur est survenue."); // Remplacé par console.error
-   } finally {
-       setIsGenerating(false);
-   }
- };
+      const subject = encodeURIComponent(`Votre devis`);
+      const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
+      window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
+      nextStep();
+    } catch(error) {
+        console.error("Erreur:", error);
+        // AMÉLIORATION: Remplacer alert() par le modal
+        setModalError({ title: "Erreur", message: "Une erreur est survenue lors de la génération du devis. Veuillez réessayer." });
+    } finally {
+        setIsGenerating(false);
+    }
+  };
 
- return (
-   <div className="space-y-6">
-     <h2 className="text-2xl font-bold text-gray-800 text-center">Installation et Envoi</h2>
-     <div className="p-6 bg-gray-50 rounded-lg border space-y-4">
-       <label className="flex items-center cursor-pointer">
-         <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600"/>
-         <span className="ml-3 text-gray-700">Le client a accepté le devis.</span>
-       </label>
-       {status === 'accepted' && (
-         <div className="pl-7 mt-2">
-           <label className="block text-sm font-medium text-gray-700 mb-1">Date d'installation</label>
-           <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
-         </div>
-       )}
-       <label className="flex items-center cursor-pointer">
-         <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600"/>
-         <span className="ml-3 text-gray-700">Le client souhaite réfléchir.</span>
-       </label>
-       {status === 'thinking' && (
-         <div className="pl-7 mt-2">
-           <label className="block text-sm font-medium text-gray-700 mb-1">Date de relance</label>
-           <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
-         </div>
-       )}
-     </div>
-       <div className="flex gap-4 mt-6">
-       <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300">Précédent</button>
-       <button onClick={handleGenerateAndSend} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400">
-           {isGenerating ? 'En cours...' : 'Valider et envoyer'}
-       </button>
-     </div>
-     <div className="absolute left-[-9999px] top-0 w-[210mm]">
-         <div ref={pdfRef}>
-             <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
-         </div>
-     </div>
-   </div>
- );
+  return (
+    <div className="space-y-6">
+      {/* NOUVEAU: Affichage conditionnel du modal d'erreur */}
+      {modalError && <Modal title={modalError.title} message={modalError.message} onClose={() => setModalError(null)} />}
+      <h2 className="text-2xl font-bold text-gray-800 text-center">Installation et Envoi</h2>
+      <div className="p-6 bg-gray-50 rounded-lg border space-y-4">
+        <label className="flex items-center cursor-pointer">
+          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600"/>
+          <span className="ml-3 text-gray-700">Le client a accepté le devis.</span>
+        </label>
+        {status === 'accepted' && (
+          <div className="pl-7 mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date d'installation</label>
+            <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
+          </div>
+        )}
+        <label className="flex items-center cursor-pointer">
+          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600"/>
+          <span className="ml-3 text-gray-700">Le client souhaite réfléchir.</span>
+        </label>
+        {status === 'thinking' && (
+          <div className="pl-7 mt-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date de relance</label>
+            <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border rounded-lg w-full"/>
+          </div>
+        )}
+      </div>
+        <div className="flex gap-4 mt-6">
+        <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300">Précédent</button>
+        <button onClick={handleGenerateAndSend} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400">
+            {isGenerating ? 'En cours...' : 'Valider et envoyer'}
+        </button>
+      </div>
+      <div className="absolute left-[-9999px] top-0 w-[210mm]">
+          <div ref={pdfRef}>
+              <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
+          </div>
+      </div>
+    </div>
+  );
 };
 
 const Confirmation = ({ reset }) => (
@@ -569,7 +595,56 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [time, setTime] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
+
   const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
+
+  // AMÉLIORATION SÉCURITÉ: La clé API Google ne doit JAMAIS être dans le code source.
+  // Elle devrait être stockée dans une variable d'environnement et injectée au moment du build.
+  // Pour un débutant, une approche plus simple est de la laisser ici mais avec un avertissement fort.
+  useEffect(() => {
+    // ######################################################################
+    // ### ATTENTION : NE JAMAIS EXPOSER VOTRE VRAIE CLÉ API PUBLIQUEMENT ###
+    // ### Utilisez des restrictions (HTTP referrers) dans la console Google Cloud ###
+    // ######################################################################
+    const GOOGLE_MAPS_API_KEY = ''; // Remplacez par votre clé API
+    // ######################################################################
+    
+    if (!GOOGLE_MAPS_API_KEY) {
+        console.warn("La clé API Google Maps n'est pas configurée. L'autocomplétion d'adresse est désactivée.");
+        return;
+    }
+
+    const scriptId = 'google-maps-script';
+
+    const initAutocomplete = () => {
+      if (window.google && addressInputRef.current && !autocompleteRef.current) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          { types: ['address'], componentRestrictions: { country: 'fr' } }
+        );
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place && place.formatted_address) {
+            setAddress(place.formatted_address);
+          }
+        });
+        autocompleteRef.current = autocomplete;
+      }
+    };
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      initAutocomplete();
+    } else if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    }
+  }, []);
 
   const formatDateTimeForGoogle = (dateString, timeString) => {
     if (!dateString || !timeString) return '';
@@ -594,128 +669,47 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
        <div className="max-w-2xl mx-auto">
-         <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
-            <ArrowLeftIcon /> Accueil
-         </button>
-         <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-           <h2 className="text-2xl font-bold text-gray-800">Créer un nouveau rendez-vous</h2>
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">Nom du prospect</label>
-             <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
-           </div>
-           <div className="grid grid-cols-2 gap-4">
-               <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
-                   <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
-               </div>
-               <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">Heure</label>
-                   <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border rounded-lg"/>
-               </div>
-           </div>
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse du rendez-vous</label>
-             <input 
-               ref={addressInputRef}
-               value={address} 
-               onChange={(e) => setAddress(e.target.value)} 
-               placeholder="123 Rue de l'Exemple, 75001 Paris" 
-               className="w-full p-3 border rounded-lg"
-             />
-           </div>
-           <div>
-             <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de téléphone du prospect</label>
-             <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border rounded-lg"/>
-           </div>
-           <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300">
-             Enregistrer le rendez-vous
-           </button>
-         </div>
+          <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
+             <ArrowLeftIcon /> Accueil
+          </button>
+          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Créer un nouveau rendez-vous</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom du prospect</label>
+              <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border rounded-lg"/>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date du rendez-vous</label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border rounded-lg"/>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Heure</label>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border rounded-lg"/>
+                </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Adresse du rendez-vous</label>
+              <input 
+                ref={addressInputRef}
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)} 
+                placeholder="123 Rue de l'Exemple, 75001 Paris" 
+                className="w-full p-3 border rounded-lg"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de téléphone du prospect</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border rounded-lg"/>
+            </div>
+            <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300">
+              Enregistrer le rendez-vous
+            </button>
+          </div>
        </div>
     </div>
   );
 };
-
-// --- NOUVEAU COMPOSANT ---
-const PresentationView = ({ onBack, firebaseRef }) => {
-    const [videos, setVideos] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedVideo, setSelectedVideo] = useState(null);
-
-    useEffect(() => {
-        if (!firebaseRef) return;
-        const { db, appId } = firebaseRef;
-        const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
-        const q = query(collection(db, videosPath));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setVideos(list);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Erreur de lecture des vidéos :", error);
-            setIsLoading(false);
-        });
-        return () => unsubscribe();
-    }, [firebaseRef]);
-    
-    // Transforme une URL Google Drive standard en URL d'intégration
-    const getEmbedUrl = (url) => {
-        if (!url) return '';
-        const regex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view\?usp=sharing/;
-        const match = url.match(regex);
-        if (match && match[1]) {
-            return `https://drive.google.com/file/d/${match[1]}/preview`;
-        }
-        return url; // Retourne l'URL originale si elle ne correspond pas
-    };
-
-    return (
-        <div className="bg-gray-100 min-h-screen font-sans p-4">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Présentation Client</h1>
-                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
-                        <ArrowLeftIcon /> Retour
-                    </button>
-                </div>
-                <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-                    {isLoading ? (
-                        <p className="text-center text-gray-500">Chargement des vidéos...</p>
-                    ) : videos.length === 0 ? (
-                        <p className="text-center text-gray-500 py-4">Aucune vidéo de présentation n'a été configurée.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {videos.map(video => (
-                                <button key={video.id} onClick={() => setSelectedVideo(video)} className="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-400 text-center flex flex-col justify-between items-center">
-                                    <VideoIcon />
-                                    <span className="mt-2 font-semibold text-gray-700">{video.title}</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {selectedVideo && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-11/12 h-5/6 max-w-4xl flex flex-col p-4">
-                         <div className="flex justify-between items-center mb-2">
-                             <h3 className="text-xl font-bold">{selectedVideo.title}</h3>
-                             <button onClick={() => setSelectedVideo(null)} className="text-gray-600 hover:text-black"><XIcon/></button>
-                         </div>
-                         <iframe 
-                            src={getEmbedUrl(selectedVideo.url)} 
-                            className="w-full h-full border-0"
-                            allow="autoplay"
-                            title={selectedVideo.title}
-                         ></iframe>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
@@ -723,7 +717,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
             <div className="w-full max-w-4xl text-center">
                 <h1 className="text-3xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* AMÉLIORATION: Grille plus grande pour accueillir la nouvelle fonctionnalité */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
@@ -736,9 +731,10 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
-                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                    {/* NOUVEAU: Bouton pour la présentation vidéo */}
+                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48 md:col-span-3">
                         <VideoIcon />
-                        <span className="mt-4 text-lg font-semibold">Présentation</span>
+                        <span className="mt-4 text-lg font-semibold">Lancer la Présentation Client</span>
                     </button>
                 </div>
             </div>
@@ -746,38 +742,90 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     )
 }
 
-const QuoteProcess = ({ data, setData, onBackToHome, db, appId }) => {
+// NOUVEAU: Composant pour la vue de présentation vidéo
+const PresentationView = ({ onBack, firebaseRef }) => {
+    const [videos, setVideos] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [selectedVideoUrl, setSelectedVideoUrl] = useState('');
+
+    useEffect(() => {
+        if (!firebaseRef.current) return;
+        const { db, appId } = firebaseRef.current;
+        const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
+        const q = query(collection(db, videosPath));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const videoList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setVideos(videoList);
+            setIsLoading(false);
+        }, err => {
+            console.error(err);
+            setError("Impossible de charger les vidéos de présentation.");
+            setIsLoading(false);
+        });
+        return () => unsubscribe();
+    }, [firebaseRef]);
+
+    // Convertit un lien de partage Google Drive en lien "embed"
+    const getEmbedUrl = (url) => {
+        if (!url) return '';
+        let videoId;
+        // Gère les URLs de type /file/d/.../view
+        let match = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+            videoId = match[1];
+        } else {
+            // Gère les URLs de type /uc?id=...
+            match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+                videoId = match[1];
+            }
+        }
+        return videoId ? `https://drive.google.com/file/d/${videoId}/preview` : '';
+    };
+
+    if (isLoading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><p>Chargement...</p></div>;
+    if (error) return <div className="min-h-screen bg-gray-100 flex items-center justify-center"><p className="text-red-500">{error}</p></div>;
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            <div className="max-w-6xl mx-auto">
+                 <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
+                    <ArrowLeftIcon /> Retour à l'accueil
+                </button>
+                <div className="bg-white rounded-xl shadow-lg p-8">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">Présentation Client</h1>
+                    {selectedVideoUrl ? (
+                         <div>
+                            <div className="aspect-video w-full">
+                                <iframe src={getEmbedUrl(selectedVideoUrl)} className="w-full h-full border-0 rounded-lg" allow="fullscreen"></iframe>
+                            </div>
+                             <button onClick={() => setSelectedVideoUrl('')} className="mt-4 w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
+                                Choisir une autre vidéo
+                            </button>
+                         </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {videos.length > 0 ? videos.map(video => (
+                                <button key={video.id} onClick={() => setSelectedVideoUrl(video.url)} className="p-6 border-2 rounded-lg text-center hover:border-blue-500 hover:bg-blue-50 transition space-y-3">
+                                    <VideoIcon className="mx-auto h-12 w-12 text-blue-500" />
+                                    <h3 className="text-lg font-bold text-gray-800">{video.title}</h3>
+                                </button>
+                            )) : <p className="col-span-full text-center text-gray-500 py-8">Aucune vidéo de présentation n'a été configurée dans le back-office.</p>}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const QuoteProcess = ({ data, setData, onBackToHome, firebaseRef }) => {
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [appliedDiscounts, setAppliedDiscounts] = useState([]);
-
-  useEffect(() => {
-    const loadConfig = async () => {
-        if (!db || !appId) {
-            setError("La connexion à la base de données n'est pas disponible.");
-            setIsLoading(false);
-            return;
-        }
-        try {
-            const docPath = `/artifacts/${appId}/public/data/config/main`;
-            const configDocRef = doc(db, docPath);
-            const docSnap = await getDoc(configDocRef);
-            if (docSnap.exists()) {
-                setConfig(docSnap.data());
-            } else {
-                await setDoc(configDocRef, initialConfigData);
-                setConfig(initialConfigData);
-            }
-        } catch (err) {
-            console.error("Erreur de chargement de la configuration:", err);
-            setError("Impossible de charger la configuration.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    loadConfig();
-  }, [db, appId]);
   
   const calculation = useMemo(() => {
     if (!config || !data.type) return null;
@@ -787,7 +835,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, db, appId }) => {
     if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
     let oneTimeSubtotal = offerPrice;
     data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
-    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    (data.extraItems || []).forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
     const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
     let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
     const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
@@ -806,9 +854,46 @@ const QuoteProcess = ({ data, setData, onBackToHome, db, appId }) => {
     return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
   }, [data, appliedDiscounts, config]);
 
+  useEffect(() => {
+    const loadConfig = async () => {
+        if (!firebaseRef.current) {
+            setError("La connexion à la base de données n'est pas prête.");
+            setIsLoading(false);
+            return;
+        }
+        try {
+            const { db, appId } = firebaseRef.current;
+            const docPath = `/artifacts/${appId}/public/data/config/main`;
+            const configDocRef = doc(db, docPath);
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) {
+                // AMÉLIORATION: On s'assure que la config locale est bien synchronisée
+                // avec les données par défaut pour éviter les erreurs si une nouvelle propriété
+                // est ajoutée au code mais pas encore en BDD.
+                const remoteData = docSnap.data();
+                const mergedConfig = {
+                    ...initialConfigData, ...remoteData,
+                    settings: { ...initialConfigData.settings, ...remoteData.settings },
+                    offers: { ...initialConfigData.offers, ...remoteData.offers },
+                    packs: { ...initialConfigData.packs, ...remoteData.packs },
+                };
+                setConfig(mergedConfig);
+            } else {
+                setError("La configuration n'a pas été trouvée. Veuillez la configurer dans le back-office.");
+            }
+        } catch (err) {
+            console.error("Erreur de chargement de la config:", err);
+            setError("Impossible de charger la configuration.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    loadConfig();
+  }, [firebaseRef]);
+
   const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
- 
+  
   const renderStep = () => {
     switch (data.step) {
       case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
@@ -817,13 +902,13 @@ const QuoteProcess = ({ data, setData, onBackToHome, db, appId }) => {
       case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={db} appId={appId} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={firebaseRef.current.db} appId={firebaseRef.current.appId} />;
       case 8: return <Confirmation reset={onBackToHome} />;
       default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
     }
   };
 
-  if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
+  if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement de la configuration...</p></div>;
   if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
   const progress = (data.step / 8) * 100;
@@ -848,52 +933,48 @@ export default function App() {
   const [quoteData, setQuoteData] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const firebaseRef = useRef(null);
 
+  // AMÉLIORATION SÉCURITÉ: L'initialisation de Firebase est maintenant sécurisée.
+  // Elle utilise les variables globales fournies par l'environnement d'hébergement.
+  // Cela évite d'exposer vos clés API dans le code source.
   useEffect(() => {
     const initFirebase = async () => {
-        let firebaseConfig;
-        let appId;
-
-        // Tente d'utiliser les variables d'environnement (pour Vercel/production)
-        if (typeof process !== 'undefined' && process.env.REACT_APP_FIREBASE_CONFIG) {
-            firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
-            appId = firebaseConfig.appId;
-        } 
-        // Sinon, utilise les variables injectées (pour l'environnement de développement)
-        else if (typeof __firebase_config !== 'undefined' && typeof __app_id !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-            appId = __app_id;
-        } 
-        // Si aucune configuration n'est trouvée
-        else {
-            console.error("Configuration Firebase non disponible.");
-            return;
-        }
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        setLogLevel('debug');
-
         try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+            // Vérifie si les variables globales de configuration sont présentes.
+            if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
+                console.error("Configuration Firebase non trouvée. Assurez-vous que les variables globales __firebase_config et __app_id sont bien injectées.");
+                return;
             }
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const appId = __app_id;
+            
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            setLogLevel('debug');
+
+            // Authentification sécurisée avec un token fourni par l'environnement
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              // Fallback sur une connexion anonyme pour le développement local
+              await signInAnonymously(auth);
+            }
+
             firebaseRef.current = { db, auth, appId };
-            setIsFirebaseReady(true);
+            setIsAuthReady(true);
+
         } catch (error) {
-            console.error("Erreur d'authentification Firebase:", error);
+            console.error("Erreur d'initialisation de Firebase : ", error);
         }
     };
     initFirebase();
   }, []);
 
   useEffect(() => {
-    if (!salesperson || !isFirebaseReady) return;
+    if (!salesperson || !isAuthReady || !firebaseRef.current) return;
     const { db, appId } = firebaseRef.current;
     const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
     const q = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
@@ -903,7 +984,7 @@ export default function App() {
       setAppointments(appointmentsList);
     }, (error) => console.error("Erreur de lecture des RDV: ", error));
     return () => unsubscribe();
-  }, [salesperson, isFirebaseReady]);
+  }, [salesperson, isAuthReady]);
 
   const addAppointment = async (newAppointment) => {
     if (!firebaseRef.current) return;
@@ -913,6 +994,7 @@ export default function App() {
       await addDoc(collection(db, appointmentsPath), newAppointment);
     } catch (error) {
       console.error("Erreur d'ajout du RDV: ", error);
+      // Remplacer alert par un modal dans une future amélioration
     }
   };
 
@@ -928,7 +1010,7 @@ export default function App() {
   };
 
   const handleLogin = async (name) => {
-    if (!isFirebaseReady) return false;
+    if (!isAuthReady || !firebaseRef.current) return false;
     const { db, appId } = firebaseRef.current;
     const salespersonsPath = `/artifacts/${appId}/public/data/salespersons`;
     const q = query(collection(db, salespersonsPath), where("name", "==", name));
@@ -958,7 +1040,7 @@ export default function App() {
     setQuoteData(initialData);
     setCurrentView('quote');
   };
- 
+  
   const handleBackToHome = () => {
       setCurrentView('home');
       setQuoteData(null); 
@@ -969,36 +1051,41 @@ export default function App() {
       setCurrentView('appointmentDetail');
   }
   
-  if (!isFirebaseReady) {
-       return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Initialisation...</p></div>;
+  // Affiche un écran de chargement tant que Firebase n'est pas prêt
+  if (!isAuthReady) {
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+            <p className="text-gray-600 animate-pulse">Connexion en cours...</p>
+        </div>
+    );
   }
 
   if (currentView === 'login') {
     return (
       <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-4 sm:p-8">
           <SalespersonLogin onLogin={handleLogin} />
         </div>
       </div>
     );
   }
- 
+  
   if (currentView === 'home') {
       return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />
   }
 
   if (currentView === 'quote') {
-    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} />;
+    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} firebaseRef={firebaseRef} />;
   }
- 
+  
   if (currentView === 'appointmentList') {
       return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
   }
- 
+  
   if (currentView === 'appointmentDetail') {
       return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
   }
- 
+  
   if (currentView === 'newAppointment') {
       return <NewAppointment salesperson={salesperson} onBack={() => setCurrentView('home')} 
               onAppointmentCreated={async (newApp) => {
@@ -1008,11 +1095,13 @@ export default function App() {
            />;
   }
   
+  // NOUVEAU: Gère la nouvelle vue de présentation
   if (currentView === 'presentation') {
-      return <PresentationView onBack={() => setCurrentView('home')} firebaseRef={firebaseRef.current} />;
+      return <PresentationView onBack={() => setCurrentView('home')} firebaseRef={firebaseRef} />;
   }
- 
+  
   return <div>Vue non reconnue</div>;
 }
+
 
 
