@@ -775,25 +775,25 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
                 
-                {/* CORRIGÉ: Grille responsive 2x2 pour tablettes et plus, 1 colonne pour mobile */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* CORRECTION DÉFINITIVE: Utilisation de Flexbox pour une grille 2x2 responsive et fiable */}
+                <div className="flex flex-wrap justify-center gap-6">
                     
-                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('appointmentList')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('newAppointment')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onStartQuote()} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('presentation')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
@@ -1132,6 +1132,8 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
+
 
 
 
