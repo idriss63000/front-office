@@ -774,7 +774,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
             <div className="w-full max-w-4xl text-center">
                 <h1 className="text-3xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* CORRIGÉ: Remplacement de la grille pour un meilleur affichage responsive */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
@@ -787,8 +788,7 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
-                    {/* NOUVEAU: Bouton pour le mode Présentation */}
-                     <button onClick={() => onNavigate('presentation')} className="md:col-span-3 flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                     <button onClick={() => onNavigate('presentation')} className="md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
@@ -1126,6 +1126,7 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
 
 
 
