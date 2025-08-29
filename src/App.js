@@ -1,3 +1,4 @@
+/* global __firebase_config, __app_id, __initial_auth_token */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
@@ -1102,6 +1103,7 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
 
 
 
