@@ -17,23 +17,6 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 
-// --- Fenêtre modale générique ---
-const Modal = ({ title, children, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-full overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center z-10">
-                <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-            </div>
-            <div className="p-6">
-                {children}
-            </div>
-        </div>
-    </div>
-);
-
 // --- Données par défaut ---
 const initialConfigData = {
   offers: {
@@ -52,34 +35,35 @@ const initialConfigData = {
 
 // --- Composants ---
 
-const SalespersonLogin = ({ onLogin }) => {
+const Modal = ({ title, message, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 className="text-lg font-bold text-gray-800">{title}</h3>
+            <p className="text-gray-600 mt-2 mb-4">{message}</p>
+            <button onClick={onClose} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Fermer</button>
+        </div>
+    </div>
+);
+
+const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
   const [salesperson, setSalesperson] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+  const [modal, setModal] = useState(null);
 
   const handleAttemptLogin = async () => {
     if (!salesperson || salesperson.trim() === '') return;
-    setError('');
+    setModal(null);
     setIsLoading(true);
-    const success = await onLogin(salesperson.trim());
-    if (!success) {
-      setError('Commercial non reconnu. Veuillez vérifier le nom.');
+    const result = await onLogin(salesperson.trim());
+    if (!result.success) {
+      setModal({ title: "Erreur", message: result.message });
     }
     setIsLoading(false);
-  };
-  
-  const handleShowModal = (title, message) => {
-      setModal({ isOpen: true, title, message });
   };
 
   return (
     <div className="space-y-6 text-center">
-      {modal.isOpen && (
-            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
-                <p>{modal.message}</p>
-            </Modal>
-      )}
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
       <LogInIcon className="mx-auto h-12 w-12 text-gray-400" />
       <h2 className="text-2xl font-bold text-gray-800">Identification du commercial</h2>
       <p className="text-gray-600">Veuillez entrer votre nom pour continuer.</p>
@@ -89,13 +73,12 @@ const SalespersonLogin = ({ onLogin }) => {
         placeholder="Votre nom" 
         className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full text-center" 
       />
-      {error && <p className="text-red-500 text-sm">{error}</p>}
       <button 
         onClick={handleAttemptLogin} 
-        disabled={isLoading || !salesperson.trim()} 
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300"
+        disabled={isLoading || !salesperson.trim() || !isFirebaseReady} 
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {isLoading ? 'Vérification...' : 'Accéder à mon espace'}
+        {!isFirebaseReady ? 'Connexion...' : (isLoading ? 'Vérification...' : 'Accéder à mon espace')}
       </button>
     </div>
   );
@@ -263,10 +246,9 @@ const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
 
 const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscounts, setAppliedDiscounts }) => {
   const [discountCode, setDiscountCode] = useState('');
-  const [error, setError] = useState('');
+  const [modal, setModal] = useState(null);
 
   const applyDiscount = () => {
-      setError('');
       const code = discountCode.toUpperCase();
       const discount = config.discounts.find(d => d.code === code && d.active);
       
@@ -280,17 +262,17 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
           setAppliedDiscounts([...newDiscounts, discount]);
           setDiscountCode('');
       } else {
-          setError(`Code de réduction invalide ou inactif.`);
+        setModal({title: "Erreur", message: "Code de réduction invalide ou inactif."});
       }
   };
 
   const removeDiscount = (discountId) => {
     setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
-    setError('');
   };
 
   return (
     <div className="space-y-6">
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
       <h2 className="text-2xl font-bold text-gray-800 text-center">Résumé du devis</h2>
       <div id="summary-content">
         <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
@@ -301,7 +283,6 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
                 <button onClick={applyDiscount} className="bg-gray-800 text-white px-6 rounded-lg font-semibold hover:bg-black">Appliquer</button>
             </div>
         </div>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
       <div className="flex gap-4 mt-6">
         <button onClick={prevStep} className="w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">Précédent</button>
         <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Valider et choisir la date</button>
@@ -384,9 +365,9 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
 const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
   const [status, setStatus] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [modal, setModal] = useState(null);
   const pdfRef = useRef();
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
-
+  
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
     if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
@@ -409,10 +390,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
     nextDay.setDate(date.getDate() + 1);
     const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
     return `${formatDate(date)}/${formatDate(nextDay)}`;
-  };
-
-  const handleShowModal = (title, message) => {
-      setModal({ isOpen: true, title, message });
   };
 
   const handleGenerateAndSend = async () => {
@@ -457,7 +434,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       nextStep();
     } catch(error) {
         console.error("Erreur:", error);
-        handleShowModal("Erreur", "Une erreur est survenue lors de la génération du PDF ou de l'envoi.");
+        setModal({title: "Erreur", message: "Une erreur est survenue lors de la génération du devis."});
     } finally {
         setIsGenerating(false);
     }
@@ -465,11 +442,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
 
   return (
     <div className="space-y-6">
-       {modal.isOpen && (
-            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
-                <p>{modal.message}</p>
-            </Modal>
-        )}
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
       <h2 className="text-2xl font-bold text-gray-800 text-center">Installation et Envoi</h2>
       <div className="p-6 bg-gray-50 rounded-lg border space-y-4">
         <label className="flex items-center cursor-pointer">
@@ -598,59 +571,20 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
   );
 };
 
-const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
+const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }) => {
   const [clientName, setClientName] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+  const [modal, setModal] = useState(null);
 
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
-    // ######################################################################
-    // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
-    // ######################################################################
-    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; 
-    // ######################################################################
-    
-    const scriptId = 'google-maps-script';
-
-    const initAutocomplete = () => {
-      if (addressInputRef.current && !autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          addressInputRef.current,
-          {
-            types: ['address'],
-            componentRestrictions: { country: 'fr' }, // Restreint la recherche à la France
-          }
-        );
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place && place.formatted_address) {
-            setAddress(place.formatted_address);
-          }
-        });
-        autocompleteRef.current = autocomplete;
-      }
-    };
-
-    if (window.google && window.google.maps && window.google.maps.places) {
-      initAutocomplete();
-      return;
-    }
-
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initAutocomplete;
-      document.head.appendChild(script);
-    }
+    // La clé API a été retirée pour la sécurité, l'autocomplete ne fonctionnera pas sans.
+    // Pour l'activer, il faut créer une clé API Google Maps et la sécuriser.
   }, []);
 
   const formatDateTimeForGoogle = (dateString, timeString) => {
@@ -663,25 +597,25 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
     return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newAppointmentData = { salesperson, clientName, date, time, address, phone, status: 'en attente', createdAt: serverTimestamp() };
-    onAppointmentCreated(newAppointmentData);
-    const title = `Rendez-vous - ${clientName}`;
-    const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
-    const formattedDateTime = formatDateTimeForGoogle(date, time);
-    const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
-    window.open(calendarUrl, '_blank');
+    const success = await onAppointmentCreated(newAppointmentData);
+    if(success) {
+        const title = `Rendez-vous - ${clientName}`;
+        const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
+        const formattedDateTime = formatDateTimeForGoogle(date, time);
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
+        window.open(calendarUrl, '_blank');
+    } else {
+        setModal({title: "Erreur", message: "Impossible de sauvegarder le rendez-vous."});
+    }
   };
 
   const isFormValid = () => clientName && date && time && address && phone;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
-        {modal.isOpen && (
-            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
-                <p>{modal.message}</p>
-            </Modal>
-        )}
+        {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
        <div className="max-w-2xl mx-auto">
           <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold mb-4">
              <ArrowLeftIcon /> Accueil
@@ -725,8 +659,20 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   );
 };
 
-// NOUVEAU: Composant pour le mode Présentation
 const PresentationMode = ({ onBack, videos }) => {
+    // Transforme le lien de partage Google Drive en lien de prévisualisation intégrable
+    const getEmbedUrl = (url) => {
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname === 'drive.google.com') {
+                return url.replace('/view', '/preview');
+            }
+            return url;
+        } catch (e) {
+            return url;
+        }
+    };
+
     return (
         <div className="bg-gray-100 min-h-screen font-sans p-4">
             <div className="max-w-4xl mx-auto">
@@ -736,37 +682,32 @@ const PresentationMode = ({ onBack, videos }) => {
                         <ArrowLeftIcon /> Retour
                     </button>
                 </div>
-                {videos.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                        <p className="text-gray-500">Aucune vidéo de présentation n'a été configurée dans le back-office.</p>
+                {videos.length > 0 ? (
+                    <div className="space-y-8">
+                        {videos.map(video => (
+                            <div key={video.id} className="bg-white rounded-xl shadow-lg p-4">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">{video.title}</h2>
+                                <div className="aspect-w-16 aspect-h-9">
+                                    <iframe
+                                        src={getEmbedUrl(video.url)}
+                                        allow="autoplay"
+                                        className="w-full h-full rounded-lg"
+                                        frameBorder="0"
+                                    ></iframe>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : (
-                    <div className="space-y-6">
-                        {videos.map(video => {
-                            // Transformation du lien de partage Google Drive en lien "embed"
-                            const embedUrl = video.url.replace("/view", "/preview");
-                            return (
-                                <div key={video.id} className="bg-white rounded-xl shadow-lg p-6">
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">{video.title}</h2>
-                                    <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg">
-                                        <iframe
-                                            src={embedUrl}
-                                            title={video.title}
-                                            frameBorder="0"
-                                            className="w-full h-full rounded-lg"
-                                            allow="autoplay; encrypted-media"
-                                            allowFullScreen
-                                        ></iframe>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                        <p className="text-gray-500">Aucune vidéo de présentation n'a été configurée dans le back-office.</p>
                     </div>
                 )}
             </div>
         </div>
     );
 };
+
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
@@ -775,25 +716,24 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
                 
-                {/* CORRECTION DÉFINITIVE: Utilisation de Flexbox pour une grille 2x2 responsive et fiable */}
-                <div className="flex flex-wrap justify-center gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     
-                    <button onClick={() => onNavigate('appointmentList')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('newAppointment')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onStartQuote()} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('presentation')} className="flex-grow sm:flex-grow-0 sm:basis-[calc(50%-0.75rem)] flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
@@ -811,7 +751,6 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
   const [appliedDiscounts, setAppliedDiscounts] = useState([]);
   const dbRef = useRef(null);
   const appIdRef = useRef(null);
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
 
   const calculation = useMemo(() => {
     if (!config || !data.type) return null;
@@ -843,50 +782,34 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
   useEffect(() => {
     const initFirebase = async () => {
         try {
-            if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
-                setError("La configuration Firebase n'est pas disponible. Impossible de charger les données.");
-                setConfig(initialConfigData); // Fallback to default data for UI
-                return;
-            }
-            
-            const firebaseConfig = JSON.parse(__firebase_config);
-            const appId = __app_id;
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.appspot.com",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            const appId = firebaseConfig.appId;
             appIdRef.current = appId;
-            
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             dbRef.current = db;
             const auth = getAuth(app);
             setLogLevel('debug');
-            
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-
+            await signInAnonymously(auth);
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
             const docSnap = await getDoc(configDocRef);
-            if (docSnap.exists()) {
-                const remoteData = docSnap.data();
-                // Merge initialData with remoteData to ensure all keys exist
-                const mergedConfig = {
-                    ...initialConfigData,
-                    ...remoteData,
-                    settings: { ...initialConfigData.settings, ...remoteData.settings },
-                    offers: { ...initialConfigData.offers, ...remoteData.offers },
-                    packs: { ...initialConfigData.packs, ...remoteData.packs },
-                };
-                setConfig(mergedConfig);
-            } else {
+            if (docSnap.exists()) setConfig(docSnap.data());
+            else {
                 await setDoc(configDocRef, initialConfigData);
                 setConfig(initialConfigData);
             }
         } catch (err) {
             console.error("Erreur d'initialisation:", err);
-            setError("Impossible de charger la configuration depuis la base de données.");
-            setConfig(initialConfigData);
+            setError("Impossible de charger la configuration.");
         } finally {
             setIsLoading(false);
         }
@@ -912,25 +835,12 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
   };
 
   if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
-  if (error || !config) return (
-      <div className="bg-red-100 min-h-screen flex items-center justify-center p-4">
-          <div className="text-center">
-              <p className="text-red-700 text-center font-bold">Erreur:</p>
-              <p className="text-red-700">{error || "Config introuvable."}</p>
-              <button onClick={onBackToHome} className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700">Retour à l'accueil</button>
-          </div>
-      </div>
-  );
+  if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
   const progress = (data.step / 8) * 100;
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-      {modal.isOpen && (
-            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
-                <p>{modal.message}</p>
-            </Modal>
-        )}
       <div className="w-full max-w-2xl">
         <div className="mb-6">
             <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
@@ -949,46 +859,44 @@ export default function App() {
   const [quoteData, setQuoteData] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  // NOUVEAU: State pour les vidéos
-  const [presentationVideos, setPresentationVideos] = useState([]);
-  const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+  const [videos, setVideos] = useState([]);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [modal, setModal] = useState(null);
   const firebaseRef = useRef(null);
 
   useEffect(() => {
-    const initFirebase = async () => {
+    const init = async () => {
         try {
-            if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
-                console.error("Configuration Firebase non trouvée.");
-                handleShowModal("Erreur Critique", "La configuration pour se connecter à la base de données est manquante. L'application ne peut pas démarrer.");
-                return;
-            }
-
-            const firebaseConfig = JSON.parse(__firebase_config);
+            const firebaseConfig = {
+                apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+                authDomain: "application-devis-f2a31.firebaseapp.com",
+                projectId: "application-devis-f2a31",
+                storageBucket: "application-devis-f2a31.appspot.com",
+                messagingSenderId: "960846329322",
+                appId: "1:960846329322:web:5802132e187aa131906e93",
+                measurementId: "G-1F9T98PGS9"
+            };
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             const auth = getAuth(app);
-            const appId = __app_id;
+            const appId = firebaseConfig.appId;
             setLogLevel('debug');
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
+            await signInAnonymously(auth);
             firebaseRef.current = { db, auth, appId };
-        } catch (error) {
-            console.error("Erreur de connexion Firebase", error);
-            handleShowModal("Erreur de Connexion", "Impossible de se connecter à la base de données. Veuillez vérifier votre connexion internet ou contacter le support.");
+            setIsFirebaseReady(true);
+        } catch(e) {
+            console.error("Firebase init failed", e);
+            setModal({title: "Erreur critique", message: "Impossible d'initialiser la connexion à la base de données. Veuillez rafraîchir la page."});
         }
-    };
-    initFirebase();
+    }
+    init();
   }, []);
 
   useEffect(() => {
     if (!salesperson || !firebaseRef.current) return;
     const { db, appId } = firebaseRef.current;
     
-    // --- Listener pour les rendez-vous ---
+    // Listener pour les rendez-vous
     const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
     const qAppointments = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
     const unsubscribeAppointments = onSnapshot(qAppointments, (querySnapshot) => {
@@ -997,13 +905,13 @@ export default function App() {
       setAppointments(appointmentsList);
     }, (error) => console.error("Erreur de lecture des RDV: ", error));
 
-    // NOUVEAU: Listener pour les vidéos de présentation
+    // Listener pour les vidéos
     const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
     const qVideos = query(collection(db, videosPath));
     const unsubscribeVideos = onSnapshot(qVideos, (querySnapshot) => {
-        const videosList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPresentationVideos(videosList);
-    }, (error) => console.error("Erreur de lecture des vidéos : ", error));
+        const videoList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setVideos(videoList);
+    }, (error) => console.error("Erreur de lecture des vidéos: ", error));
 
     return () => {
         unsubscribeAppointments();
@@ -1011,19 +919,16 @@ export default function App() {
     };
   }, [salesperson]);
 
-  const handleShowModal = (title, message) => {
-      setModal({ isOpen: true, title, message });
-  };
-
   const addAppointment = async (newAppointment) => {
-    if (!firebaseRef.current) return;
+    if (!firebaseRef.current) return false;
     const { db, appId } = firebaseRef.current;
     const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
     try {
       await addDoc(collection(db, appointmentsPath), newAppointment);
+      return true;
     } catch (error) {
       console.error("Erreur d'ajout du RDV: ", error);
-      handleShowModal("Erreur", "Impossible de sauvegarder le rendez-vous.");
+      return false;
     }
   };
 
@@ -1035,14 +940,13 @@ export default function App() {
       await updateDoc(appointmentDocRef, { status: newStatus });
     } catch (error) {
       console.error("Erreur de mise à jour du statut: ", error);
-      handleShowModal("Erreur", "Impossible de mettre à jour le statut.");
+      setModal({title: "Erreur", message: "Impossible de mettre à jour le statut."});
     }
   };
 
   const handleLogin = async (name) => {
     if (!firebaseRef.current) {
-        handleShowModal("Erreur", "La connexion à la base de données n'est pas encore établie. Veuillez patienter.");
-        return false;
+        return { success: false, message: "La connexion à la base de données n'est pas encore établie. Veuillez patienter." };
     }
     const { db, appId } = firebaseRef.current;
     const salespersonsPath = `/artifacts/${appId}/public/data/salespersons`;
@@ -1053,14 +957,13 @@ export default function App() {
         if (!querySnapshot.empty) {
             setSalesperson(name);
             setCurrentView('home');
-            return true;
+            return { success: true };
         } else {
-            return false;
+            return { success: false, message: 'Commercial non reconnu. Veuillez vérifier le nom.' };
         }
     } catch (error) {
         console.error("Erreur de vérification du commercial:", error);
-        handleShowModal("Erreur", "Impossible de vérifier le nom du commercial. Vérifiez les permissions Firestore.");
-        return false;
+        return { success: false, message: "Une erreur est survenue lors de la vérification." };
     }
   };
 
@@ -1085,52 +988,43 @@ export default function App() {
       setCurrentView('appointmentDetail');
   }
 
-  if (currentView === 'login') {
-    return (
-      <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-         {modal.isOpen && (
-            <Modal title={modal.title} onClose={() => setModal({ isOpen: false, title: '', message: '' })}>
-                <p>{modal.message}</p>
-            </Modal>
-        )}
-        <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-8">
-          <SalespersonLogin onLogin={handleLogin} />
-        </div>
-      </div>
-    );
+  const renderCurrentView = () => {
+    switch(currentView) {
+        case 'login':
+            return (
+                <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+                    <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-4 sm:p-8">
+                        {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+                        <SalespersonLogin onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />
+                    </div>
+                </div>
+            );
+        case 'home':
+            return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />;
+        case 'quote':
+            return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
+        case 'appointmentList':
+            return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
+        case 'appointmentDetail':
+            return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
+        case 'newAppointment':
+            return <NewAppointment 
+                salesperson={salesperson} 
+                onBack={() => setCurrentView('home')} 
+                onAppointmentCreated={async (newApp) => {
+                    const success = await addAppointment(newApp);
+                    if (success) setCurrentView('appointmentList');
+                    return success;
+                }} 
+            />;
+        case 'presentation':
+            return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
+        default:
+            return <div>Vue non reconnue</div>;
+    }
   }
   
-  if (currentView === 'home') {
-      return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />
-  }
-
-  if (currentView === 'quote') {
-    return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
-  }
-  
-  if (currentView === 'appointmentList') {
-      return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
-  }
-  
-  if (currentView === 'appointmentDetail') {
-      return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
-  }
-  
-  if (currentView === 'newAppointment') {
-      return <NewAppointment salesperson={salesperson} onBack={() => setCurrentView('home')} 
-              onAppointmentCreated={async (newApp) => {
-                  await addAppointment(newApp);
-                  setCurrentView('appointmentList');
-              }} 
-           />;
-  }
-
-  // NOUVEAU: Gestion de la vue "Présentation"
-  if (currentView === 'presentation') {
-    return <PresentationMode onBack={() => setCurrentView('home')} videos={presentationVideos} />;
-  }
-  
-  return <div>Vue non reconnue</div>;
+  return renderCurrentView();
 }
 
 
