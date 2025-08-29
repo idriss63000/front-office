@@ -770,28 +770,34 @@ const PresentationMode = ({ onBack, videos }) => {
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
-        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
-            <div className="w-full max-w-4xl text-center">
-                <h1 className="text-3xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
+        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-4">
+            <div className="w-full max-w-3xl mx-auto text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
-                {/* CORRIGÉ: Remplacement de la grille pour un meilleur affichage responsive */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                
+                {/* CORRIGÉ: Grille responsive 2x2 pour tablettes et plus, 1 colonne pour mobile */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    
+                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
                     </button>
-                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                    
+                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
                     </button>
-                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                    
+                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
-                     <button onClick={() => onNavigate('presentation')} className="md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition h-48">
+                    
+                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
+
                 </div>
             </div>
         </div>
@@ -1126,6 +1132,8 @@ export default function App() {
   
   return <div>Vue non reconnue</div>;
 }
+
+
 
 
 
