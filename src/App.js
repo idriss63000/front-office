@@ -853,12 +853,25 @@ export default function App() {
 
   useEffect(() => {
     const initFirebase = async () => {
-        if (typeof __firebase_config === 'undefined' || typeof __app_id === 'undefined') {
+        let firebaseConfig;
+        let appId;
+
+        // Tente d'utiliser les variables d'environnement (pour Vercel/production)
+        if (typeof process !== 'undefined' && process.env.REACT_APP_FIREBASE_CONFIG) {
+            firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
+            appId = firebaseConfig.appId;
+        } 
+        // Sinon, utilise les variables injectées (pour l'environnement de développement)
+        else if (typeof __firebase_config !== 'undefined' && typeof __app_id !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = __app_id;
+        } 
+        // Si aucune configuration n'est trouvée
+        else {
             console.error("Configuration Firebase non disponible.");
             return;
         }
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -1001,4 +1014,5 @@ export default function App() {
  
   return <div>Vue non reconnue</div>;
 }
+
 
