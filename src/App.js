@@ -716,24 +716,29 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
                 
+                {/* Mise en page en grille, la plus fiable pour ce cas */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     
-                    <button onClick={() => onNavigate('appointmentList')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    {/* Bouton 1 */}
+                    <button onClick={() => onNavigate('appointmentList')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('newAppointment')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    {/* Bouton 2 */}
+                    <button onClick={() => onNavigate('newAppointment')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
                         <CalendarIcon />
                         <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
                     </button>
                     
-                    <button onClick={() => onStartQuote()} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    {/* Bouton 3 */}
+                    <button onClick={() => onStartQuote()} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
                         <FileTextIcon />
                         <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
                     </button>
                     
-                    <button onClick={() => onNavigate('presentation')} className="flex flex-col items-center justify-center p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition min-h-[192px]">
+                    {/* Bouton 4 */}
+                    <button onClick={() => onNavigate('presentation')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
                     </button>
@@ -1026,7 +1031,6 @@ export default function App() {
   
   return renderCurrentView();
 }
-
 
 
 
