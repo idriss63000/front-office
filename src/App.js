@@ -712,35 +712,31 @@ const PresentationMode = ({ onBack, videos }) => {
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
         <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl mx-auto text-center">
+            <div className="w-full max-w-4xl mx-auto text-center">
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
                 
-                {/* Mise en page en grille, la plus fiable pour ce cas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* RE-VERIFICATION ET SIMPLIFICATION: Grille responsive standard */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    {/* Bouton 1 */}
-                    <button onClick={() => onNavigate('appointmentList')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
+                    <button onClick={() => onNavigate('appointmentList')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <CalendarIcon />
-                        <span className="mt-4 text-lg font-semibold">Mes rendez-vous</span>
+                        <span className="mt-4 text-lg font-semibold text-center">Mes rendez-vous</span>
                     </button>
                     
-                    {/* Bouton 2 */}
-                    <button onClick={() => onNavigate('newAppointment')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
+                    <button onClick={() => onNavigate('newAppointment')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <CalendarIcon />
-                        <span className="mt-4 text-lg font-semibold">Créer un rendez-vous</span>
+                        <span className="mt-4 text-lg font-semibold text-center">Créer un rendez-vous</span>
                     </button>
                     
-                    {/* Bouton 3 */}
-                    <button onClick={() => onStartQuote()} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
+                    <button onClick={() => onStartQuote()} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <FileTextIcon />
-                        <span className="mt-4 text-lg font-semibold">Nouveau Devis</span>
+                        <span className="mt-4 text-lg font-semibold text-center">Nouveau Devis</span>
                     </button>
                     
-                    {/* Bouton 4 */}
-                    <button onClick={() => onNavigate('presentation')} className="p-6 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center min-h-[180px]">
+                    <button onClick={() => onNavigate('presentation')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <VideoIcon />
-                        <span className="mt-4 text-lg font-semibold">Mode Présentation</span>
+                        <span className="mt-4 text-lg font-semibold text-center">Mode Présentation</span>
                     </button>
 
                 </div>
@@ -1031,6 +1027,7 @@ export default function App() {
   
   return renderCurrentView();
 }
+
 
 
 
