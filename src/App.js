@@ -491,6 +491,8 @@ const Confirmation = ({ reset }) => (
 );
 
 const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appointments, onUpdateStatus }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
   const getStatusClass = (status) => {
     switch (status) {
       case 'confirmé': return 'bg-green-100 text-green-800';
@@ -500,6 +502,11 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const filteredAppointments = appointments.filter(app =>
+    app.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (app.phone && app.phone.includes(searchTerm))
+  );
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans p-4">
@@ -511,10 +518,19 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
           </button>
         </div>
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-          {appointments.length === 0 ? (
-            <p className="text-center text-gray-500 py-4">Aucun rendez-vous pour le moment.</p>
+          <input
+            type="text"
+            placeholder="Rechercher un prospect par nom ou téléphone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="p-3 border rounded-lg w-full mb-4 focus:ring-2 focus:ring-blue-500"
+          />
+          {filteredAppointments.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">
+              {appointments.length > 0 ? "Aucun rendez-vous ne correspond à votre recherche." : "Aucun rendez-vous pour le moment."}
+            </p>
           ) : (
-            appointments.map(app => (
+            filteredAppointments.map(app => (
               <div key={app.id} className="p-4 border rounded-lg hover:bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
                   <p className="font-bold text-lg">{app.clientName}</p>
@@ -1027,8 +1043,6 @@ export default function App() {
   
   return renderCurrentView();
 }
-
-
 
 
 
