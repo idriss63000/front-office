@@ -599,8 +599,49 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
-    // La clé API a été retirée pour la sécurité, l'autocomplete ne fonctionnera pas sans.
-    // Pour l'activer, il faut créer une clé API Google Maps et la sécuriser.
+    // ######################################################################
+    // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
+    // ######################################################################
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; 
+    // ######################################################################
+    
+    if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
+        console.warn("L'autocomplete d'adresse est désactivé. Veuillez insérer une clé API Google Maps.");
+        return;
+    }
+
+    const scriptId = 'google-maps-script';
+
+    const initAutocomplete = () => {
+      if (window.google && addressInputRef.current && !autocompleteRef.current) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'fr' }, // Restreint la recherche à la France
+          }
+        );
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place && place.formatted_address) {
+            setAddress(place.formatted_address);
+          }
+        });
+        autocompleteRef.current = autocomplete;
+      }
+    };
+
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    } else {
+        initAutocomplete();
+    }
   }, []);
 
   const formatDateTimeForGoogle = (dateString, timeString) => {
@@ -1043,6 +1084,9 @@ export default function App() {
   
   return renderCurrentView();
 }
+
+
+
 
 
 
