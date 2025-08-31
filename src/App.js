@@ -602,7 +602,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
     // ######################################################################
     // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
     // ######################################################################
-    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; 
+    const GOOGLE_MAPS_API_KEY = 'AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI'; 
     // ######################################################################
     
     if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
@@ -634,7 +634,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
     if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = initAutocomplete;
@@ -1084,8 +1084,6 @@ export default function App() {
   
   return renderCurrentView();
 }
-
-
 
 
 
