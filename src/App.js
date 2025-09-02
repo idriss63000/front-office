@@ -769,97 +769,31 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
-// --- NOUVEAU COMPOSANT POUR LA PROSPECTION ---
+// --- COMPOSANT DE PROSPECTION (FRONT-END) MODIFIÉ ---
 const ProspectionTool = ({ onBack }) => {
     const [companies, setCompanies] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const tokenRef = useRef(null); // Pour stocker le token
-
-    // Fonction pour récupérer le token
-    const getSireneToken = async (consumerKey, consumerSecret) => {
-        const credentials = btoa(`${consumerKey}:${consumerSecret}`);
-        try {
-            const response = await fetch('https://api.insee.fr/token', {
-                method: 'POST',
-                mode: 'cors',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'grant_type=client_credentials'
-            });
-            if (!response.ok) {
-                 const errorText = await response.text();
-                 console.error("Erreur de réponse de l'API Token:", response.status, errorText);
-                 throw new Error(`Erreur d'authentification (${response.status}). Vérifiez vos clés de consommateur.`);
-            }
-            const data = await response.json();
-            return data.access_token;
-        } catch (err) {
-            console.error("Erreur lors de la récupération du token:", err);
-            throw err;
-        }
-    };
 
     useEffect(() => {
-        const CONSUMER_KEY = 'Wdy_zKzYqO_wI7NcnRnlUynmfO4a';
-        const CONSUMER_SECRET = 'fhTKef2hArzWLua5CftDGalRUmca';
-
-        const fetchCompaniesWithToken = async (latitude, longitude) => {
-             try {
-                if (!tokenRef.current) {
-                    const token = await getSireneToken(CONSUMER_KEY, CONSUMER_SECRET);
-                    tokenRef.current = token;
-                }
-                await fetchNewCompanies(latitude, longitude, tokenRef.current);
-             } catch (err) {
-                 setError(err.message);
-                 setIsLoading(false);
-             }
-        };
-
-        const fetchNewCompanies = async (latitude, longitude, token) => {
+        const fetchLocalProxy = async (latitude, longitude) => {
             setError(null);
             setIsLoading(true);
-
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 90);
-            const formattedStartDate = startDate.toISOString().split('T')[0];
-
-            const apiUrl = 'https://api.insee.fr/entreprises/sirene/V3/siret';
-            const radiusKm = 20;
-
-            const params = new URLSearchParams({
-                q: `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`,
-                latitude: latitude,
-                longitude: longitude,
-                rayon: radiusKm,
-                nombre: 100,
-            });
-            
             try {
-                const response = await fetch(`${apiUrl}?${params.toString()}`, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json',
-                    }
-                });
-
-                if (response.status === 401) {
-                     throw new Error("Authentification échouée (Erreur 401). Vos clés sont probablement incorrectes.");
-                }
+                // On appelle notre propre API proxy, pas l'API de l'INSEE directement
+                const response = await fetch(`/api/sirene?lat=${latitude}&lon=${longitude}`);
+                
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => null);
-                    throw new Error(errorData?.header?.message || `Erreur API: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.details || "Erreur lors de l'appel au service de prospection.");
                 }
+
                 const data = await response.json();
                 setCompanies(data.etablissements || []);
+
             } catch (err) {
-                 console.error("Erreur API SIRENE:", err);
+                 console.error("Erreur de communication avec le proxy:", err);
                  setError(err.message);
             } finally {
                 setIsLoading(false);
@@ -870,7 +804,7 @@ const ProspectionTool = ({ onBack }) => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    fetchCompaniesWithToken(latitude, longitude);
+                    fetchLocalProxy(latitude, longitude);
                 },
                 (err) => {
                     setError("Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation.");
