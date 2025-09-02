@@ -15,7 +15,6 @@ export default async function handler(req, res) {
 
   try {
     // 3. Obtenir le jeton d'accès (Bearer Token) auprès de l'INSEE
-    // CORRECTION: Utilisation de Buffer pour l'encodage côté serveur (compatible Vercel/Node.js)
     const credentials = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64');
     
     const tokenResponse = await fetch('https://api.insee.fr/token', {
@@ -42,11 +41,11 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
+    // CORRECTION: Construction de la requête géographique dans le paramètre 'q'
+    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${lat} AND longitude:${lon} AND rayon:${radiusKm}km)`;
+
     const params = new URLSearchParams({
-      q: `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`,
-      latitude: lat,
-      longitude: lon,
-      rayon: radiusKm,
+      q: queryString,
       nombre: 100,
     });
 
@@ -66,7 +65,7 @@ export default async function handler(req, res) {
     const companiesData = await sireneResponse.json();
 
     // 5. Renvoyer les résultats au front-end
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Sécurité supplémentaire pour CORS
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
     res.status(200).json(companiesData);
 
   } catch (error) {
