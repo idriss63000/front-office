@@ -41,20 +41,20 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // CORRECTION FINALE: Syntaxe de la requête geo() corrigée (sans les 'AND')
     const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${lat} longitude:${lon} rayon:${radiusKm}km)`;
-
-    const params = new URLSearchParams({
-      q: queryString,
-      nombre: 100,
-    });
-
-    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret?${params.toString()}`, {
-      method: 'GET',
+    
+    // CORRECTION : Utilisation d'une requête POST, plus robuste pour les requêtes complexes.
+    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
+        'Content-Type': 'application/json'
       },
+      body: JSON.stringify({
+          q: queryString,
+          nombre: 100
+      })
     });
 
     if (!sireneResponse.ok) {
