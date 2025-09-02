@@ -17,6 +17,10 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 
+// --- NOUVELLE ICÔNE POUR LA PROSPECTION ---
+const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+
+
 // --- Données par défaut ---
 const initialConfigData = {
   offers: {
@@ -602,7 +606,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
     // ######################################################################
     // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
     // ######################################################################
-    const GOOGLE_MAPS_API_KEY = 'AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI'; 
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Remplacez par votre clé
     // ######################################################################
     
     if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
@@ -634,7 +638,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
     if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = initAutocomplete;
@@ -765,6 +769,162 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
+// --- NOUVEAU COMPOSANT POUR LA PROSPECTION ---
+const ProspectionTool = ({ onBack }) => {
+    const [location, setLocation] = useState(null);
+    const [companies, setCompanies] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        // #####################################################################################
+        // ### Clé API SIRENE intégrée.                                                      ###
+        // #####################################################################################
+        const SIRENE_API_TOKEN = 'b615754f-999c-327b-b119-0c4469814fb7'; 
+        // #####################################################################################
+
+        if (SIRENE_API_TOKEN === 'VOTRE_TOKEN_BEARER_ICI') {
+            setError("Le jeton d'accès pour l'API SIRENE n'est pas configuré.");
+            setIsLoading(false);
+            return;
+        }
+        
+        const fetchNewCompanies = async (latitude, longitude) => {
+            setError(null);
+            setIsLoading(true);
+
+            // Date de début : il y a 90 jours
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 90);
+            const formattedStartDate = startDate.toISOString().split('T')[0];
+
+            const apiUrl = 'https://api.insee.fr/entreprises/sirene/V3/siret';
+            const radiusKm = 20; // Rayon de recherche en KM
+
+            const params = new URLSearchParams({
+                q: `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`,
+                latitude: latitude,
+                longitude: longitude,
+                rayon: radiusKm,
+                nombre: 100, // Nombre max de résultats
+                facetteChamps: 'activitePrincipaleEtablissement',
+            });
+            
+            try {
+                const response = await fetch(`${apiUrl}?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${SIRENE_API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.header?.message || `Erreur API: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                setCompanies(data.etablissements || []);
+            } catch (err) {
+                console.error("Erreur API SIRENE:", err);
+                setError(err.message || "Une erreur est survenue lors de la recherche.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setLocation({ latitude, longitude });
+                    fetchNewCompanies(latitude, longitude);
+                },
+                (err) => {
+                    setError("Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation dans votre navigateur.");
+                    setIsLoading(false);
+                }
+            );
+        } else {
+            setError("La géolocalisation n'est pas supportée par ce navigateur.");
+            setIsLoading(false);
+        }
+    }, []);
+
+    const filteredCompanies = companies.filter(company => {
+        const name = company.uniteLegale?.denominationUniteLegale || company.uniteLegale?.nomUniteLegale || '';
+        const postalCode = company.adresseEtablissement?.codePostalEtablissement || '';
+        const city = company.adresseEtablissement?.libelleCommuneEtablissement || '';
+
+        const searchTermLower = searchTerm.toLowerCase();
+        
+        return name.toLowerCase().includes(searchTermLower) || 
+               postalCode.includes(searchTermLower) ||
+               city.toLowerCase().includes(searchTermLower);
+    });
+
+    const renderContent = () => {
+        if (isLoading) {
+            return <div className="text-center p-10">
+                <p className="font-semibold animate-pulse">Recherche des nouvelles entreprises à proximité...</p>
+            </div>;
+        }
+        if (error) {
+            return <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
+                <p className="font-bold text-red-700">Erreur</p>
+                <p className="text-red-600 mt-2">{error}</p>
+            </div>;
+        }
+        if (filteredCompanies.length === 0) {
+             return <p className="text-center text-gray-500 py-8">
+                {companies.length > 0 ? "Aucune entreprise ne correspond à votre recherche." : "Aucune nouvelle entreprise trouvée dans un rayon de 20km sur les 90 derniers jours."}
+             </p>
+        }
+        return (
+            <div className="space-y-4">
+                {filteredCompanies.map(etab => (
+                    <div key={etab.siret} className="p-4 border rounded-lg hover:bg-gray-50 shadow-sm">
+                        <h3 className="font-bold text-lg text-blue-700">
+                            {etab.uniteLegale?.denominationUniteLegale || `${etab.uniteLegale?.prenomUsuelUniteLegale || ''} ${etab.uniteLegale?.nomUniteLegale || ''}`}
+                        </h3>
+                        <p className="text-sm text-gray-600">{etab.adresseEtablissement?.numeroVoieEtablissement} {etab.adresseEtablissement?.typeVoieEtablissement} {etab.adresseEtablissement?.libelleVoieEtablissement}, {etab.adresseEtablissement?.codePostalEtablissement} {etab.adresseEtablissement?.libelleCommuneEtablissement}</p>
+                        <div className="mt-2 text-xs">
+                           <span className="font-semibold">Activité :</span> {etab.uniteLegale?.activitePrincipaleUniteLegale}
+                        </div>
+                         <div className="mt-1 text-xs">
+                           <span className="font-semibold">Création :</span> {new Date(etab.dateCreationEtablissement).toLocaleDateString('fr-FR')}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            <div className="max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">Outil de Prospection</h1>
+                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                        <ArrowLeftIcon /> Retour
+                    </button>
+                </div>
+                 <div className="bg-white rounded-xl shadow-lg p-6">
+                    <input
+                        type="text"
+                        placeholder="Filtrer par nom, code postal, ville..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="p-3 border rounded-lg w-full mb-6 focus:ring-2 focus:ring-blue-500"
+                    />
+                    {renderContent()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
@@ -773,8 +933,7 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
                 <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
                 
-                {/* RE-VERIFICATION ET SIMPLIFICATION: Grille responsive standard */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     
                     <button onClick={() => onNavigate('appointmentList')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <CalendarIcon />
@@ -794,6 +953,12 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                     <button onClick={() => onNavigate('presentation')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold text-center">Mode Présentation</span>
+                    </button>
+
+                    {/* --- NOUVEAU BOUTON DE PROSPECTION --- */}
+                    <button onClick={() => onNavigate('prospection')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square text-blue-600">
+                        <SearchIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Prospection Locale</span>
                     </button>
 
                 </div>
@@ -1077,6 +1242,9 @@ export default function App() {
             />;
         case 'presentation':
             return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
+        // --- NOUVELLE VUE POUR LA PROSPECTION ---
+        case 'prospection':
+            return <ProspectionTool onBack={() => setCurrentView('home')} />;
         default:
             return <div>Vue non reconnue</div>;
     }
@@ -1084,6 +1252,8 @@ export default function App() {
   
   return renderCurrentView();
 }
+
+
 
 
 
