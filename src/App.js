@@ -813,6 +813,8 @@ const ProspectionTool = ({ onBack }) => {
             
             try {
                 const response = await fetch(`${apiUrl}?${params.toString()}`, {
+                    method: 'GET', // Méthode explicite
+                    mode: 'cors',  // Mode CORS explicite
                     headers: {
                         'Authorization': `Bearer ${SIRENE_API_TOKEN}`,
                         'Content-Type': 'application/json'
@@ -828,7 +830,13 @@ const ProspectionTool = ({ onBack }) => {
                 setCompanies(data.etablissements || []);
             } catch (err) {
                 console.error("Erreur API SIRENE:", err);
-                setError(err.message || "Une erreur est survenue lors de la recherche.");
+                let errorMessage = "Une erreur est survenue lors de la recherche.";
+                if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+                    errorMessage = "La requête vers l'API a échoué. Cela peut être dû à un problème de réseau, une restriction (CORS) ou un jeton d'accès (token) invalide/expiré. Veuillez vérifier votre connexion et régénérer votre jeton si le problème persiste.";
+                } else {
+                    errorMessage = err.message;
+                }
+                setError(errorMessage);
             } finally {
                 setIsLoading(false);
             }
@@ -991,7 +999,7 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
     const installationFee = installDiscount ? 0 : config.settings.installationFee;
     const totalWithInstall = subtotalAfterDiscount + installationFee;
     const vatRate = config.settings.vat[data.type] || 0;
-    const vatAmount = totalWithInstall * vatRate;
+    const vatAmount = totalWithInstall + vatRate;
     const oneTimeTotal = totalWithInstall + vatAmount;
     let monthlySubtotal = 0;
     if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
