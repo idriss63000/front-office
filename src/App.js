@@ -771,72 +771,96 @@ const PresentationMode = ({ onBack, videos }) => {
 
 // --- NOUVEAU COMPOSANT POUR LA PROSPECTION ---
 const ProspectionTool = ({ onBack }) => {
-    const [location, setLocation] = useState(null);
     const [companies, setCompanies] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const tokenRef = useRef(null); // Pour stocker le token
+
+    // Fonction pour récupérer le token
+    const getSireneToken = async (consumerKey, consumerSecret) => {
+        const credentials = btoa(`${consumerKey}:${consumerSecret}`);
+        try {
+            const response = await fetch('https://api.insee.fr/token', {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Authorization': `Basic ${credentials}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'grant_type=client_credentials'
+            });
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 console.error("Erreur de réponse de l'API Token:", response.status, errorText);
+                 throw new Error(`Erreur d'authentification (${response.status}). Vérifiez vos clés de consommateur.`);
+            }
+            const data = await response.json();
+            return data.access_token;
+        } catch (err) {
+            console.error("Erreur lors de la récupération du token:", err);
+            throw err;
+        }
+    };
 
     useEffect(() => {
-        // #####################################################################################
-        // ### Clé API SIRENE intégrée.                                                      ###
-        // #####################################################################################
-        const SIRENE_API_TOKEN = 'b615754f-999c-327b-b119-0c4469814fb7'; 
-        // #####################################################################################
+        const CONSUMER_KEY = 'Wdy_zKzYqO_wI7NcnRnlUynmfO4a';
+        const CONSUMER_SECRET = 'fhTKef2hArzWLua5CftDGalRUmca';
 
-        if (SIRENE_API_TOKEN === 'VOTRE_TOKEN_BEARER_ICI') {
-            setError("Le jeton d'accès pour l'API SIRENE n'est pas configuré.");
-            setIsLoading(false);
-            return;
-        }
-        
-        const fetchNewCompanies = async (latitude, longitude) => {
+        const fetchCompaniesWithToken = async (latitude, longitude) => {
+             try {
+                if (!tokenRef.current) {
+                    const token = await getSireneToken(CONSUMER_KEY, CONSUMER_SECRET);
+                    tokenRef.current = token;
+                }
+                await fetchNewCompanies(latitude, longitude, tokenRef.current);
+             } catch (err) {
+                 setError(err.message);
+                 setIsLoading(false);
+             }
+        };
+
+        const fetchNewCompanies = async (latitude, longitude, token) => {
             setError(null);
             setIsLoading(true);
 
-            // Date de début : il y a 90 jours
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - 90);
             const formattedStartDate = startDate.toISOString().split('T')[0];
 
             const apiUrl = 'https://api.insee.fr/entreprises/sirene/V3/siret';
-            const radiusKm = 20; // Rayon de recherche en KM
+            const radiusKm = 20;
 
             const params = new URLSearchParams({
                 q: `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`,
                 latitude: latitude,
                 longitude: longitude,
                 rayon: radiusKm,
-                nombre: 100, // Nombre max de résultats
-                facetteChamps: 'activitePrincipaleEtablissement',
+                nombre: 100,
             });
             
             try {
                 const response = await fetch(`${apiUrl}?${params.toString()}`, {
-                    method: 'GET', // Méthode explicite
-                    mode: 'cors',  // Mode CORS explicite
+                    method: 'GET',
+                    mode: 'cors',
                     headers: {
-                        'Authorization': `Bearer ${SIRENE_API_TOKEN}`,
-                        'Content-Type': 'application/json'
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
                     }
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.header?.message || `Erreur API: ${response.statusText}`);
+                if (response.status === 401) {
+                     throw new Error("Authentification échouée (Erreur 401). Vos clés sont probablement incorrectes.");
                 }
-
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(errorData?.header?.message || `Erreur API: ${response.status}`);
+                }
                 const data = await response.json();
                 setCompanies(data.etablissements || []);
             } catch (err) {
-                console.error("Erreur API SIRENE:", err);
-                let errorMessage = "Une erreur est survenue lors de la recherche.";
-                if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
-                    errorMessage = "La requête vers l'API a échoué. Cela peut être dû à un problème de réseau, une restriction (CORS) ou un jeton d'accès (token) invalide/expiré. Veuillez vérifier votre connexion et régénérer votre jeton si le problème persiste.";
-                } else {
-                    errorMessage = err.message;
-                }
-                setError(errorMessage);
+                 console.error("Erreur API SIRENE:", err);
+                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
@@ -846,11 +870,10 @@ const ProspectionTool = ({ onBack }) => {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setLocation({ latitude, longitude });
-                    fetchNewCompanies(latitude, longitude);
+                    fetchCompaniesWithToken(latitude, longitude);
                 },
                 (err) => {
-                    setError("Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation dans votre navigateur.");
+                    setError("Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation.");
                     setIsLoading(false);
                 }
             );
@@ -864,9 +887,7 @@ const ProspectionTool = ({ onBack }) => {
         const name = company.uniteLegale?.denominationUniteLegale || company.uniteLegale?.nomUniteLegale || '';
         const postalCode = company.adresseEtablissement?.codePostalEtablissement || '';
         const city = company.adresseEtablissement?.libelleCommuneEtablissement || '';
-
         const searchTermLower = searchTerm.toLowerCase();
-        
         return name.toLowerCase().includes(searchTermLower) || 
                postalCode.includes(searchTermLower) ||
                city.toLowerCase().includes(searchTermLower);
@@ -874,9 +895,7 @@ const ProspectionTool = ({ onBack }) => {
 
     const renderContent = () => {
         if (isLoading) {
-            return <div className="text-center p-10">
-                <p className="font-semibold animate-pulse">Recherche des nouvelles entreprises à proximité...</p>
-            </div>;
+            return <div className="text-center p-10"><p className="font-semibold animate-pulse">Recherche des nouvelles entreprises...</p></div>;
         }
         if (error) {
             return <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
@@ -886,7 +905,7 @@ const ProspectionTool = ({ onBack }) => {
         }
         if (filteredCompanies.length === 0) {
              return <p className="text-center text-gray-500 py-8">
-                {companies.length > 0 ? "Aucune entreprise ne correspond à votre recherche." : "Aucune nouvelle entreprise trouvée dans un rayon de 20km sur les 90 derniers jours."}
+                {companies.length > 0 ? "Aucune entreprise ne correspond à votre recherche." : "Aucune nouvelle entreprise trouvée."}
              </p>
         }
         return (
