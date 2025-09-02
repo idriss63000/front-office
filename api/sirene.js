@@ -41,8 +41,8 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // CORRECTION: Construction de la requête géographique dans le paramètre 'q'
-    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${lat} AND longitude:${lon} AND rayon:${radiusKm}km)`;
+    // CORRECTION FINALE: Syntaxe de la requête geo() corrigée (sans les 'AND')
+    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${lat} longitude:${lon} rayon:${radiusKm}km)`;
 
     const params = new URLSearchParams({
       q: queryString,
@@ -73,4 +73,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Erreur interne du serveur lors de la communication avec l'API SIRENE.", details: error.message });
   }
 }
+
 
