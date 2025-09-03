@@ -1,6 +1,8 @@
 // Ce fichier convertit une adresse textuelle en coordonnées GPS.
 // Il est renforcé pour mieux gérer les erreurs et ne pas planter.
 
+import fetch from 'node-fetch'; // On utilise un agent fetch plus robuste pour l'environnement serveur
+
 export default async function handler(req, res) {
   const GOOGLE_API_KEY = 'AIzaSyDfqjQ9a-IO6L4F4bgqETGtJXmCBvtIDzI';
   const { address } = req.query;
@@ -19,13 +21,6 @@ export default async function handler(req, res) {
 
     const geocodeResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`);
     
-    const contentType = geocodeResponse.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-        const responseText = await geocodeResponse.text();
-        console.error("La réponse de Google n'est pas du JSON:", responseText);
-        throw new Error(`Réponse inattendue de l'API Google. Statut: ${geocodeResponse.status}.`);
-    }
-
     const geocodeData = await geocodeResponse.json();
 
     if (geocodeData.status === 'REQUEST_DENIED') {
