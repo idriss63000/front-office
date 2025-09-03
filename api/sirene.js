@@ -38,26 +38,27 @@ export default async function handler(req, res) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
 
-    // 4. Utiliser le jeton pour rechercher les entreprises avec une requête SIMPLIFIÉE
+    // 4. Utiliser le jeton pour rechercher les entreprises
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 90);
+    const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // REQUÊTE DE TEST : On ne cherche que les entreprises actives, sans filtre de date.
-    const mainQuery = `etatAdministratifEtablissement:A`;
+    // CORRECTION FINALE : Reconstitution de la requête en GET, la méthode la plus standard.
+    // La syntaxe geo() est incluse directement dans le paramètre de recherche 'q'.
+    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${latitude} longitude:${longitude} rayon:${radiusKm}km)`;
+
+    const searchParams = new URLSearchParams({
+      q: queryString,
+      nombre: 100,
+    });
     
-    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret`, {
-      method: 'POST',
+    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret?${searchParams.toString()}`, {
+      method: 'GET', // On utilise GET
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-          q: mainQuery,
-          latitude: latitude,
-          longitude: longitude,
-          rayon: radiusKm,
-          nombre: 100
-      })
+      }
     });
 
     if (!sireneResponse.ok) {
