@@ -38,23 +38,13 @@ export default async function handler(req, res) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
 
-    // 4. Utiliser le jeton pour rechercher les entreprises
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 90);
-    const formattedStartDate = startDate.toISOString().split('T')[0];
+    // 4. Utiliser le jeton pour rechercher les entreprises avec une requête SIMPLIFIÉE
     const radiusKm = 20;
 
-    // CORRECTION FINALE : Séparation de la requête textuelle (dans le corps) et des paramètres géo (dans l'URL)
-    const mainQuery = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`;
-
-    const searchParams = new URLSearchParams({
-        latitude: latitude,
-        longitude: longitude,
-        rayon: radiusKm,
-        nombre: 100,
-    });
+    // REQUÊTE DE TEST : On ne cherche que les entreprises actives, sans filtre de date.
+    const mainQuery = `etatAdministratifEtablissement:A`;
     
-    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret?${searchParams.toString()}`, {
+    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -62,7 +52,11 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-          q: mainQuery
+          q: mainQuery,
+          latitude: latitude,
+          longitude: longitude,
+          rayon: radiusKm,
+          nombre: 100
       })
     });
 
