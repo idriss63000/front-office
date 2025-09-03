@@ -19,7 +19,6 @@ export default async function handler(req, res) {
 
     const geocodeResponse = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`);
     
-    // Vérifie si la réponse de Google est valide avant de la traiter
     const contentType = geocodeResponse.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
         const responseText = await geocodeResponse.text();
@@ -29,7 +28,11 @@ export default async function handler(req, res) {
 
     const geocodeData = await geocodeResponse.json();
 
-    // Gère les erreurs renvoyées par l'API Google (ex: clé invalide, API non activée)
+    if (geocodeData.status === 'REQUEST_DENIED') {
+        console.error("Erreur de l'API Google:", geocodeData);
+        throw new Error(`La clé API Google a été refusée. Vérifiez que l'API "Geocoding API" est bien activée dans votre projet Google Cloud et que la clé n'a pas de restrictions.`);
+    }
+
     if (geocodeData.status !== 'OK') {
         console.error("Erreur de l'API Google:", geocodeData);
         throw new Error(geocodeData.error_message || `Erreur de l'API Google: ${geocodeData.status}`);
@@ -46,7 +49,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("[PROXY /api/geocode] Erreur:", error.message);
-    // Renvoie toujours une erreur JSON propre, même en cas de plantage
     res.status(500).json({ error: "Erreur interne du serveur proxy.", details: error.message });
   }
 }
