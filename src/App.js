@@ -16,12 +16,142 @@ const FileTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
-
-// --- NOUVELLE ICÔNE POUR LA PROSPECTION ---
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 
+// --- COMPOSANT DE PROSPECTION (RECHERCHE MANUELLE) ---
+const ProspectionTool = ({ onBack }) => {
+    const [companies, setCompanies] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [locationInput, setLocationInput] = useState('Paris'); // Lieu par défaut
+    const [searchTerm, setSearchTerm] = useState('');
 
-// --- Données par défaut ---
+    const handleSearch = async () => {
+        if (!locationInput.trim()) {
+            setError("Veuillez entrer un lieu (ville, code postal, adresse...).");
+            return;
+        }
+
+        setError(null);
+        setIsLoading(true);
+        setCompanies([]);
+
+        try {
+            // Étape 1: Convertir le lieu en coordonnées GPS via notre proxy geocode
+            const geocodeResponse = await fetch(`${window.location.origin}/api/geocode?address=${encodeURIComponent(locationInput.trim())}`);
+            if (!geocodeResponse.ok) {
+                const errorData = await geocodeResponse.json();
+                throw new Error(errorData.details || "Impossible de trouver les coordonnées pour ce lieu.");
+            }
+            const coords = await geocodeResponse.json(); // { lat, lng }
+
+            // Étape 2: Utiliser les coordonnées pour appeler notre proxy sirene
+            const sireneResponse = await fetch(`${window.location.origin}/api/sirene?lat=${coords.lat}&lon=${coords.lng}`);
+            if (!sireneResponse.ok) {
+                const errorData = await sireneResponse.json();
+                throw new Error(errorData.details || "Erreur lors de la recherche des entreprises.");
+            }
+
+            const data = await sireneResponse.json();
+            setCompanies(data.etablissements || []);
+            if (!data.etablissements || data.etablissements.length === 0) {
+              setError("Aucune nouvelle entreprise trouvée dans cette zone pour la période sélectionnée.")
+            }
+
+        } catch (err) {
+             console.error("Erreur dans le processus de recherche:", err);
+             setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    // Lance une recherche pour le lieu par défaut au premier chargement
+    useEffect(() => {
+        handleSearch();
+    }, []);
+
+    const filteredCompanies = companies.filter(company => {
+        const name = company.uniteLegale?.denominationUniteLegale || company.uniteLegale?.nomUniteLegale || '';
+        const postalCode = company.adresseEtablissement?.codePostalEtablissement || '';
+        const city = company.adresseEtablissement?.libelleCommuneEtablissement || '';
+        const searchTermLower = searchTerm.toLowerCase();
+        return name.toLowerCase().includes(searchTermLower) || 
+               postalCode.includes(searchTermLower) ||
+               city.toLowerCase().includes(searchTermLower);
+    });
+
+    const renderContent = () => {
+        if (isLoading) {
+            return <div className="text-center p-10"><p className="font-semibold animate-pulse">Recherche des nouvelles entreprises...</p></div>;
+        }
+        if (error) {
+            return <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
+                <p className="font-bold text-red-700">Erreur</p>
+                <p className="text-red-600 mt-2">{error}</p>
+            </div>;
+        }
+        if (companies.length > 0 && filteredCompanies.length === 0) {
+             return <p className="text-center text-gray-500 py-8">Aucune entreprise ne correspond à votre filtre.</p>
+        }
+        return (
+            <div className="space-y-4">
+                {filteredCompanies.map(etab => (
+                    <div key={etab.siret} className="p-4 border rounded-lg hover:bg-gray-50 shadow-sm">
+                        <h3 className="font-bold text-lg text-blue-700">
+                            {etab.uniteLegale?.denominationUniteLegale || `${etab.uniteLegale?.prenomUsuelUniteLegale || ''} ${etab.uniteLegale?.nomUniteLegale || ''}`}
+                        </h3>
+                        <p className="text-sm text-gray-600">{etab.adresseEtablissement?.numeroVoieEtablissement} {etab.adresseEtablissement?.typeVoieEtablissement} {etab.adresseEtablissement?.libelleVoieEtablissement}, {etab.adresseEtablissement?.codePostalEtablissement} {etab.adresseEtablissement?.libelleCommuneEtablissement}</p>
+                        <div className="mt-2 text-xs">
+                           <span className="font-semibold">Activité :</span> {etab.uniteLegale?.activitePrincipaleUniteLegale}
+                        </div>
+                         <div className="mt-1 text-xs">
+                           <span className="font-semibold">Création :</span> {new Date(etab.dateCreationEtablissement).toLocaleDateString('fr-FR')}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            <div className="max-w-4xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">Prospection par Zone</h1>
+                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                        <ArrowLeftIcon /> Retour
+                    </button>
+                </div>
+                 <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-6">
+                        <input
+                            type="text"
+                            placeholder="Entrez une ville, un code postal..."
+                            value={locationInput}
+                            onChange={(e) => setLocationInput(e.target.value)}
+                            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button onClick={handleSearch} disabled={isLoading} className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+                            {isLoading ? 'Recherche...' : 'Rechercher'}
+                        </button>
+                    </div>
+                     <input
+                        type="text"
+                        placeholder="Filtrer les résultats par nom, code postal, ville..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="p-3 border rounded-lg w-full mb-6 focus:ring-2 focus:ring-blue-500"
+                    />
+                    {renderContent()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// --- Le reste de votre fichier App.js (inchangé) ---
 const initialConfigData = {
   offers: {
     initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
@@ -36,8 +166,6 @@ const initialConfigData = {
   discounts: [],
   settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
-
-// --- Composants ---
 
 const Modal = ({ title, message, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -603,38 +731,25 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
-    // ######################################################################
-    // ### IMPORTANT : INSÉREZ VOTRE CLÉ API GOOGLE MAPS CI-DESSOUS ###
-    // ######################################################################
-    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Remplacez par votre clé
-    // ######################################################################
-    
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS';
     if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
         console.warn("L'autocomplete d'adresse est désactivé. Veuillez insérer une clé API Google Maps.");
         return;
     }
-
     const scriptId = 'google-maps-script';
-
     const initAutocomplete = () => {
       if (window.google && addressInputRef.current && !autocompleteRef.current) {
         const autocomplete = new window.google.maps.places.Autocomplete(
           addressInputRef.current,
-          {
-            types: ['address'],
-            componentRestrictions: { country: 'fr' }, // Restreint la recherche à la France
-          }
+          { types: ['address'], componentRestrictions: { country: 'fr' } }
         );
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
-          if (place && place.formatted_address) {
-            setAddress(place.formatted_address);
-          }
+          if (place && place.formatted_address) setAddress(place.formatted_address);
         });
         autocompleteRef.current = autocomplete;
       }
     };
-
     if (!document.getElementById(scriptId)) {
       const script = document.createElement('script');
       script.id = scriptId;
@@ -651,10 +766,8 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   const formatDateTimeForGoogle = (dateString, timeString) => {
     if (!dateString || !timeString) return '';
     const startDate = new Date(`${dateString}T${timeString}`);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Ajoute 1 heure
-
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
     const toGoogleString = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-
     return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
   };
 
@@ -721,7 +834,6 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
 };
 
 const PresentationMode = ({ onBack, videos }) => {
-    // Transforme le lien de partage Google Drive en lien de prévisualisation intégrable
     const getEmbedUrl = (url) => {
         try {
             const urlObj = new URL(url);
@@ -769,123 +881,6 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
-// --- COMPOSANT DE PROSPECTION (FRONT-END) MODIFIÉ ---
-const ProspectionTool = ({ onBack }) => {
-    const [companies, setCompanies] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        const fetchLocalProxy = async (latitude, longitude) => {
-            setError(null);
-            setIsLoading(true);
-            try {
-                // On appelle notre propre API proxy, pas l'API de l'INSEE directement
-                const response = await fetch(`/api/sirene?lat=${latitude}&lon=${longitude}`);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || "Erreur lors de l'appel au service de prospection.");
-                }
-
-                const data = await response.json();
-                setCompanies(data.etablissements || []);
-
-            } catch (err) {
-                 console.error("Erreur de communication avec le proxy:", err);
-                 setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    fetchLocalProxy(latitude, longitude);
-                },
-                (err) => {
-                    setError("Impossible d'obtenir votre position. Veuillez autoriser la géolocalisation.");
-                    setIsLoading(false);
-                }
-            );
-        } else {
-            setError("La géolocalisation n'est pas supportée par ce navigateur.");
-            setIsLoading(false);
-        }
-    }, []);
-
-    const filteredCompanies = companies.filter(company => {
-        const name = company.uniteLegale?.denominationUniteLegale || company.uniteLegale?.nomUniteLegale || '';
-        const postalCode = company.adresseEtablissement?.codePostalEtablissement || '';
-        const city = company.adresseEtablissement?.libelleCommuneEtablissement || '';
-        const searchTermLower = searchTerm.toLowerCase();
-        return name.toLowerCase().includes(searchTermLower) || 
-               postalCode.includes(searchTermLower) ||
-               city.toLowerCase().includes(searchTermLower);
-    });
-
-    const renderContent = () => {
-        if (isLoading) {
-            return <div className="text-center p-10"><p className="font-semibold animate-pulse">Recherche des nouvelles entreprises...</p></div>;
-        }
-        if (error) {
-            return <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
-                <p className="font-bold text-red-700">Erreur</p>
-                <p className="text-red-600 mt-2">{error}</p>
-            </div>;
-        }
-        if (filteredCompanies.length === 0) {
-             return <p className="text-center text-gray-500 py-8">
-                {companies.length > 0 ? "Aucune entreprise ne correspond à votre recherche." : "Aucune nouvelle entreprise trouvée."}
-             </p>
-        }
-        return (
-            <div className="space-y-4">
-                {filteredCompanies.map(etab => (
-                    <div key={etab.siret} className="p-4 border rounded-lg hover:bg-gray-50 shadow-sm">
-                        <h3 className="font-bold text-lg text-blue-700">
-                            {etab.uniteLegale?.denominationUniteLegale || `${etab.uniteLegale?.prenomUsuelUniteLegale || ''} ${etab.uniteLegale?.nomUniteLegale || ''}`}
-                        </h3>
-                        <p className="text-sm text-gray-600">{etab.adresseEtablissement?.numeroVoieEtablissement} {etab.adresseEtablissement?.typeVoieEtablissement} {etab.adresseEtablissement?.libelleVoieEtablissement}, {etab.adresseEtablissement?.codePostalEtablissement} {etab.adresseEtablissement?.libelleCommuneEtablissement}</p>
-                        <div className="mt-2 text-xs">
-                           <span className="font-semibold">Activité :</span> {etab.uniteLegale?.activitePrincipaleUniteLegale}
-                        </div>
-                         <div className="mt-1 text-xs">
-                           <span className="font-semibold">Création :</span> {new Date(etab.dateCreationEtablissement).toLocaleDateString('fr-FR')}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
-    return (
-        <div className="bg-gray-100 min-h-screen font-sans p-4">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Outil de Prospection</h1>
-                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
-                        <ArrowLeftIcon /> Retour
-                    </button>
-                </div>
-                 <div className="bg-white rounded-xl shadow-lg p-6">
-                    <input
-                        type="text"
-                        placeholder="Filtrer par nom, code postal, ville..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="p-3 border rounded-lg w-full mb-6 focus:ring-2 focus:ring-blue-500"
-                    />
-                    {renderContent()}
-                </div>
-            </div>
-        </div>
-    );
-};
-
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
@@ -916,7 +911,6 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                         <span className="mt-4 text-lg font-semibold text-center">Mode Présentation</span>
                     </button>
 
-                    {/* --- NOUVEAU BOUTON DE PROSPECTION --- */}
                     <button onClick={() => onNavigate('prospection')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square text-blue-600">
                         <SearchIcon />
                         <span className="mt-4 text-lg font-semibold text-center">Prospection Locale</span>
@@ -1080,7 +1074,6 @@ export default function App() {
     if (!salesperson || !firebaseRef.current) return;
     const { db, appId } = firebaseRef.current;
     
-    // Listener pour les rendez-vous
     const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
     const qAppointments = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
     const unsubscribeAppointments = onSnapshot(qAppointments, (querySnapshot) => {
@@ -1089,7 +1082,6 @@ export default function App() {
       setAppointments(appointmentsList);
     }, (error) => console.error("Erreur de lecture des RDV: ", error));
 
-    // Listener pour les vidéos
     const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
     const qVideos = query(collection(db, videosPath));
     const unsubscribeVideos = onSnapshot(qVideos, (querySnapshot) => {
@@ -1203,7 +1195,6 @@ export default function App() {
             />;
         case 'presentation':
             return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
-        // --- NOUVELLE VUE POUR LA PROSPECTION ---
         case 'prospection':
             return <ProspectionTool onBack={() => setCurrentView('home')} />;
         default:
@@ -1213,6 +1204,7 @@ export default function App() {
   
   return renderCurrentView();
 }
+
 
 
 
