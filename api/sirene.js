@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Erreur d'authentification INSEE:", errorText);
-      throw new Error(`Échec de l'authentification auprès de l'INSEE (${tokenResponse.status}). Vérifiez que vos clés sont correctes.`);
+      throw new Error(`Échec de l'authentification auprès de l'INSEE (${tokenResponse.status}).`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -44,8 +44,7 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // CORRECTION FINALE : Reconstitution de la requête en GET, la méthode la plus standard.
-    // La syntaxe geo() est incluse directement dans le paramètre de recherche 'q'.
+    // CORRECTION FINALE : Syntaxe de la requête GET, la plus standard et documentée.
     const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${latitude} longitude:${longitude} rayon:${radiusKm}km)`;
 
     const searchParams = new URLSearchParams({
@@ -54,7 +53,7 @@ export default async function handler(req, res) {
     });
     
     const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret?${searchParams.toString()}`, {
-      method: 'GET', // On utilise GET
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
@@ -62,8 +61,14 @@ export default async function handler(req, res) {
     });
 
     if (!sireneResponse.ok) {
-        const errorData = await sireneResponse.json().catch(() => ({ header: { message: `Erreur ${sireneResponse.status} de l'API SIRENE.` }}));
-        throw new Error(errorData.header?.message || `Erreur de l'API SIRENE (${sireneResponse.status}).`);
+        const errorText = await sireneResponse.text();
+        console.error("Réponse brute de l'API SIRENE:", errorText);
+        let errorDetails = `Erreur ${sireneResponse.status} de l'API SIRENE.`;
+        try {
+            const errorData = JSON.parse(errorText);
+            errorDetails = errorData.header?.message || errorDetails;
+        } catch(e) { /* Pas de JSON, on ignore */ }
+        throw new Error(errorDetails);
     }
 
     const companiesData = await sireneResponse.json();
@@ -74,7 +79,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Erreur dans la fonction proxy SIRENE:", error.message);
-    res.status(500).json({ error: "Erreur interne du serveur lors de la communication avec l'API SIRENE.", details: error.message });
+    res.status(500).json({ error: "Erreur interne du serveur.", details: error.message });
   }
 }
 
