@@ -39,20 +39,29 @@ const ProspectionTool = ({ onBack }) => {
         try {
             // Étape 1: Convertir le lieu en coordonnées GPS via notre proxy geocode
             const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(locationInput.trim())}`);
-            if (!geocodeResponse.ok) {
-                const errorData = await geocodeResponse.json();
-                throw new Error(errorData.details || "Impossible de trouver les coordonnées pour ce lieu.");
+            
+            const geocodeContentType = geocodeResponse.headers.get("content-type");
+            if (!geocodeResponse.ok || !geocodeContentType || !geocodeContentType.includes("application/json")) {
+                const errorText = await geocodeResponse.text();
+                console.error("Réponse invalide du proxy /api/geocode:", errorText);
+                throw new Error("Le serveur a retourné une réponse inattendue. Vérifiez les logs du serveur (api/geocode).");
             }
-            const coords = await geocodeResponse.json(); // { lat, lng }
+            const coords = await geocodeResponse.json();
+            if (coords.error) throw new Error(coords.details || coords.error);
+
 
             // Étape 2: Utiliser les coordonnées pour appeler notre proxy sirene
             const sireneResponse = await fetch(`/api/sirene?lat=${coords.lat}&lon=${coords.lng}`);
-            if (!sireneResponse.ok) {
-                const errorData = await sireneResponse.json();
-                throw new Error(errorData.details || "Erreur lors de la recherche des entreprises.");
+            const sireneContentType = sireneResponse.headers.get("content-type");
+            if (!sireneResponse.ok || !sireneContentType || !sireneContentType.includes("application/json")) {
+                const errorText = await sireneResponse.text();
+                console.error("Réponse invalide du proxy /api/sirene:", errorText);
+                throw new Error("Le serveur a retourné une réponse inattendue lors de la recherche d'entreprises.");
             }
-
             const data = await sireneResponse.json();
+            if (data.error) throw new Error(data.details || data.error);
+
+            
             setCompanies(data.etablissements || []);
             if (!data.etablissements || data.etablissements.length === 0) {
               setError("Aucune nouvelle entreprise trouvée dans cette zone pour la période sélectionnée.")
