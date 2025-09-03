@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Erreur d'authentification INSEE:", errorText);
-      throw new Error(`Échec de l'authentification auprès de l'INSEE (${tokenResponse.status}).`);
+      throw new Error(`Échec de l'authentification auprès de l'INSEE (${tokenResponse.status}). Vérifiez que vos clés sont correctes.`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -44,8 +44,8 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // CORRECTION FINALE : Syntaxe de la requête GET, la plus standard et documentée.
-    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${latitude} longitude:${longitude} rayon:${radiusKm}km)`;
+    // CORRECTION FINALE : Ajout du champ "coordonneesEtablissement:" devant la fonction geo().
+    const queryString = `coordonneesEtablissement:geo(latitude:${latitude} longitude:${longitude} rayon:${radiusKm}km) AND etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`;
 
     const searchParams = new URLSearchParams({
       q: queryString,
@@ -82,5 +82,6 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Erreur interne du serveur.", details: error.message });
   }
 }
+
 
 
