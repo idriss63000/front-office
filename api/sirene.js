@@ -5,7 +5,6 @@ export default async function handler(req, res) {
   // 1. Récupérer et VALIDER les coordonnées depuis la requête du front-end
   let { lat, lon } = req.query;
 
-  // CORRECTION : Nettoyage et validation des coordonnées pour enlever les caractères invalides (comme ":1")
   const latitude = parseFloat(lat);
   const longitude = parseFloat(lon);
 
@@ -45,7 +44,8 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    const queryString = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *] AND geo(latitude:${latitude} longitude:${longitude} rayon:${radiusKm}km)`;
+    // CORRECTION FINALE: Utilisation de paramètres dédiés pour la géolocalisation, plus robuste.
+    const mainQuery = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`;
     
     const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret`, {
       method: 'POST',
@@ -55,7 +55,10 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-          q: queryString,
+          q: mainQuery,
+          latitude: latitude,
+          longitude: longitude,
+          rayon: radiusKm,
           nombre: 100
       })
     });
