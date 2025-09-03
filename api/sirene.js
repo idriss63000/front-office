@@ -44,10 +44,17 @@ export default async function handler(req, res) {
     const formattedStartDate = startDate.toISOString().split('T')[0];
     const radiusKm = 20;
 
-    // CORRECTION FINALE: Utilisation de paramètres dédiés pour la géolocalisation, plus robuste.
+    // CORRECTION FINALE : Séparation de la requête textuelle (dans le corps) et des paramètres géo (dans l'URL)
     const mainQuery = `etatAdministratifEtablissement:A AND dateCreationEtablissement:[${formattedStartDate} TO *]`;
+
+    const searchParams = new URLSearchParams({
+        latitude: latitude,
+        longitude: longitude,
+        rayon: radiusKm,
+        nombre: 100,
+    });
     
-    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret`, {
+    const sireneResponse = await fetch(`https://api.insee.fr/entreprises/sirene/V3/siret?${searchParams.toString()}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -55,11 +62,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-          q: mainQuery,
-          latitude: latitude,
-          longitude: longitude,
-          rayon: radiusKm,
-          nombre: 100
+          q: mainQuery
       })
     });
 
