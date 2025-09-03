@@ -38,7 +38,7 @@ const ProspectionTool = ({ onBack }) => {
 
         try {
             // Étape 1: Convertir le lieu en coordonnées GPS via notre proxy geocode
-            const geocodeResponse = await fetch(`${window.location.origin}/api/geocode?address=${encodeURIComponent(locationInput.trim())}`);
+            const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(locationInput.trim())}`);
             if (!geocodeResponse.ok) {
                 const errorData = await geocodeResponse.json();
                 throw new Error(errorData.details || "Impossible de trouver les coordonnées pour ce lieu.");
@@ -46,7 +46,7 @@ const ProspectionTool = ({ onBack }) => {
             const coords = await geocodeResponse.json(); // { lat, lng }
 
             // Étape 2: Utiliser les coordonnées pour appeler notre proxy sirene
-            const sireneResponse = await fetch(`${window.location.origin}/api/sirene?lat=${coords.lat}&lon=${coords.lng}`);
+            const sireneResponse = await fetch(`/api/sirene?lat=${coords.lat}&lon=${coords.lng}`);
             if (!sireneResponse.ok) {
                 const errorData = await sireneResponse.json();
                 throw new Error(errorData.details || "Erreur lors de la recherche des entreprises.");
