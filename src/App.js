@@ -1063,8 +1063,6 @@ export default function App() {
             />;
         case 'presentation':
             return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
-        case 'prospection':
-            return <ProspectionTool onBack={() => setCurrentView('home')} />;
         case 'contract':
             return <ContractGenerator onBack={() => setCurrentView('home')} />;
         default:
