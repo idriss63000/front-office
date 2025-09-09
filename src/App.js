@@ -16,7 +16,6 @@ const FileTextIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
-const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const ContractIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
 
 // --- Données par défaut ---
@@ -778,11 +777,6 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                     <button onClick={() => onNavigate('presentation')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
                         <VideoIcon />
                         <span className="mt-4 text-lg font-semibold text-center">Mode Présentation</span>
-                    </button>
-
-                    <button onClick={() => onNavigate('prospection')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square text-blue-600">
-                        <SearchIcon />
-                        <span className="mt-4 text-lg font-semibold text-center">Prospection Locale</span>
                     </button>
                     
                     <button onClick={() => onNavigate('contract')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
