@@ -17,6 +17,7 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const ContractIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
+const BanknoteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>;
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -425,7 +426,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
         const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
         const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
         const formattedDate = formatDateForGoogle(eventDate);
-        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
         window.open(calendarUrl, '_blank');
       }
 
@@ -750,6 +751,394 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
+const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-4">
+            <div className="w-full max-w-4xl mx-auto text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Bienvenue, {salesperson}</h1>
+                <p className="text-gray-600 mt-2 mb-8">Que souhaitez-vous faire ?</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    
+                    <button onClick={() => onNavigate('appointmentList')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <CalendarIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Mes rendez-vous</span>
+                    </button>
+                    
+                    <button onClick={() => onNavigate('newAppointment')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <CalendarIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Créer un rendez-vous</span>
+                    </button>
+                    
+                    <button onClick={() => onStartQuote()} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <FileTextIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Nouveau Devis</span>
+                    </button>
+                    
+                    <button onClick={() => onNavigate('presentation')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <VideoIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Mode Présentation</span>
+                    </button>
+                    
+                    <button onClick={() => onNavigate('contract')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <ContractIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Générer Contrat</span>
+                    </button>
+                    
+                    <button onClick={() => onNavigate('directDebit')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <BanknoteIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Prélèvement Qonto</span>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const QuoteProcess = ({ data, setData, onBackToHome }) => {
+  const [config, setConfig] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [appliedDiscounts, setAppliedDiscounts] = useState([]);
+  const dbRef = useRef(null);
+  const appIdRef = useRef(null);
+
+  const calculation = useMemo(() => {
+    if (!config || !data.type) return null;
+    let offerPrice = 0;
+    if (data.offer && config.offers[data.offer]) offerPrice = config.offers[data.offer][data.type]?.price || 0;
+    const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
+    if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
+    let oneTimeSubtotal = offerPrice;
+    data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
+    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
+    let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
+    const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
+    const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
+    const installationFee = installDiscount ? 0 : config.settings.installationFee;
+    const totalWithInstall = subtotalAfterDiscount + installationFee;
+    const vatRate = config.settings.vat[data.type] || 0;
+    const vatAmount = totalWithInstall + vatRate;
+    const oneTimeTotal = totalWithInstall + vatAmount;
+    let monthlySubtotal = 0;
+    if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
+    data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; });
+    const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
+    let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
+    const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
+    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
+  }, [data, appliedDiscounts, config]);
+
+  useEffect(() => {
+    const initFirebase = async () => {
+        try {
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.appspot.com",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            const appId = firebaseConfig.appId;
+            appIdRef.current = appId;
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            dbRef.current = db;
+            const auth = getAuth(app);
+            setLogLevel('debug');
+            await signInAnonymously(auth);
+            const docPath = `/artifacts/${appId}/public/data/config/main`;
+            const configDocRef = doc(db, docPath);
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) setConfig(docSnap.data());
+            else {
+                await setDoc(configDocRef, initialConfigData);
+                setConfig(initialConfigData);
+            }
+        } catch (err) {
+            console.error("Erreur d'initialisation:", err);
+            setError("Impossible de charger la configuration.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    initFirebase();
+  }, []);
+
+  const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
+  const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
+  
+  const renderStep = () => {
+    switch (data.step) {
+      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
+      case 8: return <Confirmation reset={onBackToHome} />;
+      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+    }
+  };
+
+  if (isLoading) return <div className="bg-gray-100 min-h-screen flex items-center justify-center"><p className="animate-pulse">Chargement...</p></div>;
+  if (error || !config) return <div className="bg-red-100 min-h-screen flex items-center justify-center p-4"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
+
+  const progress = (data.step / 8) * 100;
+
+  return (
+    <div className="bg-gray-100 min-h-screen font-sans flex items-center justify-center p-2 sm:p-4">
+      <div className="w-full max-w-2xl">
+        <div className="mb-6">
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">{renderStep()}</div>
+      </div>
+    </div>
+  );
+}
+
+const ContractGenerator = ({ onBack }) => {
+    const handleOpenLink = () => {
+        window.open('https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c', '_blank');
+    };
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            <div className="max-w-2xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">Générer un Contrat</h1>
+                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                        <ArrowLeftIcon /> Retour
+                    </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-8 text-center space-y-6">
+                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
+                    <h2 className="text-2xl font-bold text-gray-800">Contrat de Prestation</h2>
+                    <p className="text-gray-600">
+                        Cliquez sur le bouton ci-dessous pour ouvrir le formulaire de contrat Yousign dans un nouvel onglet. Vous pourrez y remplir les informations du client et envoyer la demande de signature.
+                    </p>
+                    <button 
+                        onClick={handleOpenLink} 
+                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    >
+                        Ouvrir le formulaire de contrat
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const QontoDirectDebitForm = ({ onBack }) => {
+  const [customerName, setCustomerName] = useState('');
+  const [customerIban, setCustomerIban] = useState('');
+  const [amount, setAmount] = useState('');
+  const [tvaRate, setTvaRate] = useState('20');
+  const [scheduledDate, setScheduledDate] = useState('');
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [mandateInfo, setMandateInfo] = useState(null);
+
+  const totalTTC = useMemo(() => {
+    const amountHT = parseFloat(amount) || 0;
+    const selectedTva = parseInt(tvaRate, 10) / 100;
+    const ttc = amountHT * (1 + selectedTva);
+    return ttc;
+  }, [amount, tvaRate]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!customerName || !customerIban || !amount || !scheduledDate) {
+      setStatusMessage('Erreur : Veuillez remplir tous les champs.');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatusMessage('');
+    setMandateInfo(null);
+
+    try {
+      const response = await fetch(`/api/qonto`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: customerName,
+          iban: customerIban,
+          amount: Math.round(totalTTC * 100),
+          scheduled_date: scheduledDate,
+          frequency: 'monthly'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Une erreur est survenue.');
+      }
+
+      setStatusMessage('Le mandat de prélèvement a été créé avec succès !');
+      setMandateInfo({
+        id: result.mandate_id,
+        signingUrl: result.signing_url,
+      });
+      
+      setCustomerName('');
+      setCustomerIban('');
+      setAmount('');
+      setScheduledDate('');
+      setTvaRate('20');
+
+    } catch (error) {
+      setStatusMessage(`Erreur : ${error.message}`);
+      console.error("Erreur lors de la création du prélèvement:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
+         <div className="flex justify-start mb-4">
+             <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                <ArrowLeftIcon /> Retour
+            </button>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex items-center mb-6">
+            <img src="https://logo.clearbit.com/qonto.com" alt="Qonto Logo" className="h-8 w-8 mr-3"/>
+            <h2 className="text-2xl font-bold text-gray-800">Mettre en place un prélèvement</h2>
+        </div>
+        <p className="text-gray-600 mb-6">
+          Saisissez les informations du client pour initier la création d'un mandat de prélèvement SEPA mensuel.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="customerName" className="block text-sm font-medium text-gray-700">Nom complet du client</label>
+            <input
+              type="text"
+              id="customerName"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ex: Jean Dupont"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="customerIban" className="block text-sm font-medium text-gray-700">IBAN du client</label>
+            <input
+              type="text"
+              id="customerIban"
+              value={customerIban}
+              onChange={(e) => setCustomerIban(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ex: FR76..."
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Montant HT (€)</label>
+              <input
+                type="number"
+                id="amount"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="ex: 129.99"
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">TVA</label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                    <button type="button" onClick={() => setTvaRate('10')} disabled={isLoading} className={`px-4 py-2 border rounded-l-md text-sm ${tvaRate === '10' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}>10%</button>
+                    <button type="button" onClick={() => setTvaRate('20')} disabled={isLoading} className={`px-4 py-2 border rounded-r-md text-sm -ml-px ${tvaRate === '20' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}>20%</button>
+                </div>
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="totalTTC" className="block text-sm font-medium text-gray-700">Total TTC (€)</label>
+            <input
+              type="text"
+              id="totalTTC"
+              value={totalTTC.toFixed(2)}
+              readOnly
+              className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm cursor-not-allowed"
+            />
+          </div>
+
+            <div>
+              <label htmlFor="scheduledDate" className="block text-sm font-medium text-gray-700">Date du premier prélèvement</label>
+              <input
+                type="date"
+                id="scheduledDate"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-gray-500 mt-1">Le prélèvement sera ensuite effectué chaque mois à cette date.</p>
+            </div>
+          
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Création en cours...' : 'Créer le mandat de prélèvement'}
+          </button>
+        </form>
+
+        {statusMessage && (
+          <div className={`mt-6 p-4 rounded-md text-sm ${statusMessage.startsWith('Erreur') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+            <p>{statusMessage}</p>
+          </div>
+        )}
+        
+        {mandateInfo && (
+            <div className="mt-4 p-4 rounded-md bg-gray-50 border">
+                <h3 className="font-semibold text-gray-800">Prochaines étapes :</h3>
+                <p className="text-gray-600 mt-2">
+                    ID du mandat : <code className="bg-gray-200 px-1 rounded">{mandateInfo.id}</code>
+                </p>
+                <p className="text-gray-600 mt-2">
+                    Envoyez ce lien au client pour qu'il puisse signer le mandat électroniquement :
+                </p>
+                <a 
+                    href={mandateInfo.signingUrl}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-600 hover:underline break-words"
+                >
+                    {mandateInfo.signingUrl}
+                </a>
+            </div>
+        )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
@@ -917,6 +1306,8 @@ export default function App() {
             return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract':
             return <ContractGenerator onBack={() => setCurrentView('home')} />;
+        case 'directDebit':
+            return <QontoDirectDebitForm onBack={() => setCurrentView('home')} />;
         default:
             return <div>Vue non reconnue</div>;
     }
@@ -924,7 +1315,6 @@ export default function App() {
   
   return renderCurrentView();
 }
-
 
 
 
