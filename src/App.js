@@ -17,150 +17,9 @@ const CalendarIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const SearchIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const ContractIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
 
-// --- COMPOSANT DE PROSPECTION (RECHERCHE MANUELLE) ---
-const ProspectionTool = ({ onBack }) => {
-    const [companies, setCompanies] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [locationInput, setLocationInput] = useState('Paris'); // Lieu par défaut
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const handleSearch = async () => {
-        if (!locationInput.trim()) {
-            setError("Veuillez entrer un lieu (ville, code postal, adresse...).");
-            return;
-        }
-
-        setError(null);
-        setIsLoading(true);
-        setCompanies([]);
-
-        try {
-            // Étape 1: Convertir le lieu en coordonnées GPS via notre proxy geocode
-            const geocodeResponse = await fetch(`/api/geocode?address=${encodeURIComponent(locationInput.trim())}`);
-            
-            const geocodeContentType = geocodeResponse.headers.get("content-type");
-            if (!geocodeResponse.ok || !geocodeContentType || !geocodeContentType.includes("application/json")) {
-                const errorText = await geocodeResponse.text();
-                console.error("Réponse invalide du proxy /api/geocode:", errorText);
-                throw new Error("Le serveur a retourné une réponse inattendue. Vérifiez les logs du serveur (api/geocode).");
-            }
-            const coords = await geocodeResponse.json();
-            if (coords.error) throw new Error(coords.details || coords.error);
-
-
-            // Étape 2: Utiliser les coordonnées pour appeler notre proxy sirene
-            const sireneResponse = await fetch(`/api/sirene?lat=${coords.lat}&lon=${coords.lng}`);
-            const sireneContentType = sireneResponse.headers.get("content-type");
-            if (!sireneResponse.ok || !sireneContentType || !sireneContentType.includes("application/json")) {
-                const errorText = await sireneResponse.text();
-                console.error("Réponse invalide du proxy /api/sirene:", errorText);
-                throw new Error("Le serveur a retourné une réponse inattendue lors de la recherche d'entreprises.");
-            }
-            const data = await sireneResponse.json();
-            if (data.error) throw new Error(data.details || data.error);
-
-            
-            setCompanies(data.etablissements || []);
-            if (!data.etablissements || data.etablissements.length === 0) {
-              setError("Aucune nouvelle entreprise trouvée dans cette zone pour la période sélectionnée.")
-            }
-
-        } catch (err) {
-             console.error("Erreur dans le processus de recherche:", err);
-             setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    // Lance une recherche pour le lieu par défaut au premier chargement
-    useEffect(() => {
-        handleSearch();
-    }, []);
-
-    const filteredCompanies = companies.filter(company => {
-        const name = company.uniteLegale?.denominationUniteLegale || company.uniteLegale?.nomUniteLegale || '';
-        const postalCode = company.adresseEtablissement?.codePostalEtablissement || '';
-        const city = company.adresseEtablissement?.libelleCommuneEtablissement || '';
-        const searchTermLower = searchTerm.toLowerCase();
-        return name.toLowerCase().includes(searchTermLower) || 
-               postalCode.includes(searchTermLower) ||
-               city.toLowerCase().includes(searchTermLower);
-    });
-
-    const renderContent = () => {
-        if (isLoading) {
-            return <div className="text-center p-10"><p className="font-semibold animate-pulse">Recherche des nouvelles entreprises...</p></div>;
-        }
-        if (error) {
-            return <div className="text-center p-10 bg-red-50 border border-red-200 rounded-lg">
-                <p className="font-bold text-red-700">Erreur</p>
-                <p className="text-red-600 mt-2">{error}</p>
-            </div>;
-        }
-        if (companies.length > 0 && filteredCompanies.length === 0) {
-             return <p className="text-center text-gray-500 py-8">Aucune entreprise ne correspond à votre filtre.</p>
-        }
-        return (
-            <div className="space-y-4">
-                {filteredCompanies.map(etab => (
-                    <div key={etab.siret} className="p-4 border rounded-lg hover:bg-gray-50 shadow-sm">
-                        <h3 className="font-bold text-lg text-blue-700">
-                            {etab.uniteLegale?.denominationUniteLegale || `${etab.uniteLegale?.prenomUsuelUniteLegale || ''} ${etab.uniteLegale?.nomUniteLegale || ''}`}
-                        </h3>
-                        <p className="text-sm text-gray-600">{etab.adresseEtablissement?.numeroVoieEtablissement} {etab.adresseEtablissement?.typeVoieEtablissement} {etab.adresseEtablissement?.libelleVoieEtablissement}, {etab.adresseEtablissement?.codePostalEtablissement} {etab.adresseEtablissement?.libelleCommuneEtablissement}</p>
-                        <div className="mt-2 text-xs">
-                           <span className="font-semibold">Activité :</span> {etab.uniteLegale?.activitePrincipaleUniteLegale}
-                        </div>
-                         <div className="mt-1 text-xs">
-                           <span className="font-semibold">Création :</span> {new Date(etab.dateCreationEtablissement).toLocaleDateString('fr-FR')}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
-    };
-
-    return (
-        <div className="bg-gray-100 min-h-screen font-sans p-4">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Prospection par Zone</h1>
-                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
-                        <ArrowLeftIcon /> Retour
-                    </button>
-                </div>
-                 <div className="bg-white rounded-xl shadow-lg p-6">
-                    <div className="flex flex-col sm:flex-row gap-2 mb-6">
-                        <input
-                            type="text"
-                            placeholder="Entrez une ville, un code postal..."
-                            value={locationInput}
-                            onChange={(e) => setLocationInput(e.target.value)}
-                            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button onClick={handleSearch} disabled={isLoading} className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
-                            {isLoading ? 'Recherche...' : 'Rechercher'}
-                        </button>
-                    </div>
-                     <input
-                        type="text"
-                        placeholder="Filtrer les résultats par nom, code postal, ville..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="p-3 border rounded-lg w-full mb-6 focus:ring-2 focus:ring-blue-500"
-                    />
-                    {renderContent()}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
-// --- Le reste de votre fichier App.js (inchangé) ---
+// --- Données par défaut ---
 const initialConfigData = {
   offers: {
     initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
@@ -176,6 +35,7 @@ const initialConfigData = {
   settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
 
+// --- Composants ---
 const Modal = ({ title, message, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
@@ -924,6 +784,11 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                         <SearchIcon />
                         <span className="mt-4 text-lg font-semibold text-center">Prospection Locale</span>
                     </button>
+                    
+                    <button onClick={() => onNavigate('contract')} className="p-8 bg-white border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition flex flex-col items-center justify-center aspect-square">
+                        <ContractIcon />
+                        <span className="mt-4 text-lg font-semibold text-center">Générer Contrat</span>
+                    </button>
 
                 </div>
             </div>
@@ -1206,6 +1071,8 @@ export default function App() {
             return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'prospection':
             return <ProspectionTool onBack={() => setCurrentView('home')} />;
+        case 'contract':
+            return <ContractGenerator onBack={() => setCurrentView('home')} />;
         default:
             return <div>Vue non reconnue</div>;
     }
