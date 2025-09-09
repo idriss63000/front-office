@@ -11,14 +11,17 @@ export default async function handler(req, res) {
   const QONTO_API_KEY = process.env.QONTO_API_KEY;
 
   if (!QONTO_API_KEY) {
+    console.error("La variable d'environnement QONTO_API_KEY n'est pas définie.");
     return res.status(500).json({ message: "La clé API Qonto n'est pas configurée sur le serveur." });
   }
 
   try {
     const { name, iban, amount, scheduled_date, frequency } = req.body;
 
-    // --- Appel à la véritable API de Qonto ---
-    const qontoResponse = await fetch('https://api.qonto.com/v2/direct_debit_mandates', {
+    // --- CORRECTION: Utilisation de la bonne URL pour l'API de production ---
+    const qontoApiUrl = 'https://thirdparty.qonto.com/v2/direct_debit_mandates';
+    
+    const qontoResponse = await fetch(qontoApiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${QONTO_API_KEY}`,
@@ -38,9 +41,9 @@ export default async function handler(req, res) {
     const responseData = await qontoResponse.json();
 
     if (!qontoResponse.ok) {
-      // Si Qonto renvoie une erreur, on la transmet au front-end
       console.error("Erreur de l'API Qonto:", responseData);
-      throw new Error(responseData.message || `Erreur de l'API Qonto (${qontoResponse.status}).`);
+      const errorMessage = responseData.message || responseData.meta?.message || `Erreur de l'API Qonto (${qontoResponse.status}).`;
+      throw new Error(errorMessage);
     }
 
     // --- Succès : On renvoie les informations nécessaires au front-end ---
@@ -55,3 +58,4 @@ export default async function handler(req, res) {
     res.status(500).json({ message: error.message });
   }
 }
+
