@@ -35,6 +35,7 @@ const initialConfigData = {
 };
 
 // --- Composants ---
+
 const Modal = ({ title, message, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
@@ -749,6 +750,232 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
+const SignatureModal = ({ onSave, onCancel }) => {
+    const canvasRef = useRef(null);
+    const signaturePadRef = useRef(null);
+
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = "https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js";
+        script.onload = () => {
+            if (canvasRef.current) {
+                const canvas = canvasRef.current;
+                const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                signaturePadRef.current = new window.SignaturePad(canvas);
+            }
+        };
+        document.body.appendChild(script);
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
+    const handleClear = () => signaturePadRef.current.clear();
+    const handleSave = () => {
+        if (signaturePadRef.current.isEmpty()) {
+            alert("Veuillez signer avant de valider.");
+        } else {
+            onSave(signaturePadRef.current.toDataURL("image/png"));
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Signature du client</h3>
+                <div className="border rounded-lg w-full h-48 md:h-64">
+                    <canvas ref={canvasRef} className="w-full h-full"></canvas>
+                </div>
+                <div className="flex gap-4 mt-4">
+                    <button onClick={handleClear} className="w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300">Effacer</button>
+                    <button onClick={onCancel} className="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600">Annuler</button>
+                    <button onClick={handleSave} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Valider la Signature</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const ContractGenerator = ({ onBack }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [isSigning, setIsSigning] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState(null);
+    
+    // Form data state
+    const [formData, setFormData] = useState({
+        clientName: "Nom de l'entreprise cliente",
+        clientAddress: "Adresse du client",
+        clientEmail: "email@client.com",
+        clientPhone: "0600000000",
+        contractDate: new Date().toLocaleDateString('fr-FR'),
+        effectiveDate: new Date().toLocaleDateString('fr-FR'),
+        securityPrice: 49.99,
+        sanitaryPrice: 29.99,
+        paymentDay: 5,
+        paymentMethod: "Prélèvement",
+        location: "Pont-du-Château",
+        clientRepName: "Nom du représentant"
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+        if (window.PDFLib) return resolve();
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Erreur de chargement du script ${src}`));
+        document.body.appendChild(script);
+    });
+
+    const generatePdf = async (signatureDataUrl = null) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            await loadScript("https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js");
+            const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage();
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            const margin = 50;
+            let y = height - margin;
+
+            const drawText = (text, options) => {
+                page.drawText(text, options);
+                y -= (options.size || 10) * 1.5;
+            };
+
+            const drawSectionTitle = (text) => {
+                 drawText(text, { x: margin, y, font: boldFont, size: 12 });
+            }
+            
+            const drawParagraph = (text, size=10, indent=0) => {
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                     drawText(line, { x: margin + indent, y, font, size });
+                })
+            }
+
+            // --- Construction du PDF ---
+            drawText('CONTRAT DE SERVICES INTÉGRÉS : MAINTENANCE SÉCURITÉ ET PRESTATIONS SANITAIRES', { x: margin, y, font: boldFont, size: 14 });
+            y -= 20;
+            drawParagraph('Entre les soussignés :', 10);
+            y -= 10;
+            drawParagraph(`La société : SAS DÉDALE ET ASSOCIÉS\nAdresse : 52 C rue Jacques Offenbach, 63430 Pont-du-Château\nReprésentée par : Jeremy Vauthier, dûment habilité(e)\n\nCi-après dénommée « Le Prestataire »`, 10, 20);
+            y -= 20;
+            drawParagraph(`Et\n\nLe Client : ${formData.clientName}\nAdresse : ${formData.clientAddress}\nE-mail : ${formData.clientEmail}\nTéléphone : ${formData.clientPhone}\n\nCi-après dénommé(e) « Le Client »`, 10, 20);
+            y -= 20;
+            drawSectionTitle('PRÉAMBULE');
+            drawParagraph(`Le Prestataire est spécialisé dans l'installation, la maintenance et le dépannage de systèmes de sécurité électronique ainsi que dans la fourniture de services sanitaires de lutte contre les nuisibles. Le Client, exerçant une activité dans le secteur des métiers de bouche, souhaite faire entretenir ses systèmes de sécurité et assurer un suivi sanitaire de ses locaux par Le Prestataire afin d'en garantir le bon fonctionnement, la pérennité et la conformité.`);
+             y -= 10;
+            drawParagraph('IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :', 10, 0, boldFont);
+             y -= 10;
+            drawSectionTitle('ARTICLE 1 - OBJET DU CONTRAT');
+            drawParagraph(`Le présent contrat a pour objet de définir les conditions dans lesquelles Le Prestataire assure deux types de prestations pour le Client :\n- Une prestation de maintenance préventive et curative des systèmes de sécurité (alarme, vidéosurveillance) installés chez le Client.\n- Une prestation sanitaire de suivi et de lutte contre les nuisibles dans les locaux du Client.`);
+            drawSectionTitle('ARTICLE 6 - CONDITIONS FINANCIÈRES');
+            const totalMonthly = (parseFloat(formData.securityPrice) || 0) + (parseFloat(formData.sanitaryPrice) || 0);
+            drawParagraph(`Abonnement Mensuel : En contrepartie des services décrits dans ce contrat, Le Client s'engage à verser au Prestataire un paiement MENSUEL de :\n- Maintenance Sécurité : ${formData.securityPrice} € HT.\n- Prestations Sanitaires : ${formData.sanitaryPrice} € HT.\nSOIT UN TOTAL MENSUEL DE : ${totalMonthly.toFixed(2)} € HT.`);
+            
+            // Signature
+            if (signatureDataUrl) {
+                const pngImage = await pdfDoc.embedPng(signatureDataUrl);
+                page.drawImage(pngImage, { x: 350, y: 50, width: 150, height: 75 });
+            }
+             page.drawText('Pour Le Client :', { x: 350, y: 130, font, size: 10 });
+             page.drawText(formData.clientRepName, { x: 350, y: 115, font, size: 10 });
+
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            setPdfUrl(url);
+
+        } catch (err) {
+            console.error("Erreur lors de la génération du PDF:", err);
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    useEffect(() => {
+        generatePdf();
+    }, [formData]);
+
+    const handleSignatureSave = (dataUrl) => {
+        setIsSigning(false);
+        generatePdf(dataUrl);
+    };
+
+    return (
+        <div className="bg-gray-100 min-h-screen font-sans p-4">
+            {isSigning && <SignatureModal onSave={handleSignatureSave} onCancel={() => setIsSigning(false)} />}
+            <div className="max-w-7xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-3xl font-bold text-gray-800">Générateur de Contrat</h1>
+                    <button onClick={onBack} className="flex items-center gap-2 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300">
+                        <ArrowLeftIcon /> Retour
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 bg-white rounded-xl shadow-lg p-6 space-y-4 h-fit">
+                        <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Informations du Contrat</h2>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Nom du client</label>
+                            <input name="clientName" value={formData.clientName} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Adresse</label>
+                            <input name="clientAddress" value={formData.clientAddress} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                            <input name="clientEmail" value={formData.clientEmail} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Téléphone</label>
+                            <input name="clientPhone" value={formData.clientPhone} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                        <hr/>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Mensualité Sécurité (€ HT)</label>
+                            <input type="number" name="securityPrice" value={formData.securityPrice} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Mensualité Sanitaire (€ HT)</label>
+                            <input type="number" name="sanitaryPrice" value={formData.sanitaryPrice} onChange={handleInputChange} className="mt-1 p-2 border rounded-md w-full" />
+                        </div>
+                        <div className="pt-4">
+                             <button onClick={() => setIsSigning(true)} disabled={isLoading} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-400">
+                                Faire Signer le Client
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+                         <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mb-4">Aperçu du Contrat</h2>
+                        {isLoading && <p>Génération du PDF...</p>}
+                        {error && <p className="text-red-500">{error}</p>}
+                        {pdfUrl && !isLoading && (
+                            <iframe src={pdfUrl} className="w-full h-[70vh] border rounded-md"></iframe>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     return (
