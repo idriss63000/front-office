@@ -819,7 +819,7 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
     const installationFee = installDiscount ? 0 : config.settings.installationFee;
     const totalWithInstall = subtotalAfterDiscount + installationFee;
     const vatRate = config.settings.vat[data.type] || 0;
-    const vatAmount = totalWithInstall + vatRate;
+    const vatAmount = totalWithInstall * vatRate;
     const oneTimeTotal = totalWithInstall + vatAmount;
     let monthlySubtotal = 0;
     if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
@@ -904,8 +904,13 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
 }
 
 const ContractGenerator = ({ onBack }) => {
-    const handleOpenLink = () => {
-        window.open('https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c', '_blank');
+    const handleOpenLink = (url) => {
+        window.open(url, '_blank');
+    };
+
+    const contractUrls = {
+        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
+        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609'
     };
 
     return (
@@ -918,23 +923,44 @@ const ContractGenerator = ({ onBack }) => {
                     </button>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-lg p-8 text-center space-y-6">
-                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
-                    <h2 className="text-2xl font-bold text-gray-800">Contrat de Prestation</h2>
-                    <p className="text-gray-600">
-                        Cliquez sur le bouton ci-dessous pour ouvrir le formulaire de contrat Yousign dans un nouvel onglet. Vous pourrez y remplir les informations du client et envoyer la demande de signature.
-                    </p>
-                    <button 
-                        onClick={handleOpenLink} 
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-                    >
-                        Ouvrir le formulaire de contrat
-                    </button>
+                <div className="bg-white rounded-xl shadow-lg p-8 space-y-8">
+                    {/* Option 1 : Contrat Sanisecurité */}
+                    <div className="text-center space-y-4">
+                        <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
+                        <h2 className="text-2xl font-bold text-gray-800">Contrat Sanisecurité</h2>
+                        <p className="text-gray-600">
+                            Ouvrir le formulaire pour un contrat de prestation de services standard.
+                        </p>
+                        <button 
+                            onClick={() => handleOpenLink(contractUrls.prestation)} 
+                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                        >
+                            Ouvrir Contrat Sanisecurité
+                        </button>
+                    </div>
+
+                    <hr/>
+
+                    {/* Option 2 : Contrat Sanitaire */}
+                    <div className="text-center space-y-4">
+                        <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
+                        <h2 className="text-2xl font-bold text-gray-800">Contrat Sanitaire</h2>
+                        <p className="text-gray-600">
+                           Ouvrir le formulaire pour le contrat sanitaire.
+                        </p>
+                        <button 
+                            onClick={() => handleOpenLink(contractUrls.maintenance)} 
+                            className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+                        >
+                            Ouvrir Contrat Sanitaire
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
+
 
 const QontoDirectDebitForm = ({ onBack }) => {
   const [customerName, setCustomerName] = useState('');
@@ -967,37 +993,21 @@ const QontoDirectDebitForm = ({ onBack }) => {
     setMandateInfo(null);
 
     try {
-      const response = await fetch(`/api/qonto`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: customerName,
-          iban: customerIban,
-          amount: Math.round(totalTTC * 100),
-          scheduled_date: scheduledDate,
-          frequency: 'monthly'
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Une erreur est survenue.');
-      }
-
-      setStatusMessage('Le mandat de prélèvement a été créé avec succès !');
-      setMandateInfo({
-        id: result.mandate_id,
-        signingUrl: result.signing_url,
-      });
+      // This is a placeholder for a server-side call.
+      // In a real application, this fetch call would go to your backend,
+      // which would then securely communicate with the Qonto API.
+      // The backend is necessary to protect your API keys.
+      setStatusMessage('Erreur: La fonctionnalité backend pour contacter Qonto n\'est pas implémentée dans cette démo.');
+      console.error("This is a frontend demo. A backend is required to make secure API calls to Qonto.");
       
-      setCustomerName('');
-      setCustomerIban('');
-      setAmount('');
-      setScheduledDate('');
-      setTvaRate('20');
+      // MOCKED SUCCESS FOR DEMO
+      // const result = {
+      //     mandate_id: 'mandate_12345',
+      //     signing_url: 'https://demo.qonto.com/sign/mandate_12345'
+      // };
+      // setStatusMessage('Le mandat de prélèvement a été créé avec succès !');
+      // setMandateInfo({ id: result.mandate_id, signingUrl: result.signing_url });
+      // setCustomerName(''); setCustomerIban(''); setAmount(''); setScheduledDate(''); setTvaRate('20');
 
     } catch (error) {
       setStatusMessage(`Erreur : ${error.message}`);
@@ -1314,13 +1324,4 @@ export default function App() {
   
   return renderCurrentView();
 }
-
-
-
-
-
-
-
-
-
 
