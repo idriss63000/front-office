@@ -805,6 +805,66 @@ const PresentationMode = ({ onBack, videos }) => {
 
 // --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
 
+const ReportForPDF = ({ data }) => (
+    <div className="p-8 font-sans text-sm" style={{ width: '210mm' }}>
+        <div className="flex justify-between items-start mb-8">
+            <h1 className="text-3xl font-bold text-slate-800">Rapport d'Intervention Sanitaire</h1>
+            <div className="text-right">
+                <p><strong>Date :</strong> {new Date(data.interventionDate).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Technicien :</strong> {data.salesperson}</p>
+            </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 rounded-lg border">
+            <h2 className="font-bold text-lg mb-2">Informations Client</h2>
+            <p><strong>Client :</strong> {data.client.prenom} {data.client.nom}</p>
+            <p><strong>Adresse :</strong> {data.client.adresse}</p>
+            <p><strong>Contact :</strong> {data.client.telephone} | {data.client.email}</p>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Diagnostic</h2>
+            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div><strong>Nuisibles constatés:</strong> <span className="font-normal">{data.nuisiblesConstates.join(', ') || 'N/A'}</span></div>
+                <div><strong>Zones inspectées:</strong> <span className="font-normal">{data.zonesInspectees.join(', ') || 'N/A'}</span></div>
+                <div><strong>Niveau d'infestation:</strong> <span className="font-normal">{data.infestationLevel}%</span></div>
+                <div><strong>Consommation des appâts:</strong> <span className="font-normal">{data.consumptionLevel}%</span></div>
+                <div className="col-span-2"><strong>Observations:</strong><br/><p className="font-normal whitespace-pre-wrap">{data.observations || 'Aucune'}</p></div>
+            </div>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Actions et Traitements</h2>
+            <div className="p-4 border rounded-lg">
+                <p><strong>Actions menées:</strong> <span className="font-normal">{data.actionsMenees.join(', ') || 'N/A'}</span></p>
+                <p><strong>Produits utilisés:</strong> <span className="font-normal">{data.produitsUtilises.join(', ') || 'N/A'}</span></p>
+                {data.produitsAutres && <p><strong>Autres produits:</strong> <span className="font-normal">{data.produitsAutres}</span></p>}
+            </div>
+        </div>
+        
+        {data.photos.length > 0 && (
+            <div className="mt-6">
+                <h2 className="font-bold text-lg mb-2">Photos de l'intervention</h2>
+                <div className="grid grid-cols-2 gap-4">
+                    {data.photos.map(photo => (
+                        <div key={photo.id} className="border p-2 rounded-lg">
+                            <img src={photo.dataUrl} alt={photo.caption || 'Photo d\'intervention'} className="w-full h-auto rounded-md mb-2"/>
+                            <p className="text-xs text-center italic">{photo.caption}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Recommandations</h2>
+            <div className="p-4 border rounded-lg">
+                <p className="font-normal whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
+            </div>
+        </div>
+    </div>
+);
+
 const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
     return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} isReport={true} />;
 };
