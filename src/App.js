@@ -452,16 +452,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
         loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
         loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
       ]);
-      await new Promise(resolve => {
-            const check = () => {
-                if (window.jspdf) {
-                    resolve();
-                } else {
-                    setTimeout(check, 50);
-                }
-            };
-            check();
-        });
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const { jsPDF } = window.jspdf;
       const html2canvas = window.html2canvas;
@@ -1138,17 +1129,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
                 loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
                 loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
             ]);
-            
-            await new Promise(resolve => {
-                const check = () => {
-                    if (window.jspdf && window.html2canvas) {
-                        resolve();
-                    } else {
-                        setTimeout(check, 100);
-                    }
-                };
-                check();
-            });
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
             await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
