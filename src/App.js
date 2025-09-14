@@ -1058,6 +1058,139 @@ const ReportStep5_Finalize = ({ onGenerate, prevStep, isGenerating }) => (
     </div>
 );
 
+const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
+    const [step, setStep] = useState(1);
+    const [reportData, setReportData] = useState({
+        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
+        interventionDate: new Date().toISOString().split('T')[0],
+        motif: '',
+        nuisiblesConstates: [],
+        zonesInspectees: [],
+        infestationLevel: 50,
+        consumptionLevel: 0,
+        observations: '',
+        actionsMenees: [],
+        produitsUtilises: [],
+        produitsAutres: '',
+        photos: [],
+        recommandations: '',
+        salesperson: salesperson,
+    });
+    const [reportConfig, setReportConfig] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const pdfRef = useRef();
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            if (!db || !appId) {
+                console.error("DB or AppId not available");
+                setIsLoading(false);
+                return;
+            }
+            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
+            const docRef = doc(db, reportDocPath);
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setReportConfig(docSnap.data());
+                } else {
+                    console.warn("Report configuration not found, using fallback.");
+                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+                }
+            } catch(e) {
+                console.error("Error fetching report config:", e);
+                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchConfig();
+    }, [db, appId]);
+
+    const nextStep = () => setStep(s => s + 1);
+    const prevStep = () => setStep(s => s - 1);
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Script load error for ${src}`));
+        document.body.appendChild(script);
+    });
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            await Promise.all([
+                loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+                loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+            ]);
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
+            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
+
+            const { jsPDF } = window.jspdf;
+            const html2canvas = window.html2canvas;
+            const input = pdfRef.current;
+            if (!input) throw new Error("Element for PDF not found.");
+            
+            const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const imgWidth = pdfWidth - 20; // with margin
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            pdf.save(`Rapport-Sanitaire-${reportData.client.nom}.pdf`);
+
+            const subject = encodeURIComponent(`Rapport d'intervention du ${new Date(reportData.interventionDate).toLocaleDateString('fr-FR')}`);
+            const body = encodeURIComponent(`Bonjour ${reportData.client.prenom},\n\nVeuillez trouver ci-joint notre rapport d'intervention.\n\nCordialement,`);
+            window.location.href = `mailto:${reportData.client.email}?subject=${subject}&body=${body}`;
+
+            onBackToHome();
+
+        } catch (error) {
+            console.error("Error generating report:", error);
+            // Gérer l'erreur avec un modal
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    
+    const renderCurrentStep = () => {
+         switch(step) {
+            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
+            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
+            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} isGenerating={isGenerating} />;
+            default: return <p>Étape inconnue</p>;
+         }
+    };
+    
+    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
+    
+    const progress = (step / 5) * 100;
+
+    return (
+        <div className="w-full">
+            <div className="mb-6">
+                 <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+            </div>
+            {renderCurrentStep()}
+            <div className="absolute left-[-9999px] top-0">
+                <div ref={pdfRef}>
+                    <ReportForPDF data={reportData} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     
     const ActionCard = ({ onClick, icon, title }) => (
