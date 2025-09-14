@@ -1074,6 +1074,166 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     )
 }
 
+const QuoteProcess = ({ data, setData, onBackToHome }) => {
+  const [config, setConfig] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [appliedDiscounts, setAppliedDiscounts] = useState([]);
+  const dbRef = useRef(null);
+  const appIdRef = useRef(null);
+
+  const calculation = useMemo(() => {
+    if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0 };
+    let offerPrice = 0;
+    if (data.offer && config.offers[data.offer]) offerPrice = config.offers[data.offer][data.type]?.price || 0;
+    const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
+    if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
+    let oneTimeSubtotal = offerPrice;
+    data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
+    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
+    let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
+    const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
+    const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
+    const installationFee = installDiscount ? 0 : config.settings.installationFee;
+    const totalWithInstall = subtotalAfterDiscount + installationFee;
+    const vatRate = config.settings.vat[data.type] || 0;
+    const vatAmount = totalWithInstall * vatRate;
+    const oneTimeTotal = totalWithInstall + vatAmount;
+    let monthlySubtotal = 0;
+    if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
+    data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; });
+    const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
+    let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
+    const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
+    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
+  }, [data, appliedDiscounts, config]);
+
+  useEffect(() => {
+    const initFirebase = async () => {
+        try {
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.appspot.com",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            const appId = firebaseConfig.appId;
+            appIdRef.current = appId;
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            dbRef.current = db;
+            const auth = getAuth(app);
+            setLogLevel('debug');
+            await signInAnonymously(auth);
+            const docPath = `/artifacts/${appId}/public/data/config/main`;
+            const configDocRef = doc(db, docPath);
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) setConfig(docSnap.data());
+            else {
+                await setDoc(configDocRef, initialConfigData);
+                setConfig(initialConfigData);
+            }
+        } catch (err) {
+            console.error("Erreur d'initialisation:", err);
+            setError("Impossible de charger la configuration.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    initFirebase();
+  }, []);
+
+  const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
+  const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
+  
+  const renderStep = () => {
+    switch (data.step) {
+      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
+      case 8: return <Confirmation reset={onBackToHome} />;
+      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+    }
+  };
+
+  if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration...</p>;
+  if (error || !config) return <div className="bg-red-100 p-4 rounded-lg"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
+
+  const progress = (data.step / 8) * 100;
+
+  return (
+    <div className="w-full">
+        <div className="mb-6">
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
+            <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+        </div>
+        <div>{renderStep()}</div>
+    </div>
+  );
+}
+
+const ContractGenerator = ({ onBack }) => {
+    const handleOpenLink = (url) => {
+        window.open(url, '_blank');
+    };
+
+    const contractUrls = {
+        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
+        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609'
+    };
+
+    return (
+        <div className="w-full">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-slate-800">Générer un Contrat</h1>
+                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors">
+                    <ArrowLeftIcon /> Retour
+                </button>
+            </div>
+
+            <div className="space-y-8 mt-6">
+                {/* Option 1 : Contrat Sanisecurité */}
+                <div className="text-center space-y-4 p-6 border rounded-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
+                    <p className="text-slate-600">
+                        Ouvrir le formulaire pour un contrat de prestation de services standard.
+                    </p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.prestation)} 
+                        className="w-full sm:w-auto px-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    >
+                        Ouvrir Contrat Sanisecurité
+                    </button>
+                </div>
+
+                {/* Option 2 : Contrat Sanitaire */}
+                <div className="text-center space-y-4 p-6 border rounded-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
+                    <p className="text-slate-600">
+                        Ouvrir le formulaire pour le contrat sanitaire.
+                    </p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.maintenance)} 
+                        className="w-full sm:w-auto px-6 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+                    >
+                        Ouvrir Contrat Sanitaire
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
   const [salesperson, setSalesperson] = useState('');
