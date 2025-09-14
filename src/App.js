@@ -86,36 +86,57 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
   );
 };
 
-const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
-  const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
+const CustomerInfo = ({ data, setData, nextStep, prevStep, isReport = false }) => {
+  const handleClientChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
+  const handleReportDataChange = (e) => setData({ ...data, [e.target.name]: e.target.value });
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Informations du Client</h2>
+      <h2 className="text-2xl font-bold text-slate-800 text-center">
+        {isReport ? "Rapport d'Intervention" : "Informations du Devis"}
+      </h2>
+      
+      {isReport && (
+        <div>
+          <label htmlFor="interventionDate" className="block text-sm font-medium text-slate-600 mb-1">Date de l'intervention</label>
+          <input
+              type="date"
+              id="interventionDate"
+              name="interventionDate"
+              value={data.interventionDate}
+              onChange={handleReportDataChange}
+              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+          />
+        </div>
+      )}
+
+      <h3 className="text-lg font-semibold text-slate-700 pt-4 border-t mt-6">
+          Informations du Client
+      </h3>
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="nom" className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
-                <input id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="nom" name="nom" value={data.client.nom} onChange={handleClientChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
             <div>
                 <label htmlFor="prenom" className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
-                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleClientChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
         </div>
         <div>
             <label htmlFor="adresse" className="block text-sm font-medium text-slate-600 mb-1">Adresse</label>
-            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleClientChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="telephone" className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
-                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleClientChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
             <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <input id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="email" type="email" name="email" value={data.client.email} onChange={handleClientChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
         </div>
       </div>
@@ -775,99 +796,68 @@ const PresentationMode = ({ onBack, videos }) => {
 
 // --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
 
-const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
-    const [step, setStep] = useState(1);
-    const [reportData, setReportData] = useState({
-        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-        interventionDate: new Date().toISOString().split('T')[0],
-        motif: '',
-        nuisiblesConstates: [],
-        zonesInspectees: [],
-        niveauInfestation: 'Non précisé',
-        observations: '',
-        actionsMenees: [],
-        produitsUtilises: '',
-        photos: [],
-        recommandations: '',
-        salesperson: salesperson,
-    });
-    const [reportConfig, setReportConfig] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            if (!db || !appId) {
-                console.error("DB or AppId not available");
-                setIsLoading(false);
-                return;
-            }
-            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
-            const docRef = doc(db, reportDocPath);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setReportConfig(docSnap.data());
-                } else {
-                    console.warn("Report configuration not found, using fallback.");
-                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-                }
-            } catch(e) {
-                console.error("Error fetching report config:", e);
-                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchConfig();
-    }, [db, appId]);
-
-    const nextStep = () => setStep(s => s + 1);
-    const prevStep = () => setStep(s => s - 1);
-
-    const handleGenerate = async () => {
-        console.log("Génération du rapport...", reportData);
-        // Ici, on ajouterait la logique pour générer le PDF
-        const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
-        try {
-            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
-            alert("Rapport sauvegardé avec succès !"); // Remplacer par un modal plus tard
-        } catch(e) {
-            console.error("Error saving report:", e);
-            alert("Erreur lors de la sauvegarde du rapport."); // Remplacer par un modal plus tard
-        }
-        onBackToHome();
-    };
-
-
-    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
-
-    const progress = (step / 5) * 100;
-    
-    const renderCurrentStep = () => {
-         switch(step) {
-            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
-            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} />;
-            default: return <p>Étape inconnue</p>;
-         }
-    };
-    
-    return (
-        <div className="w-full">
-            <div className="mb-6">
-                <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+const ReportForPDF = ({ data }) => (
+    <div className="p-8 font-sans text-sm" style={{ width: '210mm' }}>
+        <div className="flex justify-between items-start mb-8">
+            <h1 className="text-3xl font-bold text-slate-800">Rapport d'Intervention Sanitaire</h1>
+            <div className="text-right">
+                <p><strong>Date :</strong> {new Date(data.interventionDate).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Technicien :</strong> {data.salesperson}</p>
             </div>
-            {renderCurrentStep()}
         </div>
-    );
-};
+
+        <div className="p-4 bg-slate-50 rounded-lg border">
+            <h2 className="font-bold text-lg mb-2">Informations Client</h2>
+            <p><strong>Client :</strong> {data.client.prenom} {data.client.nom}</p>
+            <p><strong>Adresse :</strong> {data.client.adresse}</p>
+            <p><strong>Contact :</strong> {data.client.telephone} | {data.client.email}</p>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Diagnostic</h2>
+            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div><strong>Nuisibles constatés:</strong> <span className="font-normal">{data.nuisiblesConstates.join(', ') || 'N/A'}</span></div>
+                <div><strong>Zones inspectées:</strong> <span className="font-normal">{data.zonesInspectees.join(', ') || 'N/A'}</span></div>
+                <div><strong>Niveau d'infestation:</strong> <span className="font-normal">{data.infestationLevel}%</span></div>
+                <div><strong>Consommation des appâts:</strong> <span className="font-normal">{data.consumptionLevel}%</span></div>
+                <div className="col-span-2"><strong>Observations:</strong><br/><p className="font-normal whitespace-pre-wrap">{data.observations || 'Aucune'}</p></div>
+            </div>
+        </div>
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Actions et Traitements</h2>
+            <div className="p-4 border rounded-lg">
+                <p><strong>Actions menées:</strong> <span className="font-normal">{data.actionsMenees.join(', ') || 'N/A'}</span></p>
+                <p><strong>Produits utilisés:</strong> <span className="font-normal">{data.produitsUtilises.join(', ') || 'N/A'}</span></p>
+                {data.produitsAutres && <p><strong>Autres produits:</strong> <span className="font-normal">{data.produitsAutres}</span></p>}
+            </div>
+        </div>
+        
+        {data.photos.length > 0 && (
+            <div className="mt-6">
+                <h2 className="font-bold text-lg mb-2">Photos de l'intervention</h2>
+                <div className="grid grid-cols-2 gap-4">
+                    {data.photos.map(photo => (
+                        <div key={photo.id} className="border p-2 rounded-lg">
+                            <img src={photo.dataUrl} alt={photo.caption || 'Photo d\'intervention'} className="w-full h-auto rounded-md mb-2"/>
+                            <p className="text-xs text-center italic">{photo.caption}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        <div className="mt-6">
+            <h2 className="font-bold text-lg mb-2">Recommandations</h2>
+            <div className="p-4 border rounded-lg">
+                <p className="font-normal whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
+            </div>
+        </div>
+    </div>
+);
 
 const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
-    // On réutilise le composant existant pour les informations client
-    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} isReport={true} />;
 };
 
 const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) => {
@@ -907,12 +897,21 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
                     )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
                 </div>
             </div>
+            
+            <div>
+                <label htmlFor="infestationLevel" className="font-semibold text-slate-700">Niveau d'infestation: <span className="font-bold text-blue-600">{data.infestationLevel}%</span></label>
+                <input id="infestationLevel" type="range" min="0" max="100" step="5" value={data.infestationLevel} onChange={e => setData(prev => ({...prev, infestationLevel: e.target.value}))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+            </div>
+
+            <div>
+                <label htmlFor="consumptionLevel" className="font-semibold text-slate-700">Consommation des appâts: <span className="font-bold text-blue-600">{data.consumptionLevel}%</span></label>
+                <input id="consumptionLevel" type="range" min="0" max="100" step="5" value={data.consumptionLevel} onChange={e => setData(prev => ({...prev, consumptionLevel: e.target.value}))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+            </div>
 
             <div>
                  <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
-                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
+                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs..."></textarea>
             </div>
-
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
@@ -1015,13 +1014,25 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
             </div>
 
             <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Produits utilisés</label>
-                 <textarea value={data.produitsUtilises} onChange={e => setData(prev => ({...prev, produitsUtilises: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Lister les produits et matières actives..."></textarea>
+                <label className="font-semibold text-slate-700">Produits utilisés</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {config?.produits?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.produitsUtilises.includes(item)} onChange={() => handleCheckboxChange('produitsUtilises', item)} className="h-4 w-4 rounded text-blue-600"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucun produit configuré.</p>}
+                </div>
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Autres produits ou détails</label>
+                 <textarea value={data.produitsAutres} onChange={e => setData(prev => ({...prev, produitsAutres: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Si un produit non listé a été utilisé..."></textarea>
             </div>
 
             <div>
                  <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
-                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier, ne pas laisser de nourriture accessible..."></textarea>
+                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier..."></textarea>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -1033,14 +1044,16 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
 };
 
 
-const ReportStep5_Finalize = ({ onGenerate, prevStep }) => (
+const ReportStep5_Finalize = ({ onGenerate, prevStep, isGenerating }) => (
      <div className="text-center space-y-6">
         <CheckCircleIcon className="mx-auto h-16 w-16 text-blue-500" />
         <h2 className="text-2xl font-bold text-slate-800">Prêt à finaliser ?</h2>
-        <p className="text-slate-600">Le rapport va être sauvegardé dans la base de données. La génération du PDF et l'envoi par mail seront implémentés dans une future version.</p>
+        <p className="text-slate-600">Le rapport va être sauvegardé, le PDF sera téléchargé et une fenêtre d'email s'ouvrira pour l'envoi.</p>
         <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
-            <button onClick={onGenerate} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Sauvegarder et Terminer</button>
-            <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
+            <button onClick={onGenerate} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400">
+                {isGenerating ? 'Génération en cours...' : 'Générer et Terminer'}
+            </button>
+            <button onClick={prevStep} disabled={isGenerating} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
         </div>
     </div>
 );
