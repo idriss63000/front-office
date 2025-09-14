@@ -803,8 +803,6 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
-// --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
-
 const ReportForPDF = ({ data }) => (
     <div className="p-8 font-sans text-sm" style={{ width: '210mm' }}>
         <div className="flex justify-between items-start mb-8">
@@ -1125,7 +1123,11 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
         const script = document.createElement('script');
         script.src = src;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Script load error for ${src}`));
+        const timer = setTimeout(() => reject(new Error(`Script load timeout for ${src}`)), 5000);
+        script.onerror = () => {
+            clearTimeout(timer);
+            reject(new Error(`Script load error for ${src}`));
+        };
         document.body.appendChild(script);
     });
 
@@ -1136,12 +1138,13 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
                 loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
                 loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
             ]);
+            
             await new Promise(resolve => {
                 const check = () => {
-                    if (window.jspdf) {
+                    if (window.jspdf && window.html2canvas) {
                         resolve();
                     } else {
-                        setTimeout(check, 50);
+                        setTimeout(check, 100);
                     }
                 };
                 check();
@@ -1159,9 +1162,21 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const imgWidth = pdfWidth - 20; // with margin
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft > 0) {
+              position = heightLeft - imgHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+              heightLeft -= pdfHeight;
+            }
             pdf.save(`Rapport-Sanitaire-${reportData.client.nom}.pdf`);
 
             const subject = encodeURIComponent(`Rapport d'intervention du ${new Date(reportData.interventionDate).toLocaleDateString('fr-FR')}`);
@@ -1172,7 +1187,8 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
 
         } catch (error) {
             console.error("Error generating report:", error);
-            // Gérer l'erreur avec un modal
+            alert("Erreur lors de la génération du PDF. Le service externe est peut-être bloqué. Le rapport a bien été sauvegardé.");
+            onBackToHome();
         } finally {
             setIsGenerating(false);
         }
