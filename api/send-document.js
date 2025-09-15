@@ -20,13 +20,36 @@ export default async function handler(req, res) {
 
     // Définit le sujet et le nom du fichier en fonction du type de document
     const subject = documentType === 'devis' ? 'Votre Devis' : 'Votre Rapport Sanitaire';
-    const filename = documentType === 'devis' ? `Devis-${client.nom}-${client.prenom}.pdf` : `Rapport-${client.nom}-${client.prenom}.pdf`;
 
     // --- SECURISATION DES DONNEES ---
-    // Vérifie que l'offre existe avant d'essayer d'accéder à son nom
     const offerName = documentData.offer && configData.offers && configData.offers[documentData.offer]
         ? configData.offers[documentData.offer].name
         : 'Non spécifiée';
+        
+    // --- PREPARATION DES IMAGES POUR L'EMAIL (NOUVELLE LOGIQUE) ---
+    const attachments = [];
+    let photoHtml = '';
+
+    if (documentType === 'rapport' && documentData.photos && documentData.photos.length > 0) {
+        documentData.photos.forEach((photo, index) => {
+            // Extrait les données Base64 de l'URL de données
+            const base64Data = photo.dataUrl.split(';base64,').pop();
+            const contentId = `photo_${index}`;
+            
+            // Crée l'objet pièce jointe pour SendGrid
+            attachments.push({
+                content: base64Data,
+                filename: `photo_${index}.png`,
+                type: 'image/png',
+                disposition: 'inline',
+                content_id: contentId,
+            });
+
+            // Génère le HTML correspondant pour afficher l'image via son CID
+            photoHtml += `<div><img src="cid:${contentId}" alt="${photo.caption || ''}"><p><em>${photo.caption || ''}</em></p></div>`;
+        });
+    }
+
 
     // --- Génération du contenu HTML du document ---
     const htmlContent = `
@@ -40,7 +63,7 @@ export default async function handler(req, res) {
             h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
             .section { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
             .section h2 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-            .photo-gallery img { max-width: 100%; border-radius: 4px; margin-bottom: 10px; border: 1px solid #ddd; }
+            .photo-gallery img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; border: 1px solid #ddd; }
             p { line-height: 1.6; }
             strong { color: #1a73e8; }
         </style>
@@ -68,10 +91,10 @@ export default async function handler(req, res) {
                 <h2>Recommandations</h2>
                 ${formatTextForHTML(documentData.recommandations) || '<p>Aucune recommandation.</p>'}
             </div>
-            ${documentData.photos && documentData.photos.length > 0 ? `
+            ${photoHtml ? `
             <div class="section photo-gallery">
                 <h2>Photos</h2>
-                ${documentData.photos.map(p => `<div><img src="${p.dataUrl}" alt="${p.caption || ''}"><p><em>${p.caption || ''}</em></p></div>`).join('')}
+                ${photoHtml}
             </div>
             ` : ''}
             ` : `
@@ -90,10 +113,11 @@ export default async function handler(req, res) {
     // Création de l'objet message pour SendGrid
     const msg = {
         to: client.email,
-        from: process.env.SENDGRID_FROM_EMAIL, // Utilise l'email configuré sur Vercel
+        from: process.env.SENDGRID_FROM_EMAIL,
         subject: `${subject} pour ${client.prenom} ${client.nom}`,
-        // On utilise notre HTML stylisé comme corps de l'email
         html: htmlContent,
+        // On ajoute les images en tant que pièces jointes
+        attachments: attachments,
     };
 
     try {
