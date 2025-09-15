@@ -17,6 +17,8 @@ const CalendarIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="h
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
+const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
+const CameraIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -771,6 +773,278 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
+// --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
+
+const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
+    const [step, setStep] = useState(1);
+    const [reportData, setReportData] = useState({
+        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
+        interventionDate: new Date().toISOString().split('T')[0],
+        motif: '',
+        nuisiblesConstates: [],
+        zonesInspectees: [],
+        niveauInfestation: 'Non précisé',
+        observations: '',
+        actionsMenees: [],
+        produitsUtilises: '',
+        photos: [],
+        recommandations: '',
+        salesperson: salesperson,
+    });
+    const [reportConfig, setReportConfig] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            if (!db || !appId) {
+                console.error("DB or AppId not available");
+                setIsLoading(false);
+                return;
+            }
+            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
+            const docRef = doc(db, reportDocPath);
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setReportConfig(docSnap.data());
+                } else {
+                    console.warn("Report configuration not found, using fallback.");
+                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+                }
+            } catch(e) {
+                console.error("Error fetching report config:", e);
+                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchConfig();
+    }, [db, appId]);
+
+    const nextStep = () => setStep(s => s + 1);
+    const prevStep = () => setStep(s => s - 1);
+
+    const handleGenerate = async () => {
+        console.log("Génération du rapport...", reportData);
+        // Ici, on ajouterait la logique pour générer le PDF
+        const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
+        try {
+            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
+            alert("Rapport sauvegardé avec succès !"); // Remplacer par un modal plus tard
+        } catch(e) {
+            console.error("Error saving report:", e);
+            alert("Erreur lors de la sauvegarde du rapport."); // Remplacer par un modal plus tard
+        }
+        onBackToHome();
+    };
+
+
+    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
+
+    const progress = (step / 5) * 100;
+    
+    const renderCurrentStep = () => {
+         switch(step) {
+            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
+            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
+            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} />;
+            default: return <p>Étape inconnue</p>;
+         }
+    };
+    
+    return (
+        <div className="w-full">
+            <div className="mb-6">
+                <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+            </div>
+            {renderCurrentStep()}
+        </div>
+    );
+};
+
+const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
+    // On réutilise le composant existant pour les informations client
+    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+};
+
+const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) => {
+    
+    const handleCheckboxChange = (field, value) => {
+        const currentValues = data[field] || [];
+        const newValues = currentValues.includes(value)
+            ? currentValues.filter(item => item !== value)
+            : [...currentValues, value];
+        setData(prev => ({ ...prev, [field]: newValues }));
+    };
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
+            
+            <div>
+                <label className="font-semibold text-slate-700">Nuisibles constatés</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {config?.nuisibles?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.nuisiblesConstates.includes(item)} onChange={() => handleCheckboxChange('nuisiblesConstates', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
+
+             <div>
+                <label className="font-semibold text-slate-700">Zones inspectées</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {config?.zones?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.zonesInspectees.includes(item)} onChange={() => handleCheckboxChange('zonesInspectees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
+                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
+            </div>
+
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+            </div>
+        </div>
+    );
+};
+
+const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
+    
+    const handlePhotoUpload = (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (upload) => {
+                const newPhoto = {
+                    id: `photo_${Date.now()}_${Math.random()}`,
+                    dataUrl: upload.target.result,
+                    caption: ''
+                };
+                setData(prev => ({...prev, photos: [...prev.photos, newPhoto]}));
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+    
+    const updateCaption = (id, caption) => {
+        setData(prev => ({
+            ...prev,
+            photos: prev.photos.map(p => p.id === id ? {...p, caption} : p)
+        }));
+    };
+
+    const removePhoto = (id) => {
+        setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
+    };
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des Photos</h2>
+            
+            <div className="p-6 border-2 border-dashed rounded-xl text-center">
+                <label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-sm text-slate-700 hover:bg-slate-50">
+                    <CameraIcon className="h-5 w-5"/>
+                    Importer depuis l'appareil
+                </label>
+                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
+                <p className="text-xs text-slate-500 mt-2">Vous pouvez sélectionner plusieurs photos.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {data.photos.map(photo => (
+                    <div key={photo.id} className="border rounded-lg p-2 space-y-2">
+                        <img src={photo.dataUrl} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
+                        <input 
+                            type="text"
+                            value={photo.caption}
+                            onChange={(e) => updateCaption(photo.id, e.target.value)}
+                            placeholder="Ajouter une légende..."
+                            className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button onClick={() => removePhoto(photo.id)} className="text-xs text-red-600 hover:underline">Supprimer</button>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+            </div>
+        </div>
+    );
+};
+
+const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, config }) => {
+    
+    const handleCheckboxChange = (field, value) => {
+        const currentValues = data[field] || [];
+        const newValues = currentValues.includes(value)
+            ? currentValues.filter(item => item !== value)
+            : [...currentValues, value];
+        setData(prev => ({ ...prev, [field]: newValues }));
+    };
+    
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
+
+            <div>
+                <label className="font-semibold text-slate-700">Actions menées</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {config?.actions?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.actionsMenees.includes(item)} onChange={() => handleCheckboxChange('actionsMenees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Produits utilisés</label>
+                 <textarea value={data.produitsUtilises} onChange={e => setData(prev => ({...prev, produitsUtilises: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Lister les produits et matières actives..."></textarea>
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
+                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier, ne pas laisser de nourriture accessible..."></textarea>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Finaliser</button>
+            </div>
+        </div>
+    );
+};
+
+
+const ReportStep5_Finalize = ({ onGenerate, prevStep }) => (
+     <div className="text-center space-y-6">
+        <CheckCircleIcon className="mx-auto h-16 w-16 text-blue-500" />
+        <h2 className="text-2xl font-bold text-slate-800">Prêt à finaliser ?</h2>
+        <p className="text-slate-600">Le rapport va être sauvegardé dans la base de données. La génération du PDF et l'envoi par mail seront implémentés dans une future version.</p>
+        <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
+            <button onClick={onGenerate} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Sauvegarder et Terminer</button>
+            <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
+        </div>
+    </div>
+);
+
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     
     const ActionCard = ({ onClick, icon, title }) => (
@@ -793,6 +1067,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
                 <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
                 <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
+                {/* NOUVELLE CARTE D'ACTION */}
+                <ActionCard onClick={() => onNavigate('sanitaryReport')} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
             </div>
         </div>
     )
@@ -958,7 +1234,6 @@ const ContractGenerator = ({ onBack }) => {
     );
 };
 
-
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
   const [salesperson, setSalesperson] = useState('');
@@ -1111,6 +1386,7 @@ export default function App() {
             />;
         case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
+        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} />;
         default: return <div>Vue non reconnue</div>;
     }
   }
