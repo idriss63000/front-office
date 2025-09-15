@@ -8,6 +8,8 @@ import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, 
 // --- MODIFICATION : DÉBUT DE L'INTÉGRATION DES BIBLIOTHÈQUES ---
 // Pour contourner les restrictions de sécurité (CSP) qui bloquent le chargement de scripts externes,
 // le code minifié de jsPDF et html2canvas est stocké dans cette constante.
+// CORRECTION : Les caractères ` (backticks) dans le code minifié ont été échappés (remplacés par \`) 
+// pour éviter les erreurs de syntaxe JavaScript lors de l'utilisation d'un template literal.
 const VENDOR_LIBS_CODE = `
 /* html2canvas 1.4.1 */
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t=t||self).html2canvas=e()}(this,(function(){"use strict";var t=function(t,e,n,r,o,i,a,s){return new Promise((function(c,l){s.onclone&&s.onclone(n);var u=n.defaultView.pageXOffset,p=n.defaultView.pageYOffset;t.scrollTo(i,a);var f=(s.backgroundColor||"transparent").toString(),d=t.renderer.render(e,r,o,i,a,f);c(d.then((function(t){t.getContext("2d").setTransform(1,0,0,1,0,0),t.getContext("2d").translate(-u,-p),s.onrendered&&s.onrendered(t)})))}));var e=function(t){return"string"==typeof t};var n=function(t){for(var e=[],n=0,r=t.length;n<r;n++)e.push(t[n]);return e};var r=/([\\s\\S])\\1+/,o=function(t){return e(t)?t.replace(r,"$1"):t};var i=/^([a-z0-9]*):/i;var a=function(t){var e=t.getPropertyValue("content");return"string"==typeof e&&"none"!==e?e.substr(1,e.length-2):""};var s=function(t,e){var n=a(t);if(n){var r=n.split(",");r.forEach((function(t){var n=t.match(i);n&&("open-quote"===n[1]?e.push(n[2]):"close-quote"===n[1]&&e.pop())}))}return e};var c=["normal","none","counter","open-quote","close-quote","no-open-quote","no-close-quote","initial","inherit","unset"],l=/^((?:-moz-)?|cursor:)(.*?)\\s*,\\s*(.*?)$/,u=function(t){var e=t.getPropertyValue("cursor"),n=e.match(l);return n?{prefix:n[1],value:n[2],fallback:n[3]}:e};var p=function(t){var e={};return e.clip=t.clip,e.display=t.display,e.float=t.float,e.position=t.position,e.opacity=t.opacity,e.pointerEvents=t.pointerEvents,e.transform=t.transform,e.transformOrigin=t.transformOrigin,e.webkitTransform=t.webkitTransform,e.webkitTransformOrigin=t.webkitTransformOrigin,e.mozTransform=t.mozTransform,e.mozTransformOrigin=t.mozTransformOrigin,e.msTransform=t.msTransform,e.msTransformOrigin=t.msTransformOrigin,e.oTransform=t.oTransform,e.oTransformOrigin=t.oTransformOrigin,e.visibility=t.visibility,e};
@@ -16,7 +18,7 @@ const VENDOR_LIBS_CODE = `
 /* jspdf 2.5.1 */
 !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):((t="undefined"!=typeof globalThis?globalThis:t||self).jspdf=e()).jsPDF=t.jspdf}(this,(function(){"use strict";class t{constructor(t){this.subscribe=this.subscribe.bind(this),this.unsubscribe=this.unsubscribe.bind(this),this.publish=this.publish.bind(this),this.events=t||{}}}
 // ... Le reste du code minifié de jspdf est volontairement omis pour la lisibilité ...
-`;
+`.replace(/`/g, '\\`'); // Échapper tous les backticks
 
 // Ce composant injecte le code des bibliothèques dans une balise <script> une seule fois au montage de l'application.
 const InjectVendorLibs = () => {
