@@ -22,1381 +22,1575 @@ const CameraIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/20
 
 // --- Données par défaut ---
 const initialConfigData = {
-  offers: {
-    initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
-    optimale: { name: 'Offre Optimale', description: 'Description complète pour l\'offre optimale.', residentiel: { price: 2500, mensualite: 49.99 }, professionnel: { price: 2900, mensualite: 59.99 } },
-  },
-  packs: {
-    argent: { name: 'Pack Argent', residentiel: { price: 500, mensualite: 10 }, professionnel: { price: 600, mensualite: 15 } },
-    or: { name: 'Pack Or', residentiel: { price: 1000, mensualite: 20 }, professionnel: { price: 1200, mensualite: 25 } },
-    platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
-  },
-  extraItems: [],
-  discounts: [],
-  settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
+  offers: {
+    initiale: { name: 'Offre Initiale', description: 'Description de base pour l\'offre initiale.', residentiel: { price: 1500, mensualite: 29.99 }, professionnel: { price: 1800, mensualite: 39.99 } },
+    optimale: { name: 'Offre Optimale', description: 'Description complète pour l\'offre optimale.', residentiel: { price: 2500, mensualite: 49.99 }, professionnel: { price: 2900, mensualite: 59.99 } },
+  },
+  packs: {
+    argent: { name: 'Pack Argent', residentiel: { price: 500, mensualite: 10 }, professionnel: { price: 600, mensualite: 15 } },
+    or: { name: 'Pack Or', residentiel: { price: 1000, mensualite: 20 }, professionnel: { price: 1200, mensualite: 25 } },
+    platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
+  },
+  extraItems: [],
+  discounts: [],
+  settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
 
 // --- Composants ---
 const Modal = ({ title, message, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-            <p className="text-slate-600 mt-2 mb-4">{message}</p>
-            <button onClick={onClose} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Fermer</button>
-        </div>
-    </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+            <p className="text-slate-600 mt-2 mb-4">{message}</p>
+            <button onClick={onClose} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Fermer</button>
+        </div>
+    </div>
 );
 
 const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
-  const [salesperson, setSalesperson] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [modal, setModal] = useState(null);
+  const [salesperson, setSalesperson] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [modal, setModal] = useState(null);
 
-  const handleAttemptLogin = async () => {
-    if (!salesperson || salesperson.trim() === '') return;
-    setModal(null);
-    setIsLoading(true);
-    const result = await onLogin(salesperson.trim());
-    if (!result.success) {
-      setModal({ title: "Erreur", message: result.message });
-    }
-    setIsLoading(false);
-  };
+  const handleAttemptLogin = async () => {
+    if (!salesperson || salesperson.trim() === '') return;
+    setModal(null);
+    setIsLoading(true);
+    const result = await onLogin(salesperson.trim());
+    if (!result.success) {
+      setModal({ title: "Erreur", message: result.message });
+    }
+    setIsLoading(false);
+  };
 
-  return (
-    <div className="space-y-6 text-center">
-      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-      <LogInIcon className="mx-auto h-12 w-12 text-slate-400" />
-      <h2 className="text-3xl font-bold text-slate-800">Identification</h2>
-      <p className="text-slate-500">Veuillez entrer votre nom pour continuer.</p>
-      <input 
-        value={salesperson} 
-        onChange={(e) => setSalesperson(e.target.value)} 
-        placeholder="Prénom Nom" 
-        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-center" 
-      />
-      <button 
-        onClick={handleAttemptLogin} 
-        disabled={isLoading || !salesperson.trim() || !isFirebaseReady} 
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
-      >
-        {!isFirebaseReady ? 'Connexion...' : (isLoading ? 'Vérification...' : 'Accéder à mon espace')}
-      </button>
-    </div>
-  );
+  return (
+    <div className="space-y-6 text-center">
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+      <LogInIcon className="mx-auto h-12 w-12 text-slate-400" />
+      <h2 className="text-3xl font-bold text-slate-800">Identification</h2>
+      <p className="text-slate-500">Veuillez entrer votre nom pour continuer.</p>
+      <input 
+        value={salesperson} 
+        onChange={(e) => setSalesperson(e.target.value)} 
+        placeholder="Prénom Nom" 
+        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-center" 
+      />
+      <button 
+        onClick={handleAttemptLogin} 
+        disabled={isLoading || !salesperson.trim() || !isFirebaseReady} 
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+      >
+        {!isFirebaseReady ? 'Connexion...' : (isLoading ? 'Vérification...' : 'Accéder à mon espace')}
+      </button>
+    </div>
+  );
 };
 
 const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
-  const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-  const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
+  const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
+  const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Informations du Client</h2>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="nom" className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
-                <input id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
-            </div>
-            <div>
-                <label htmlFor="prenom" className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
-                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
-            </div>
-        </div>
-        <div>
-            <label htmlFor="adresse" className="block text-sm font-medium text-slate-600 mb-1">Adresse</label>
-            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label htmlFor="telephone" className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
-                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
-            </div>
-            <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <input id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
-            </div>
-        </div>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-300">Suivant</button>
-      </div>
-    </div>
-  );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Informations du Client</h2>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="nom" className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
+                <input id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+            <div>
+                <label htmlFor="prenom" className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
+                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+        </div>
+        <div>
+            <label htmlFor="adresse" className="block text-sm font-medium text-slate-600 mb-1">Adresse</label>
+            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label htmlFor="telephone" className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
+                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+            <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                <input id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            </div>
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-300">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const CustomerType = ({ setData, nextStep, prevStep }) => {
-  const setType = (type) => {
-    setData(prev => ({ ...prev, type }));
-    nextStep();
-  };
+  const setType = (type) => {
+    setData(prev => ({ ...prev, type }));
+    nextStep();
+  };
 
-  return (
-    <div className="space-y-6 text-center">
-      <h2 className="text-2xl font-bold text-slate-800">Type de Client</h2>
-      <p className="text-slate-500">S'agit-il d'un particulier ou d'un professionnel ?</p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-        <div onClick={() => setType('residentiel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
-          <UserIcon className="h-10 w-10 text-slate-500" />
-          <span className="mt-4 text-lg font-semibold text-slate-700">Résidentiel</span>
-        </div>
-        <div onClick={() => setType('professionnel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
-          <BuildingIcon className="h-10 w-10 text-slate-500" />
-          <span className="mt-4 text-lg font-semibold text-slate-700">Professionnel</span>
-        </div>
-      </div>
-      <div className="pt-4">
-        <button onClick={prevStep} className="w-full sm:w-auto sm:px-8 bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-      </div>
-    </div>
-  );
+  return (
+    <div className="space-y-6 text-center">
+      <h2 className="text-2xl font-bold text-slate-800">Type de Client</h2>
+      <p className="text-slate-500">S'agit-il d'un particulier ou d'un professionnel ?</p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+        <div onClick={() => setType('residentiel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
+          <UserIcon className="h-10 w-10 text-slate-500" />
+          <span className="mt-4 text-lg font-semibold text-slate-700">Résidentiel</span>
+        </div>
+        <div onClick={() => setType('professionnel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
+          <BuildingIcon className="h-10 w-10 text-slate-500" />
+          <span className="mt-4 text-lg font-semibold text-slate-700">Professionnel</span>
+        </div>
+      </div>
+      <div className="pt-4">
+        <button onClick={prevStep} className="w-full sm:w-auto sm:px-8 bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+      </div>
+    </div>
+  );
 };
 
 const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
-  const selectOffer = (offerKey) => {
-    setData(prev => ({ ...prev, offer: offerKey }));
-    nextStep();
-  };
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Choisissez votre offre</h2>
-      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
-        {Object.entries(config.offers).map(([key, offer]) => {
-          const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
-          return (
-            <div key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
-              <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-              <p className="text-sm text-slate-600 mt-2 h-12">{offer.description}</p>
-              <div className="mt-4">
-                  <p className="text-3xl font-light text-slate-800">{priceInfo.price} €</p>
-                  <p className="text-lg font-semibold text-slate-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-      </div>
-    </div>
-  );
+  const selectOffer = (offerKey) => {
+    setData(prev => ({ ...prev, offer: offerKey }));
+    nextStep();
+  };
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Choisissez votre offre</h2>
+      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
+        {Object.entries(config.offers).map(([key, offer]) => {
+          const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
+          return (
+            <div key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
+              <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
+              <p className="text-sm text-slate-600 mt-2 h-12">{offer.description}</p>
+              <div className="mt-4">
+                  <p className="text-3xl font-light text-slate-800">{priceInfo.price} €</p>
+                  <p className="text-lg font-semibold text-slate-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+      </div>
+    </div>
+  );
 };
 
 const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
-  const addPack = (packKey) => {
-    const newPack = { id: Date.now(), key: packKey, details: '' };
-    setData(prev => ({ ...prev, packs: [...prev.packs, newPack] }));
-  };
+  const addPack = (packKey) => {
+    const newPack = { id: Date.now(), key: packKey, details: '' };
+    setData(prev => ({ ...prev, packs: [...prev.packs, newPack] }));
+  };
 
-  const removePack = (packId) => {
-    setData(prev => ({ ...prev, packs: prev.packs.filter(p => p.id !== packId) }));
-  };
+  const removePack = (packId) => {
+    setData(prev => ({ ...prev, packs: prev.packs.filter(p => p.id !== packId) }));
+  };
 
-  const handleDetailChange = (packId, details) => {
-    const updatedPacks = data.packs.map(p => p.id === packId ? { ...p, details } : p);
-    setData(prev => ({ ...prev, packs: updatedPacks }));
-  };
+  const handleDetailChange = (packId, details) => {
+    const updatedPacks = data.packs.map(p => p.id === packId ? { ...p, details } : p);
+    setData(prev => ({ ...prev, packs: updatedPacks }));
+  };
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des packs supplémentaires</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-            {Object.entries(config.packs).map(([key, pack]) => {
-            const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
-            return (
-                <div key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-xl text-center transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer">
-                    <h3 className="text-lg font-bold text-slate-800">{pack.name}</h3>
-                    <p className="text-md font-light mt-1">{priceInfo.price} €</p>
-                    <p className="text-sm font-semibold text-slate-600">+ {priceInfo.mensualite} €/mois</p>
-                    <span className="mt-3 inline-block bg-blue-100 text-blue-700 text-sm font-bold px-4 py-1 rounded-full">Ajouter</span>
-                </div>
-            )
-            })}
-        </div>
-      </div>
+  return (
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des packs supplémentaires</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            {Object.entries(config.packs).map(([key, pack]) => {
+            const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
+            return (
+                <div key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-xl text-center transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer">
+                    <h3 className="text-lg font-bold text-slate-800">{pack.name}</h3>
+                    <p className="text-md font-light mt-1">{priceInfo.price} €</p>
+                    <p className="text-sm font-semibold text-slate-600">+ {priceInfo.mensualite} €/mois</p>
+                    <span className="mt-3 inline-block bg-blue-100 text-blue-700 text-sm font-bold px-4 py-1 rounded-full">Ajouter</span>
+                </div>
+            )
+            })}
+        </div>
+      </div>
 
-      <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Packs sélectionnés</h3>
-        {data.packs.length === 0 ? (
-          <div className="text-center py-6 border-2 border-dashed rounded-xl">
-            <p className="text-slate-500">Aucun pack sélectionné.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {data.packs.map((pack) => {
-              const packInfo = config.packs[pack.key];
-              return (
-                <div key={pack.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-bold text-lg text-slate-700">{packInfo.name}</h4>
-                    <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                  </div>
-                  <textarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus..." className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="2"></textarea>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-      </div>
-    </div>
-  );
+      <div>
+        <h3 className="text-xl font-bold text-slate-800 mb-4">Packs sélectionnés</h3>
+        {data.packs.length === 0 ? (
+          <div className="text-center py-6 border-2 border-dashed rounded-xl">
+            <p className="text-slate-500">Aucun pack sélectionné.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {data.packs.map((pack) => {
+              const packInfo = config.packs[pack.key];
+              return (
+                <div key={pack.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-bold text-lg text-slate-700">{packInfo.name}</h4>
+                    <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                  </div>
+                  <textarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus..." className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="2"></textarea>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
-  const toggleItem = (itemId) => {
-    const currentItems = data.extraItems || [];
-    const newItems = currentItems.includes(itemId) ? currentItems.filter(id => id !== itemId) : [...currentItems, itemId];
-    setData(prev => ({ ...prev, extraItems: newItems }));
-  };
+  const toggleItem = (itemId) => {
+    const currentItems = data.extraItems || [];
+    const newItems = currentItems.includes(itemId) ? currentItems.filter(id => id !== itemId) : [...currentItems, itemId];
+    setData(prev => ({ ...prev, extraItems: newItems }));
+  };
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Éléments supplémentaires</h2>
-      <div className="space-y-3">
-        {config.extraItems.map(item => (
-          <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
-            <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-            <span className="ml-4 text-slate-700">{item.name}</span>
-            <span className="ml-auto font-semibold">{item.price} €</span>
-          </label>
-        ))}
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-      </div>
-    </div>
-  );
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Éléments supplémentaires</h2>
+      <div className="space-y-3">
+        {config.extraItems.map(item => (
+          <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+            <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+            <span className="ml-4 text-slate-700">{item.name}</span>
+            <span className="ml-auto font-semibold">{item.price} €</span>
+          </label>
+        ))}
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+      </div>
+    </div>
+  );
 };
 
 const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscounts, setAppliedDiscounts }) => {
-  const [discountCode, setDiscountCode] = useState('');
-  const [modal, setModal] = useState(null);
+  const [discountCode, setDiscountCode] = useState('');
+  const [modal, setModal] = useState(null);
 
-  const applyDiscount = () => {
-      const code = discountCode.toUpperCase();
-      const discount = config.discounts.find(d => d.code === code && d.active);
-      
-      if (discount) {
-          const newDiscounts = appliedDiscounts.filter(d => {
-              if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
-                  return d.type !== 'prix_fixe' && d.type !== 'materiel';
-              }
-              return d.type !== discount.type;
-          });
-          setAppliedDiscounts([...newDiscounts, discount]);
-          setDiscountCode('');
-      } else {
-        setModal({title: "Erreur", message: "Code de réduction invalide ou inactif."});
-      }
-  };
+  const applyDiscount = () => {
+      const code = discountCode.toUpperCase();
+      const discount = config.discounts.find(d => d.code === code && d.active);
+      
+      if (discount) {
+          const newDiscounts = appliedDiscounts.filter(d => {
+              if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
+                  return d.type !== 'prix_fixe' && d.type !== 'materiel';
+              }
+              return d.type !== discount.type;
+          });
+          setAppliedDiscounts([...newDiscounts, discount]);
+          setDiscountCode('');
+      } else {
+        setModal({title: "Erreur", message: "Code de réduction invalide ou inactif."});
+      }
+  };
 
-  const removeDiscount = (discountId) => {
-    setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
-  };
+  const removeDiscount = (discountId) => {
+    setAppliedDiscounts(prev => prev.filter(d => d.id !== discountId));
+  };
 
-  return (
-    <div className="space-y-6">
-      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Résumé du devis</h2>
-      <div id="summary-content">
-        <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
-      </div>
-        <div className="space-y-4">
-            <div className="flex gap-2">
-                <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border border-slate-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
-                <button onClick={applyDiscount} className="bg-slate-800 text-white px-6 rounded-lg font-semibold hover:bg-black transition-colors">Appliquer</button>
-            </div>
-        </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Valider et choisir la date</button>
-      </div>
-    </div>
-  );
+  return (
+    <div className="space-y-6">
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Résumé du devis</h2>
+      <div id="summary-content">
+        <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
+      </div>
+        <div className="space-y-4">
+            <div className="flex gap-2">
+                <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border border-slate-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+                <button onClick={applyDiscount} className="bg-slate-800 text-white px-6 rounded-lg font-semibold hover:bg-black transition-colors">Appliquer</button>
+            </div>
+        </div>
+      <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Valider et choisir la date</button>
+      </div>
+    </div>
+  );
 };
 
 const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscount }) => (
-  <>
-    <div className="p-4 sm:p-6 bg-slate-50 rounded-xl border border-slate-200">
-      <h3 className="font-bold text-lg mb-4">Client</h3>
-      <p>{data.client.prenom} {data.client.nom}</p>
-      <p>{data.client.adresse}</p>
-      <p>{data.client.telephone} | {data.client.email}</p>
-      <p className="capitalize mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block">{data.type}</p>
-    </div>
-    <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
-      <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
-      {data.offer && (
-        <div>
-            <div className="flex justify-between">
-                <span>{config.offers[data.offer].name}</span>
-                <span>{calculation.offerPrice.toFixed(2)} €</span>
-            </div>
-            <p className="text-xs text-slate-500 italic pl-4">{config.offers[data.offer].description}</p>
-        </div>
-      )}
-      {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
-      {data.packs.map(packInstance => {
-          const packInfo = config.packs[packInstance.key];
-          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-slate-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
-      })}
-      {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
-      {data.extraItems.map(id => {
-        const item = config.extraItems.find(i => i.id === id);
-        return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
-      })}
-      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.map(discount => {
-        if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
-        }
-        return null;
-      })}
-      <hr className="my-2"/>
-      <div className="flex justify-between">
-        <span>Frais d'installation</span>
-        <span>{config.settings.installationFee.toFixed(2)} €</span>
-      </div>
-      {appliedDiscounts.map(discount => {
-        if (discount.type === 'installation_offerte') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
-        }
-        return null;
-      })}
-      <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
-      <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
-      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
-    </div>
-     <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
-      <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
-      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
-      {data.packs.map(packInstance => {
-          const packInfo = config.packs[packInstance.key];
-          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
-      })}
-      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
-      {appliedDiscounts.map(discount => {
-        if (discount.type === 'abonnement') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
-        }
-        return null;
-      })}
-      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
-    </div>
-  </>
+  <>
+    <div className="p-4 sm:p-6 bg-slate-50 rounded-xl border border-slate-200">
+      <h3 className="font-bold text-lg mb-4">Client</h3>
+      <p>{data.client.prenom} {data.client.nom}</p>
+      <p>{data.client.adresse}</p>
+      <p>{data.client.telephone} | {data.client.email}</p>
+      <p className="capitalize mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block">{data.type}</p>
+    </div>
+    <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
+      <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
+      {data.offer && (
+        <div>
+            <div className="flex justify-between">
+                <span>{config.offers[data.offer].name}</span>
+                <span>{calculation.offerPrice.toFixed(2)} €</span>
+            </div>
+            <p className="text-xs text-slate-500 italic pl-4">{config.offers[data.offer].description}</p>
+        </div>
+      )}
+      {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
+      {data.packs.map(packInstance => {
+          const packInfo = config.packs[packInstance.key];
+          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-slate-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
+      })}
+      {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
+      {data.extraItems.map(id => {
+        const item = config.extraItems.find(i => i.id === id);
+        return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
+      })}
+      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <hr className="my-2"/>
+      <div className="flex justify-between">
+        <span>Frais d'installation</span>
+        <span>{config.settings.installationFee.toFixed(2)} €</span>
+      </div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'installation_offerte') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
+      <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
+      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
+    </div>
+     <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
+      <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
+      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
+      {data.packs.map(packInstance => {
+          const packInfo = config.packs[packInstance.key];
+          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
+      })}
+      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
+      {appliedDiscounts.map(discount => {
+        if (discount.type === 'abonnement') {
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
+        }
+        return null;
+      })}
+      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
+    </div>
+  </>
 );
 
-const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
-  const [status, setStatus] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [modal, setModal] = useState(null);
-  const pdfRef = useRef();
-  
-  const handleStatusChange = (newStatus) => {
-    setStatus(newStatus);
-    if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
-    if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
-  };
+const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId, sendDocumentByEmail }) => {
+  const [status, setStatus] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [modal, setModal] = useState(null);
+  const pdfRef = useRef();
+  
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
+    if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
+  };
 
-  const loadScript = (src) => new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Script load error for ${src}`));
-      document.body.appendChild(script);
-  });
-  
-  const formatDateForGoogle = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const nextDay = new Date(date);
-    nextDay.setDate(date.getDate() + 1);
-    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
-    return `${formatDate(date)}/${formatDate(nextDay)}`;
-  };
+  const formatDateForGoogle = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const nextDay = new Date(date);
+    nextDay.setDate(date.getDate() + 1);
+    const formatDate = (d) => d.toISOString().split('T')[0].replace(/-/g, '');
+    return `${formatDate(date)}/${formatDate(nextDay)}`;
+  };
 
-  const handleGenerateAndSend = async () => {
-    setIsGenerating(true);
-    try {
-      await Promise.all([
-        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
-        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
-      ]);
-      await new Promise(resolve => setTimeout(resolve, 100));
+  const handleGenerateAndSend = async () => {
+    setIsGenerating(true);
+    try {
+        // Sauvegarde sur Firestore d'abord
+        const quotesPath = `/artifacts/${appId}/public/data/devis`;
+        const quoteToSave = { ...data, calculation, appliedDiscounts, createdAt: serverTimestamp() };
+        await addDoc(collection(db, quotesPath), quoteToSave);
 
-      const { jsPDF } = window.jspdf;
-      const html2canvas = window.html2canvas;
-      const input = pdfRef.current;
-      if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
+        // Appel de la fonction centralisée pour générer le PDF et envoyer l'email
+        const emailSent = await sendDocumentByEmail({
+            documentType: 'devis',
+            client: data.client,
+            pdfContentRef: pdfRef.current,
+        });
 
-      const quotesPath = `/artifacts/${appId}/public/data/devis`;
-      const quoteToSave = { ...data, calculation, appliedDiscounts, createdAt: serverTimestamp() };
-      await addDoc(collection(db, quotesPath), quoteToSave);
+        if (!emailSent) {
+            throw new Error("L'envoi de l'email a échoué. Le devis a été sauvegardé, mais pas envoyé.");
+        }
 
-      const canvas = await html2canvas(input, { scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pdfWidth - 20;
-      const imgHeight = imgWidth / (canvas.width / canvas.height);
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-      pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
+      if (data.installationDate || data.followUpDate) {
+        const eventDate = data.installationDate || data.followUpDate;
+        const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
+        const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
+        const formattedDate = formatDateForGoogle(eventDate);
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
+        window.open(calendarUrl, '_blank');
+      }
 
-      if (data.installationDate || data.followUpDate) {
-        const eventDate = data.installationDate || data.followUpDate;
-        const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
-        const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
-        const formattedDate = formatDateForGoogle(eventDate);
-        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
-        window.open(calendarUrl, '_blank');
-      }
+      nextStep(); // Aller à l'écran de confirmation
+    } catch(error) {
+        console.error("Erreur lors de la finalisation du devis:", error);
+        setModal({title: "Erreur", message: error.message || "Une erreur est survenue."});
+    } finally {
+        setIsGenerating(false);
+    }
+  };
 
-      const subject = encodeURIComponent(`Votre devis`);
-      const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
-      window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
-      nextStep();
-    } catch(error) {
-        console.error("Erreur:", error);
-        setModal({title: "Erreur", message: "Une erreur est survenue lors de la génération du devis."});
-    } finally {
-        setIsGenerating(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Installation et Envoi</h2>
-      <div className="p-6 bg-slate-50 rounded-xl border space-y-4">
-        <label className="flex items-center cursor-pointer">
-          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
-          <span className="ml-3 text-slate-700">Le client a accepté le devis.</span>
-        </label>
-        {status === 'accepted' && (
-          <div className="pl-7 mt-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
-            <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
-          </div>
-        )}
-        <label className="flex items-center cursor-pointer">
-          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
-          <span className="ml-3 text-slate-700">Le client souhaite réfléchir.</span>
-        </label>
-        {status === 'thinking' && (
-          <div className="pl-7 mt-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
-            <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
-          </div>
-        )}
-      </div>
-       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={handleGenerateAndSend} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
-            {isGenerating ? 'En cours...' : 'Valider et envoyer'}
-        </button>
-      </div>
-      <div className="absolute left-[-9999px] top-0 w-[210mm]">
-          <div ref={pdfRef}>
-              <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
-          </div>
-      </div>
-    </div>
-  );
+  return (
+    <div className="space-y-6">
+      {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Installation et Envoi</h2>
+      <div className="p-6 bg-slate-50 rounded-xl border space-y-4">
+        <label className="flex items-center cursor-pointer">
+          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
+          <span className="ml-3 text-slate-700">Le client a accepté le devis.</span>
+        </label>
+        {status === 'accepted' && (
+          <div className="pl-7 mt-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
+            <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
+          </div>
+        )}
+        <label className="flex items-center cursor-pointer">
+          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
+          <span className="ml-3 text-slate-700">Le client souhaite réfléchir.</span>
+        </label>
+        {status === 'thinking' && (
+          <div className="pl-7 mt-2">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
+            <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
+          </div>
+        )}
+      </div>
+       <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+        <button onClick={handleGenerateAndSend} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
+            {isGenerating ? 'Envoi en cours...' : 'Valider et envoyer au client'}
+        </button>
+      </div>
+      {/* Cet élément est utilisé pour la génération du PDF. Il n'est pas visible par l'utilisateur. */}
+      <div className="absolute left-[-9999px] top-0 w-[210mm]">
+          <div ref={pdfRef}>
+              <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
+          </div>
+      </div>
+    </div>
+  );
 };
 
-const Confirmation = ({ reset }) => (
+const Confirmation = ({ reset, type = 'devis' }) => (
     <div className="text-center space-y-6">
         <CheckCircleIcon className="mx-auto h-16 w-16 text-green-500" />
-        <h2 className="text-2xl font-bold text-slate-800">Devis envoyé !</h2>
-        <p className="text-slate-600">Le devis a été enregistré et le PDF téléchargé.</p>
-        <button onClick={reset} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Créer un nouveau devis</button>
+        <h2 className="text-2xl font-bold text-slate-800">{type === 'devis' ? 'Devis' : 'Rapport'} envoyé !</h2>
+        <p className="text-slate-600">Le document a été sauvegardé et envoyé au client avec succès.</p>
+        <button onClick={reset} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+            {type === 'devis' ? 'Créer un nouveau devis' : 'Retour à l\'accueil'}
+        </button>
     </div>
 );
 
 const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appointments, onUpdateStatus }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'confirmé': return 'bg-green-100 text-green-800';
-      case 'en attente': return 'bg-yellow-100 text-yellow-800';
-      case 'relance': return 'bg-blue-100 text-blue-800';
-      case 'pas vendu': return 'bg-red-100 text-red-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'confirmé': return 'bg-green-100 text-green-800';
+      case 'en attente': return 'bg-yellow-100 text-yellow-800';
+      case 'relance': return 'bg-blue-100 text-blue-800';
+      case 'pas vendu': return 'bg-red-100 text-red-800';
+      default: return 'bg-slate-100 text-slate-800';
+    }
+  };
 
-  const filteredAppointments = appointments.filter(app =>
-    app.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (app.phone && app.phone.includes(searchTerm))
-  );
+  const filteredAppointments = appointments.filter(app =>
+    app.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (app.phone && app.phone.includes(searchTerm))
+  );
 
-  return (
-    <div className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-slate-800">Mes rendez-vous</h1>
-          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors self-start">
-             <ArrowLeftIcon /> Retour
-          </button>
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Rechercher un prospect par nom ou téléphone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-3 border border-slate-300 rounded-lg w-full mb-4 focus:ring-2 focus:ring-blue-500"
-          />
-          {filteredAppointments.length === 0 ? (
-            <div className="text-center text-slate-500 py-8 border-2 border-dashed rounded-xl">
-              <p>{appointments.length > 0 ? "Aucun rendez-vous ne correspond à votre recherche." : "Aucun rendez-vous pour le moment."}</p>
-            </div>
-          ) : (
-            filteredAppointments.map(app => (
-              <div key={app.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
-                  <p className="font-bold text-lg text-slate-800">{app.clientName}</p>
-                  <p className="text-sm text-slate-500">Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}</p>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusClass(app.status)}`}>{app.status}</span>
-                  <select value={app.status} onChange={(e) => onUpdateStatus(app.docId, e.target.value)} onClick={(e) => e.stopPropagation()} className="p-1 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
-                    <option value="en attente">En attente</option>
-                    <option value="relance">Relance</option>
-                    <option value="pas vendu">Pas vendu</option>
-                    <option value="confirmé">Confirmé</option>
-                  </select>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-    </div>
-  );
+  return (
+    <div className="w-full">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+          <h1 className="text-3xl font-bold text-slate-800">Mes rendez-vous</h1>
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors self-start">
+             <ArrowLeftIcon /> Retour
+          </button>
+        </div>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Rechercher un prospect par nom ou téléphone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="p-3 border border-slate-300 rounded-lg w-full mb-4 focus:ring-2 focus:ring-blue-500"
+          />
+          {filteredAppointments.length === 0 ? (
+            <div className="text-center text-slate-500 py-8 border-2 border-dashed rounded-xl">
+              <p>{appointments.length > 0 ? "Aucun rendez-vous ne correspond à votre recherche." : "Aucun rendez-vous pour le moment."}</p>
+            </div>
+          ) : (
+            filteredAppointments.map(app => (
+              <div key={app.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
+                  <p className="font-bold text-lg text-slate-800">{app.clientName}</p>
+                  <p className="text-sm text-slate-500">Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusClass(app.status)}`}>{app.status}</span>
+                  <select value={app.status} onChange={(e) => onUpdateStatus(app.docId, e.target.value)} onClick={(e) => e.stopPropagation()} className="p-1 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
+                    <option value="en attente">En attente</option>
+                    <option value="relance">Relance</option>
+                    <option value="pas vendu">Pas vendu</option>
+                    <option value="confirmé">Confirmé</option>
+                  </select>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+    </div>
+  );
 };
 
 const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
-  if (!appointment) return <div>Rendez-vous non trouvé.</div>;
+  if (!appointment) return <div>Rendez-vous non trouvé.</div>;
 
-  const clientDataForQuote = {
-      nom: appointment.clientName.split(' ').slice(1).join(' '),
-      prenom: appointment.clientName.split(' ')[0],
-      email: '', 
-      telephone: appointment.phone || '',
-      adresse: appointment.address || ''
-  };
+  const clientDataForQuote = {
+      nom: appointment.clientName.split(' ').slice(1).join(' '),
+      prenom: appointment.clientName.split(' ')[0],
+      email: '', 
+      telephone: appointment.phone || '',
+      adresse: appointment.address || ''
+  };
 
-  return (
-    <div className="w-full">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
-          <ArrowLeftIcon /> Tous les rendez-vous
-        </button>
-        <div className="mt-4">
-          <h2 className="text-2xl font-bold text-slate-800">{appointment.clientName}</h2>
-          <p className="text-slate-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</p>
-          <p className="mt-1">Adresse : {appointment.address}</p>
-          <p className="mt-1">Téléphone : {appointment.phone}</p>
-          <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
-          <hr className="my-6" />
-          <button onClick={() => onStartQuote(clientDataForQuote)} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-            Créer un devis pour ce client
-          </button>
-        </div>
-    </div>
-  );
+  return (
+    <div className="w-full">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
+          <ArrowLeftIcon /> Tous les rendez-vous
+        </button>
+        <div className="mt-4">
+          <h2 className="text-2xl font-bold text-slate-800">{appointment.clientName}</h2>
+          <p className="text-slate-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</p>
+          <p className="mt-1">Adresse : {appointment.address}</p>
+          <p className="mt-1">Téléphone : {appointment.phone}</p>
+          <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
+          <hr className="my-6" />
+          <button onClick={() => onStartQuote(clientDataForQuote)} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+            Créer un devis pour ce client
+          </button>
+        </div>
+    </div>
+  );
 };
 
 const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }) => {
-  const [clientName, setClientName] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [address, setAddress] = useState(''); 
-  const [phone, setPhone] = useState(''); 
-  const [modal, setModal] = useState(null);
+  const [clientName, setClientName] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [address, setAddress] = useState(''); 
+  const [phone, setPhone] = useState(''); 
+  const [modal, setModal] = useState(null);
 
-  const addressInputRef = useRef(null);
-  const autocompleteRef = useRef(null);
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
 
-  useEffect(() => {
-    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS';
-    if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
-        console.warn("L'autocomplete d'adresse est désactivé. Veuillez insérer une clé API Google Maps.");
-        return;
-    }
-    const scriptId = 'google-maps-script';
-    const initAutocomplete = () => {
-      if (window.google && addressInputRef.current && !autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-          addressInputRef.current,
-          { types: ['address'], componentRestrictions: { country: 'fr' } }
-        );
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place && place.formatted_address) setAddress(place.formatted_address);
-        });
-        autocompleteRef.current = autocomplete;
-      }
-    };
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initAutocomplete;
-      document.head.appendChild(script);
-    } else {
-        initAutocomplete();
-    }
-  }, []);
+  useEffect(() => {
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS';
+    if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
+        console.warn("L'autocomplete d'adresse est désactivé. Veuillez insérer une clé API Google Maps.");
+        return;
+    }
+    const scriptId = 'google-maps-script';
+    const initAutocomplete = () => {
+      if (window.google && addressInputRef.current && !autocompleteRef.current) {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          { types: ['address'], componentRestrictions: { country: 'fr' } }
+        );
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place && place.formatted_address) setAddress(place.formatted_address);
+        });
+        autocompleteRef.current = autocomplete;
+      }
+    };
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    } else {
+        initAutocomplete();
+    }
+  }, []);
 
-  const formatDateTimeForGoogle = (dateString, timeString) => {
-    if (!dateString || !timeString) return '';
-    const startDate = new Date(`${dateString}T${timeString}`);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-    const toGoogleString = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
-  };
+  const formatDateTimeForGoogle = (dateString, timeString) => {
+    if (!dateString || !timeString) return '';
+    const startDate = new Date(`${dateString}T${timeString}`);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    const toGoogleString = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    return `${toGoogleString(startDate)}/${toGoogleString(endDate)}`;
+  };
 
-  const handleSave = async () => {
-    const newAppointmentData = { salesperson, clientName, date, time, address, phone, status: 'en attente', createdAt: serverTimestamp() };
-    const success = await onAppointmentCreated(newAppointmentData);
-    if(success) {
-        const title = `Rendez-vous - ${clientName}`;
-        const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
-        const formattedDateTime = formatDateTimeForGoogle(date, time);
-        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
-        window.open(calendarUrl, '_blank');
-    } else {
-        setModal({title: "Erreur", message: "Impossible de sauvegarder le rendez-vous."});
-    }
-  };
+  const handleSave = async () => {
+    const newAppointmentData = { salesperson, clientName, date, time, address, phone, status: 'en attente', createdAt: serverTimestamp() };
+    const success = await onAppointmentCreated(newAppointmentData);
+    if(success) {
+        const title = `Rendez-vous - ${clientName}`;
+        const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
+        const formattedDateTime = formatDateTimeForGoogle(date, time);
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
+        window.open(calendarUrl, '_blank');
+    } else {
+        setModal({title: "Erreur", message: "Impossible de sauvegarder le rendez-vous."});
+    }
+  };
 
-  const isFormValid = () => clientName && date && time && address && phone;
+  const isFormValid = () => clientName && date && time && address && phone;
 
-  return (
-    <div className="w-full">
-        {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
-            <ArrowLeftIcon /> Accueil
-        </button>
-        <div className="space-y-6 mt-4">
-            <h2 className="text-2xl font-bold text-slate-800">Créer un nouveau rendez-vous</h2>
-            <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nom du prospect</label>
-                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border border-slate-300 rounded-lg"/>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Date du rendez-vous</label>
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Heure</label>
-                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
-                </div>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Adresse du rendez-vous</label>
-                <input 
-                ref={addressInputRef}
-                value={address} 
-                onChange={(e) => setAddress(e.target.value)} 
-                placeholder="123 Rue de l'Exemple, 75001 Paris" 
-                className="w-full p-3 border border-slate-300 rounded-lg"
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Numéro de téléphone du prospect</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg"/>
-            </div>
-            <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300">
-                Enregistrer le rendez-vous
-            </button>
-        </div>
-    </div>
-  );
+  return (
+    <div className="w-full">
+        {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
+            <ArrowLeftIcon /> Accueil
+        </button>
+        <div className="space-y-6 mt-4">
+            <h2 className="text-2xl font-bold text-slate-800">Créer un nouveau rendez-vous</h2>
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nom du prospect</label>
+                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border border-slate-300 rounded-lg"/>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Date du rendez-vous</label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Heure</label>
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Adresse du rendez-vous</label>
+                <input 
+                ref={addressInputRef}
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)} 
+                placeholder="123 Rue de l'Exemple, 75001 Paris" 
+                className="w-full p-3 border border-slate-300 rounded-lg"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Numéro de téléphone du prospect</label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg"/>
+            </div>
+            <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300">
+                Enregistrer le rendez-vous
+            </button>
+        </div>
+    </div>
+  );
 };
 
 const PresentationMode = ({ onBack, videos }) => {
-    const getEmbedUrl = (url) => {
-        try {
-            const urlObj = new URL(url);
-            if (urlObj.hostname === 'drive.google.com') {
-                return url.replace('/view', '/preview');
-            }
-            return url;
-        } catch (e) {
-            return url;
-        }
-    };
+    const getEmbedUrl = (url) => {
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname === 'drive.google.com') {
+                return url.replace('/view', '/preview');
+            }
+            return url;
+        } catch (e) {
+            return url;
+        }
+    };
 
-    return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-800">Présentation Client</h1>
-                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300">
-                    <ArrowLeftIcon /> Retour
-                </button>
-            </div>
-            {videos.length > 0 ? (
-                <div className="space-y-8">
-                    {videos.map(video => (
-                        <div key={video.id}>
-                            <h2 className="text-xl font-bold text-slate-800 mb-4">{video.title}</h2>
-                            <div className="aspect-w-16 aspect-h-9 bg-slate-200 rounded-xl overflow-hidden">
-                                <iframe
-                                    src={getEmbedUrl(video.url)}
-                                    allow="autoplay"
-                                    className="w-full h-full"
-                                    frameBorder="0"
-                                ></iframe>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12 border-2 border-dashed rounded-xl">
-                    <p className="text-slate-500">Aucune vidéo de présentation n'a été configurée.</p>
-                </div>
-            )}
-        </div>
-    );
+    return (
+        <div className="w-full">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-slate-800">Présentation Client</h1>
+                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300">
+                    <ArrowLeftIcon /> Retour
+                </button>
+            </div>
+            {videos.length > 0 ? (
+                <div className="space-y-8">
+                    {videos.map(video => (
+                        <div key={video.id}>
+                            <h2 className="text-xl font-bold text-slate-800 mb-4">{video.title}</h2>
+                            <div className="aspect-w-16 aspect-h-9 bg-slate-200 rounded-xl overflow-hidden">
+                                <iframe
+                                    src={getEmbedUrl(video.url)}
+                                    allow="autoplay"
+                                    className="w-full h-full"
+                                    frameBorder="0"
+                                ></iframe>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-12 border-2 border-dashed rounded-xl">
+                    <p className="text-slate-500">Aucune vidéo de présentation n'a été configurée.</p>
+                </div>
+            )}
+        </div>
+    );
 };
 
 // --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
 
-const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
-    const [step, setStep] = useState(1);
-    const [reportData, setReportData] = useState({
-        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-        interventionDate: new Date().toISOString().split('T')[0],
-        motif: '',
-        nuisiblesConstates: [],
-        zonesInspectees: [],
-        niveauInfestation: 'Non précisé',
-        observations: '',
-        actionsMenees: [],
-        produitsUtilises: '',
-        photos: [],
-        recommandations: '',
-        salesperson: salesperson,
-    });
-    const [reportConfig, setReportConfig] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            if (!db || !appId) {
-                console.error("DB or AppId not available");
-                setIsLoading(false);
-                return;
-            }
-            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
-            const docRef = doc(db, reportDocPath);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setReportConfig(docSnap.data());
-                } else {
-                    console.warn("Report configuration not found, using fallback.");
-                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-                }
-            } catch(e) {
-                console.error("Error fetching report config:", e);
-                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchConfig();
-    }, [db, appId]);
-
-    const nextStep = () => setStep(s => s + 1);
-    const prevStep = () => setStep(s => s - 1);
-
-    const handleGenerate = async () => {
-        console.log("Génération du rapport...", reportData);
-        // Ici, on ajouterait la logique pour générer le PDF
-        const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
-        try {
-            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
-            alert("Rapport sauvegardé avec succès !"); // Remplacer par un modal plus tard
-        } catch(e) {
-            console.error("Error saving report:", e);
-            alert("Erreur lors de la sauvegarde du rapport."); // Remplacer par un modal plus tard
-        }
-        onBackToHome();
-    };
-
-
-    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
-
-    const progress = (step / 5) * 100;
-    
-    const renderCurrentStep = () => {
-         switch(step) {
-            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
-            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} />;
-            default: return <p>Étape inconnue</p>;
-         }
-    };
-    
+// NOUVEAU: Un composant dédié à l'affichage du rapport pour la génération PDF
+const RapportPourPDF = React.forwardRef(({ data, config }, ref) => {
     return (
-        <div className="w-full">
-            <div className="mb-6">
-                <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+        <div ref={ref} className="p-4 bg-white">
+            <h1 className="text-2xl font-bold mb-4 text-center">Rapport d'Intervention Sanitaire</h1>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4 p-2 border rounded">
+                <div>
+                    <h2 className="font-bold">Client</h2>
+                    <p>{data.client.prenom} {data.client.nom}</p>
+                    <p>{data.client.adresse}</p>
+                    <p>{data.client.telephone} | {data.client.email}</p>
+                </div>
+                <div>
+                    <h2 className="font-bold">Intervention</h2>
+                    <p>Date : {new Date(data.interventionDate).toLocaleDateString()}</p>
+                    <p>Technicien : {data.salesperson}</p>
+                </div>
             </div>
-            {renderCurrentStep()}
+
+            <div className="mb-4 p-2 border rounded">
+                <h2 className="font-bold">1. Diagnostic</h2>
+                <p><strong>Nuisibles constatés:</strong> {data.nuisiblesConstates.join(', ') || 'Aucun'}</p>
+                <p><strong>Zones inspectées:</strong> {data.zonesInspectees.join(', ') || 'Aucune'}</p>
+                <p><strong>Observations:</strong> {data.observations || 'Aucune'}</p>
+            </div>
+
+            <div className="mb-4 p-2 border rounded">
+                <h2 className="font-bold">2. Actions et Produits</h2>
+                <p><strong>Actions menées:</strong> {data.actionsMenees.join(', ') || 'Aucune'}</p>
+                <p><strong>Produits utilisés:</strong> {data.produitsUtilises || 'Aucun'}</p>
+            </div>
+
+            <div className="mb-4 p-2 border rounded">
+                <h2 className="font-bold">3. Recommandations</h2>
+                <p>{data.recommandations || 'Aucune'}</p>
+            </div>
+
+            {data.photos && data.photos.length > 0 && (
+                <div className="p-2 border rounded">
+                    <h2 className="font-bold mb-2">4. Photos</h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        {data.photos.map(photo => (
+                            <div key={photo.id}>
+                                <img src={photo.dataUrl} alt={photo.caption || 'Photo'} className="w-full h-auto border"/>
+                                <p className="text-xs text-center mt-1">{photo.caption}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
+});
+
+
+const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, sendDocumentByEmail }) => {
+    const [step, setStep] = useState(1);
+    const [reportData, setReportData] = useState({
+        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
+        interventionDate: new Date().toISOString().split('T')[0],
+        motif: '',
+        nuisiblesConstates: [],
+        zonesInspectees: [],
+        niveauInfestation: 'Non précisé',
+        observations: '',
+        actionsMenees: [],
+        produitsUtilises: '',
+        photos: [],
+        recommandations: '',
+        salesperson: salesperson,
+    });
+    const [reportConfig, setReportConfig] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [modal, setModal] = useState(null);
+    const pdfRef = useRef();
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            if (!db || !appId) {
+                console.error("DB or AppId not available");
+                setIsLoading(false);
+                return;
+            }
+            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
+            const docRef = doc(db, reportDocPath);
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setReportConfig(docSnap.data());
+                } else {
+                    console.warn("Report configuration not found, using fallback.");
+                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+                }
+            } catch(e) {
+                console.error("Error fetching report config:", e);
+                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchConfig();
+    }, [db, appId]);
+
+    const nextStep = () => setStep(s => s + 1);
+    const prevStep = () => setStep(s => s - 1);
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            // Sauvegarde sur Firestore
+            const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
+            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
+            
+            // Génération PDF et envoi email
+            const emailSent = await sendDocumentByEmail({
+                documentType: 'rapport',
+                client: reportData.client,
+                pdfContentRef: pdfRef.current
+            });
+            
+            if (!emailSent) {
+                throw new Error("L'envoi de l'email a échoué. Le rapport a été sauvegardé, mais pas envoyé.");
+            }
+            
+            // Si tout va bien, on va à la confirmation
+            setStep(s => s + 1);
+
+        } catch(error) {
+            console.error("Error finalizing report:", error);
+            setModal({title: "Erreur", message: error.message || "Une erreur est survenue lors de la finalisation du rapport."});
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
+
+    const progress = (step / 6) * 100;
+    
+    const renderCurrentStep = () => {
+         switch(step) {
+            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
+            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
+            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} isGenerating={isGenerating} />;
+            case 6: return <Confirmation reset={onBackToHome} type="rapport" />;
+            default: return <p>Étape inconnue</p>;
+         }
+    };
+    
+    return (
+        <div className="w-full">
+            {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+            <div className="mb-6">
+                <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+            </div>
+            {renderCurrentStep()}
+            {/* Div cachée pour la génération du PDF du rapport */}
+            <div className="absolute left-[-9999px] top-0 w-[210mm]">
+                <RapportPourPDF data={reportData} config={reportConfig} ref={pdfRef} />
+            </div>
+        </div>
+    );
 };
 
 const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
-    // On réutilise le composant existant pour les informations client
-    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
 };
 
 const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
-    };
+    
+    const handleCheckboxChange = (field, value) => {
+        const currentValues = data[field] || [];
+        const newValues = currentValues.includes(value)
+            ? currentValues.filter(item => item !== value)
+            : [...currentValues, value];
+        setData(prev => ({ ...prev, [field]: newValues }));
+    };
 
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
-            
-            <div>
-                <label className="font-semibold text-slate-700">Nuisibles constatés</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.nuisibles?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.nuisiblesConstates.includes(item)} onChange={() => handleCheckboxChange('nuisiblesConstates', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
+            
+            <div>
+                <label className="font-semibold text-slate-700">Nuisibles constatés</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {config?.nuisibles?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.nuisiblesConstates.includes(item)} onChange={() => handleCheckboxChange('nuisiblesConstates', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
 
-             <div>
-                <label className="font-semibold text-slate-700">Zones inspectées</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.zones?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.zonesInspectees.includes(item)} onChange={() => handleCheckboxChange('zonesInspectees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
+             <div>
+                <label className="font-semibold text-slate-700">Zones inspectées</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {config?.zones?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.zonesInspectees.includes(item)} onChange={() => handleCheckboxChange('zonesInspectees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
 
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
-                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
-            </div>
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
+                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
+            </div>
 
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-            </div>
-        </div>
-    );
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+            </div>
+        </div>
+    );
 };
 
 const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
-    
-    const handlePhotoUpload = (e) => {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (upload) => {
-                const newPhoto = {
-                    id: `photo_${Date.now()}_${Math.random()}`,
-                    dataUrl: upload.target.result,
-                    caption: ''
-                };
-                setData(prev => ({...prev, photos: [...prev.photos, newPhoto]}));
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-    
-    const updateCaption = (id, caption) => {
-        setData(prev => ({
-            ...prev,
-            photos: prev.photos.map(p => p.id === id ? {...p, caption} : p)
-        }));
-    };
+    
+    const handlePhotoUpload = (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (upload) => {
+                const newPhoto = {
+                    id: `photo_${Date.now()}_${Math.random()}`,
+                    dataUrl: upload.target.result,
+                    caption: ''
+                };
+                setData(prev => ({...prev, photos: [...prev.photos, newPhoto]}));
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+    
+    const updateCaption = (id, caption) => {
+        setData(prev => ({
+            ...prev,
+            photos: prev.photos.map(p => p.id === id ? {...p, caption} : p)
+        }));
+    };
 
-    const removePhoto = (id) => {
-        setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
-    };
+    const removePhoto = (id) => {
+        setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
+    };
 
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des Photos</h2>
-            
-            <div className="p-6 border-2 border-dashed rounded-xl text-center">
-                <label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-sm text-slate-700 hover:bg-slate-50">
-                    <CameraIcon className="h-5 w-5"/>
-                    Importer depuis l'appareil
-                </label>
-                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
-                <p className="text-xs text-slate-500 mt-2">Vous pouvez sélectionner plusieurs photos.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.photos.map(photo => (
-                    <div key={photo.id} className="border rounded-lg p-2 space-y-2">
-                        <img src={photo.dataUrl} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
-                        <input 
-                            type="text"
-                            value={photo.caption}
-                            onChange={(e) => updateCaption(photo.id, e.target.value)}
-                            placeholder="Ajouter une légende..."
-                            className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button onClick={() => removePhoto(photo.id)} className="text-xs text-red-600 hover:underline">Supprimer</button>
-                    </div>
-                ))}
-            </div>
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des Photos</h2>
+            
+            <div className="p-6 border-2 border-dashed rounded-xl text-center">
+                <label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-sm text-slate-700 hover:bg-slate-50">
+                    <CameraIcon className="h-5 w-5"/>
+                    Importer depuis l'appareil
+                </label>
+                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
+                <p className="text-xs text-slate-500 mt-2">Vous pouvez sélectionner plusieurs photos.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {data.photos.map(photo => (
+                    <div key={photo.id} className="border rounded-lg p-2 space-y-2">
+                        <img src={photo.dataUrl} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
+                        <input 
+                            type="text"
+                            value={photo.caption}
+                            onChange={(e) => updateCaption(photo.id, e.target.value)}
+                            placeholder="Ajouter une légende..."
+                            className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button onClick={() => removePhoto(photo.id)} className="text-xs text-red-600 hover:underline">Supprimer</button>
+                    </div>
+                ))}
+            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-            </div>
-        </div>
-    );
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+            </div>
+        </div>
+    );
 };
 
 const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
-    };
-    
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
+    
+    const handleCheckboxChange = (field, value) => {
+        const currentValues = data[field] || [];
+        const newValues = currentValues.includes(value)
+            ? currentValues.filter(item => item !== value)
+            : [...currentValues, value];
+        setData(prev => ({ ...prev, [field]: newValues }));
+    };
+    
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
 
-            <div>
-                <label className="font-semibold text-slate-700">Actions menées</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {config?.actions?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.actionsMenees.includes(item)} onChange={() => handleCheckboxChange('actionsMenees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
+            <div>
+                <label className="font-semibold text-slate-700">Actions menées</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {config?.actions?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.actionsMenees.includes(item)} onChange={() => handleCheckboxChange('actionsMenees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                </div>
+            </div>
 
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Produits utilisés</label>
-                 <textarea value={data.produitsUtilises} onChange={e => setData(prev => ({...prev, produitsUtilises: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Lister les produits et matières actives..."></textarea>
-            </div>
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Produits utilisés</label>
+                 <textarea value={data.produitsUtilises} onChange={e => setData(prev => ({...prev, produitsUtilises: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Lister les produits et matières actives..."></textarea>
+            </div>
 
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
-                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier, ne pas laisser de nourriture accessible..."></textarea>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Finaliser</button>
-            </div>
-        </div>
-    );
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
+                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier, ne pas laisser de nourriture accessible..."></textarea>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Finaliser</button>
+            </div>
+        </div>
+    );
 };
 
 
-const ReportStep5_Finalize = ({ onGenerate, prevStep }) => (
-     <div className="text-center space-y-6">
+const ReportStep5_Finalize = ({ onGenerate, prevStep, isGenerating }) => (
+    <div className="text-center space-y-6">
         <CheckCircleIcon className="mx-auto h-16 w-16 text-blue-500" />
         <h2 className="text-2xl font-bold text-slate-800">Prêt à finaliser ?</h2>
-        <p className="text-slate-600">Le rapport va être sauvegardé dans la base de données. La génération du PDF et l'envoi par mail seront implémentés dans une future version.</p>
+        <p className="text-slate-600">Le rapport va être sauvegardé et envoyé par email au client.</p>
         <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
-            <button onClick={onGenerate} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">Sauvegarder et Terminer</button>
+            <button onClick={onGenerate} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
+                {isGenerating ? 'Envoi en cours...' : 'Sauvegarder et Envoyer'}
+            </button>
             <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
         </div>
     </div>
 );
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
-    
-    const ActionCard = ({ onClick, icon, title }) => (
-         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-center items-center aspect-square">
-            <div className="bg-slate-100 p-4 rounded-full inline-block group-hover:bg-blue-100 transition-colors duration-300">
-                {icon}
-            </div>
-            <p className="mt-4 font-semibold text-slate-700">{title}</p>
-        </div>
-    );
+    
+    const ActionCard = ({ onClick, icon, title }) => (
+         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-center items-center aspect-square">
+            <div className="bg-slate-100 p-4 rounded-full inline-block group-hover:bg-blue-100 transition-colors duration-300">
+                {icon}
+            </div>
+            <p className="mt-4 font-semibold text-slate-700">{title}</p>
+        </div>
+    );
 
-    return (
-        <div className="w-full text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Bienvenue, {salesperson}</h1>
-            <p className="text-slate-500 mt-2 mb-10">Que souhaitez-vous faire aujourd'hui ?</p>
-            
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mes rendez-vous" />
-                <ActionCard onClick={() => onNavigate('newAppointment')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Créer un rendez-vous" />
-                <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
-                <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
-                <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
-                {/* NOUVELLE CARTE D'ACTION */}
-                <ActionCard onClick={() => onNavigate('sanitaryReport')} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
-            </div>
-        </div>
-    )
+    return (
+        <div className="w-full text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Bienvenue, {salesperson}</h1>
+            <p className="text-slate-500 mt-2 mb-10">Que souhaitez-vous faire aujourd'hui ?</p>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mes rendez-vous" />
+                <ActionCard onClick={() => onNavigate('newAppointment')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Créer un rendez-vous" />
+                <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
+                <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
+                <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
+                {/* NOUVELLE CARTE D'ACTION */}
+                <ActionCard onClick={() => onNavigate('sanitaryReport')} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
+            </div>
+        </div>
+    )
 }
 
-const QuoteProcess = ({ data, setData, onBackToHome }) => {
-  const [config, setConfig] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [appliedDiscounts, setAppliedDiscounts] = useState([]);
-  const dbRef = useRef(null);
-  const appIdRef = useRef(null);
+const QuoteProcess = ({ data, setData, onBackToHome, sendDocumentByEmail }) => {
+  const [config, setConfig] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [appliedDiscounts, setAppliedDiscounts] = useState([]);
+  const dbRef = useRef(null);
+  const appIdRef = useRef(null);
 
-  const calculation = useMemo(() => {
-    if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0 };
-    let offerPrice = 0;
-    if (data.offer && config.offers[data.offer]) offerPrice = config.offers[data.offer][data.type]?.price || 0;
-    const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
-    if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
-    let oneTimeSubtotal = offerPrice;
-    data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
-    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
-    const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
-    let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
-    const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
-    const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
-    const installationFee = installDiscount ? 0 : config.settings.installationFee;
-    const totalWithInstall = subtotalAfterDiscount + installationFee;
-    const vatRate = config.settings.vat[data.type] || 0;
-    const vatAmount = totalWithInstall * vatRate;
-    const oneTimeTotal = totalWithInstall + vatAmount;
-    let monthlySubtotal = 0;
-    if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
-    data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; });
-    const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
-    let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
-    const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
-    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
-  }, [data, appliedDiscounts, config]);
+  const calculation = useMemo(() => {
+    if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0 };
+    let offerPrice = 0;
+    if (data.offer && config.offers[data.offer]) offerPrice = config.offers[data.offer][data.type]?.price || 0;
+    const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
+    if (fixedPriceDiscount) offerPrice = fixedPriceDiscount.value;
+    let oneTimeSubtotal = offerPrice;
+    data.packs.forEach(p => { if(config.packs[p.key]) oneTimeSubtotal += config.packs[p.key][data.type]?.price || 0; });
+    data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
+    const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
+    let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
+    const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
+    const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
+    const installationFee = installDiscount ? 0 : config.settings.installationFee;
+    const totalWithInstall = subtotalAfterDiscount + installationFee;
+    const vatRate = config.settings.vat[data.type] || 0;
+    const vatAmount = totalWithInstall * vatRate;
+    const oneTimeTotal = totalWithInstall + vatAmount;
+    let monthlySubtotal = 0;
+    if (data.offer && config.offers[data.offer]) monthlySubtotal += config.offers[data.offer][data.type]?.mensualite || 0;
+    data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; });
+    const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
+    let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
+    const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
+    return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
+  }, [data, appliedDiscounts, config]);
 
-  useEffect(() => {
-    const initFirebase = async () => {
-        try {
-            const firebaseConfig = {
-              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
-              authDomain: "application-devis-f2a31.firebaseapp.com",
-              projectId: "application-devis-f2a31",
-              storageBucket: "application-devis-f2a31.appspot.com",
-              messagingSenderId: "960846329322",
-              appId: "1:960846329322:web:5802132e187aa131906e93",
-              measurementId: "G-1F9T98PGS9"
-            };
-            const appId = firebaseConfig.appId;
-            appIdRef.current = appId;
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
-            dbRef.current = db;
-            const auth = getAuth(app);
-            setLogLevel('debug');
-            await signInAnonymously(auth);
-            const docPath = `/artifacts/${appId}/public/data/config/main`;
-            const configDocRef = doc(db, docPath);
-            const docSnap = await getDoc(configDocRef);
-            if (docSnap.exists()) setConfig(docSnap.data());
-            else {
-                await setDoc(configDocRef, initialConfigData);
-                setConfig(initialConfigData);
-            }
-        } catch (err) {
-            console.error("Erreur d'initialisation:", err);
-            setError("Impossible de charger la configuration.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    initFirebase();
-  }, []);
+  useEffect(() => {
+    const initFirebase = async () => {
+        try {
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.appspot.com",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            const appId = firebaseConfig.appId;
+            appIdRef.current = appId;
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            dbRef.current = db;
+            const auth = getAuth(app);
+            setLogLevel('debug');
+            await signInAnonymously(auth);
+            const docPath = `/artifacts/${appId}/public/data/config/main`;
+            const configDocRef = doc(db, docPath);
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) setConfig(docSnap.data());
+            else {
+                await setDoc(configDocRef, initialConfigData);
+                setConfig(initialConfigData);
+            }
+        } catch (err) {
+            console.error("Erreur d'initialisation:", err);
+            setError("Impossible de charger la configuration.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    initFirebase();
+  }, []);
 
-  const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
-  const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
-  
-  const renderStep = () => {
-    switch (data.step) {
-      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
-      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
-      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
-      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} />;
-      case 8: return <Confirmation reset={onBackToHome} />;
-      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
-    }
-  };
+  const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
+  const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
+  
+  const renderStep = () => {
+    switch (data.step) {
+      case 1: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+      case 2: return <CustomerType setData={setData} nextStep={nextStep} prevStep={prevStep} />;
+      case 3: return <MainOffer data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 4: return <AddonPacks data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+      case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
+      case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} db={dbRef.current} appId={appIdRef.current} sendDocumentByEmail={sendDocumentByEmail} />;
+      case 8: return <Confirmation reset={onBackToHome} type="devis" />;
+      default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
+    }
+  };
 
-  if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration...</p>;
-  if (error || !config) return <div className="bg-red-100 p-4 rounded-lg"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
+  if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration...</p>;
+  if (error || !config) return <div className="bg-red-100 p-4 rounded-lg"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
-  const progress = (data.step / 8) * 100;
+  const progress = (data.step / 8) * 100;
 
-  return (
-    <div className="w-full">
-        <div className="mb-6">
-            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
-        </div>
-        <div>{renderStep()}</div>
-    </div>
-  );
+  return (
+    <div className="w-full">
+        <div className="mb-6">
+            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
+            <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
+        </div>
+        <div>{renderStep()}</div>
+    </div>
+  );
 }
 
 const ContractGenerator = ({ onBack }) => {
-    const handleOpenLink = (url) => {
-        window.open(url, '_blank');
-    };
+    const handleOpenLink = (url) => {
+        window.open(url, '_blank');
+    };
 
-    const contractUrls = {
-        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
-        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609'
-    };
+    const contractUrls = {
+        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
+        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609'
+    };
 
-    return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-800">Générer un Contrat</h1>
-                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors">
-                    <ArrowLeftIcon /> Retour
-                </button>
-            </div>
+    return (
+        <div className="w-full">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-slate-800">Générer un Contrat</h1>
+                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors">
+                    <ArrowLeftIcon /> Retour
+                </button>
+            </div>
 
-            <div className="space-y-8 mt-6">
-                {/* Option 1 : Contrat Sanisecurité */}
-                <div className="text-center space-y-4 p-6 border rounded-xl">
-                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
-                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
-                    <p className="text-slate-600">
-                        Ouvrir le formulaire pour un contrat de prestation de services standard.
-                    </p>
-                    <button 
-                        onClick={() => handleOpenLink(contractUrls.prestation)} 
-                        className="w-full sm:w-auto px-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-                    >
-                        Ouvrir Contrat Sanisecurité
-                    </button>
-                </div>
+            <div className="space-y-8 mt-6">
+                <div className="text-center space-y-4 p-6 border rounded-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
+                    <p className="text-slate-600">
+                        Ouvrir le formulaire pour un contrat de prestation de services standard.
+                    </p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.prestation)} 
+                        className="w-full sm:w-auto px-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    >
+                        Ouvrir Contrat Sanisecurité
+                    </button>
+                </div>
 
-                {/* Option 2 : Contrat Sanitaire */}
-                <div className="text-center space-y-4 p-6 border rounded-xl">
-                    <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
-                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
-                    <p className="text-slate-600">
-                        Ouvrir le formulaire pour le contrat sanitaire.
-                    </p>
-                    <button 
-                        onClick={() => handleOpenLink(contractUrls.maintenance)} 
-                        className="w-full sm:w-auto px-6 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
-                    >
-                        Ouvrir Contrat Sanitaire
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+                <div className="text-center space-y-4 p-6 border rounded-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
+                    <p className="text-slate-600">
+                        Ouvrir le formulaire pour le contrat sanitaire.
+                    </p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.maintenance)} 
+                        className="w-full sm:w-auto px-6 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+                    >
+                        Ouvrir Contrat Sanitaire
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('login'); 
-  const [salesperson, setSalesperson] = useState('');
-  const [quoteData, setQuoteData] = useState(null);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [appointments, setAppointments] = useState([]);
-  const [videos, setVideos] = useState([]);
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
-  const [modal, setModal] = useState(null);
-  const firebaseRef = useRef(null);
+  const [currentView, setCurrentView] = useState('login'); 
+  const [salesperson, setSalesperson] = useState('');
+  const [quoteData, setQuoteData] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  const [modal, setModal] = useState(null);
+  const firebaseRef = useRef(null);
 
+  // MODIFICATION: Ajout d'un état pour les scripts PDF
+  const [pdfScriptsReady, setPdfScriptsReady] = useState(false);
+
+  // MODIFICATION: Chargement des scripts PDF une seule fois au montage de l'application
   useEffect(() => {
-    const init = async () => {
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
-                authDomain: "application-devis-f2a31.firebaseapp.com",
-                projectId: "application-devis-f2a31",
-                storageBucket: "application-devis-f2a31.appspot.com",
-                messagingSenderId: "960846329322",
-                appId: "1:960846329322:web:5802132e187aa131906e93",
-                measurementId: "G-1F9T98PGS9"
-            };
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
-            const auth = getAuth(app);
-            const appId = firebaseConfig.appId;
-            setLogLevel('debug');
-            await signInAnonymously(auth);
-            firebaseRef.current = { db, auth, appId };
-            setIsFirebaseReady(true);
-        } catch(e) {
-            console.error("Firebase init failed", e);
-            setModal({title: "Erreur critique", message: "Impossible d'initialiser la connexion à la base de données. Veuillez rafraîchir la page."});
-        }
-    }
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (!salesperson || !firebaseRef.current) return;
-    const { db, appId } = firebaseRef.current;
-    
-    const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
-    const qAppointments = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
-    const unsubscribeAppointments = onSnapshot(qAppointments, (querySnapshot) => {
-      const appointmentsList = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      appointmentsList.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setAppointments(appointmentsList);
-    }, (error) => console.error("Erreur de lecture des RDV: ", error));
-
-    const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
-    const qVideos = query(collection(db, videosPath));
-    const unsubscribeVideos = onSnapshot(qVideos, (querySnapshot) => {
-        const videoList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setVideos(videoList);
-    }, (error) => console.error("Erreur de lecture des vidéos: ", error));
-
-    return () => {
-        unsubscribeAppointments();
-        unsubscribeVideos();
+    const loadPdfScripts = async () => {
+      try {
+        // On charge les scripts en parallèle
+        await Promise.all([
+          loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+          loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+        ]);
+        setPdfScriptsReady(true);
+      } catch (error) {
+        console.error("Failed to load PDF generation scripts:", error);
+        setModal({title: "Erreur de chargement", message: "Impossible de charger les outils de création de PDF. Veuillez rafraîchir la page."});
+      }
     };
-  }, [salesperson]);
+    loadPdfScripts();
+  }, []); // Le tableau vide [] signifie que cet effet ne s'exécute qu'une fois.
 
-  const addAppointment = async (newAppointment) => {
-    if (!firebaseRef.current) return false;
-    const { db, appId } = firebaseRef.current;
-    const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
-    try {
-      await addDoc(collection(db, appointmentsPath), newAppointment);
-      return true;
-    } catch (error) {
-      console.error("Erreur d'ajout du RDV: ", error);
-      return false;
-    }
+  // Fonction utilitaire pour charger un script et renvoyer une promesse
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      // Si le script est déjà là, on n'a rien à faire
+      if (document.querySelector(`script[src="${src}"]`)) {
+        return resolve();
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Script load error for ${src}`));
+      document.body.appendChild(script);
+    });
   };
 
-  const updateAppointmentStatus = async (docId, newStatus) => {
-    if (!firebaseRef.current) return;
-    const { db, appId } = firebaseRef.current;
-    const appointmentDocRef = doc(db, `/artifacts/${appId}/public/data/appointments`, docId);
-    try {
-      await updateDoc(appointmentDocRef, { status: newStatus });
-    } catch (error) {
-      console.error("Erreur de mise à jour du statut: ", error);
-      setModal({title: "Erreur", message: "Impossible de mettre à jour le statut."});
+  /**
+   * NOUVELLE FONCTION CENTRALISÉE
+   * Gère la génération du PDF et l'envoi par email via notre API Vercel.
+   * @param {object} options - { documentType: 'devis' | 'rapport', client: object, pdfContentRef: React.RefObject }
+   * @returns {boolean} - true si l'envoi a réussi, false sinon.
+   */
+  const sendDocumentByEmail = async ({ documentType, client, pdfContentRef }) => {
+    if (!pdfScriptsReady) {
+        console.error("PDF scripts are not ready yet.");
+        setModal({title: "Veuillez patienter", message: "Les outils de génération de documents sont en cours de chargement."});
+        return false;
     }
-  };
-
-  const handleLogin = async (name) => {
-    if (!firebaseRef.current) {
-        return { success: false, message: "La connexion à la base de données n'est pas encore établie. Veuillez patienter." };
+    if (!pdfContentRef) {
+        console.error("PDF content reference is missing.");
+        return false;
     }
-    const { db, appId } = firebaseRef.current;
-    const salespersonsPath = `/artifacts/${appId}/public/data/salespersons`;
-    const q = query(collection(db, salespersonsPath), where("name", "==", name));
     
     try {
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            setSalesperson(name);
-            setCurrentView('home');
-            return { success: true };
-        } else {
-            return { success: false, message: 'Commercial non reconnu. Veuillez vérifier le nom.' };
+        const { jsPDF } = window.jspdf;
+        const html2canvas = window.html2canvas;
+
+        const canvas = await html2canvas(pdfContentRef, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+
+        let finalImgWidth = pdfWidth - 20; // 10mm de marge de chaque côté
+        let finalImgHeight = finalImgWidth / ratio;
+        
+        let heightLeft = finalImgHeight;
+        let position = 10; // Marge supérieure
+
+        pdf.addImage(imgData, 'PNG', 10, position, finalImgWidth, finalImgHeight);
+        heightLeft -= (pdfHeight - 20); // 20 pour marges haut/bas
+
+        while (heightLeft > 0) {
+            position = heightLeft - finalImgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 10, position, finalImgWidth, finalImgHeight);
+            heightLeft -= (pdfHeight - 20);
         }
+        
+        const pdfBase64 = pdf.output('data:application/pdf;base64,');
+
+        // Préparation des données pour notre API
+        const fromEmail = 'idris.nay@gmail.com'; //  IMPORTANT: Remplacez par votre email vérifié sur SendGrid
+        const subject = documentType === 'devis' 
+            ? `Votre devis pour nos services - ${client.nom}`
+            : `Votre rapport d'intervention - ${client.nom}`;
+        
+        const htmlBody = documentType === 'devis'
+            ? `Bonjour ${client.prenom},<br><br>Veuillez trouver ci-joint le devis détaillé que nous avons établi pour vous.<br><br>N'hésitez pas à nous contacter pour toute question.<br><br>Cordialement,<br>L'équipe`
+            : `Bonjour ${client.prenom},<br><br>Suite à notre intervention, veuillez trouver en pièce jointe le rapport sanitaire détaillé.<br><br>Nous restons à votre disposition.<br><br>Cordialement,<br>L'équipe`;
+
+        const filename = documentType === 'devis'
+            ? `Devis-${client.nom}-${client.prenom}.pdf`
+            : `Rapport-${client.nom}-${client.prenom}.pdf`;
+
+        const emailPayload = {
+            to: client.email,
+            from: fromEmail,
+            subject: subject,
+            html: htmlBody,
+            attachments: [{
+                content: pdfBase64.split('base64,')[1],
+                filename: filename,
+                type: 'application/pdf',
+                disposition: 'attachment',
+            }],
+        };
+
+        // Appel à notre fonction Vercel
+        const response = await fetch('/api/send-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emailPayload),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(errorBody.error || 'La requête vers le serveur a échoué.');
+        }
+
+        return true; // Succès !
+        
     } catch (error) {
-        console.error("Erreur de vérification du commercial:", error);
-        return { success: false, message: "Une erreur est survenue lors de la vérification." };
+        console.error(`Erreur lors de la création ou l'envoi du ${documentType}:`, error);
+        setModal({ title: `Erreur d'envoi`, message: `Impossible d'envoyer le document. Veuillez réessayer ou contacter le support. Détail: ${error.message}` });
+        return false; // Échec
     }
   };
 
-  const startNewQuote = (initialClientData = null) => {
-    const initialData = {
-      step: initialClientData ? 2 : 1, 
-      salesperson: salesperson,
-      client: initialClientData || { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-      type: 'residentiel', offer: null, packs: [], extraItems: [], installationDate: null, followUpDate: null,
-    };
-    setQuoteData(initialData);
-    setCurrentView('quote');
-  };
-  
-  const handleBackToHome = () => {
-      setCurrentView('home');
-      setQuoteData(null); 
-  }
+  useEffect(() => {
+    const init = async () => {
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+                authDomain: "application-devis-f2a31.firebaseapp.com",
+                projectId: "application-devis-f2a31",
+                storageBucket: "application-devis-f2a31.appspot.com",
+                messagingSenderId: "960846329322",
+                appId: "1:960846329322:web:5802132e187aa131906e93",
+                measurementId: "G-1F9T98PGS9"
+            };
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            const appId = firebaseConfig.appId;
+            setLogLevel('debug');
+            await signInAnonymously(auth);
+            firebaseRef.current = { db, auth, appId };
+            setIsFirebaseReady(true);
+        } catch(e) {
+            console.error("Firebase init failed", e);
+            setModal({title: "Erreur critique", message: "Impossible d'initialiser la connexion à la base de données. Veuillez rafraîchir la page."});
+        }
+    }
+    init();
+  }, []);
 
-  const viewAppointment = (appointment) => {
-      setSelectedAppointment(appointment);
-      setCurrentView('appointmentDetail');
-  }
+  useEffect(() => {
+    if (!salesperson || !firebaseRef.current) return;
+    const { db, appId } = firebaseRef.current;
+    
+    const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
+    const qAppointments = query(collection(db, appointmentsPath), where("salesperson", "==", salesperson));
+    const unsubscribeAppointments = onSnapshot(qAppointments, (querySnapshot) => {
+      const appointmentsList = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      appointmentsList.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setAppointments(appointmentsList);
+    }, (error) => console.error("Erreur de lecture des RDV: ", error));
 
-  const renderCurrentView = () => {
-    switch(currentView) {
-        case 'login': return <SalespersonLogin onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />;
-        case 'home': return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />;
-        case 'quote': return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} />;
-        case 'appointmentList': return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
-        case 'appointmentDetail': return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
-        case 'newAppointment':
-            return <NewAppointment 
-                salesperson={salesperson} 
-                onBack={() => setCurrentView('home')} 
-                onAppointmentCreated={async (newApp) => {
-                    const success = await addAppointment(newApp);
-                    if (success) setCurrentView('appointmentList');
-                    return success;
-                }} 
-            />;
-        case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
-        case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
-        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} />;
-        default: return <div>Vue non reconnue</div>;
-    }
-  }
-  
-  return (
-    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-6 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
-            {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-            {renderCurrentView()}
-        </div>
-    </main>
-  );
+    const videosPath = `/artifacts/${appId}/public/data/presentationVideos`;
+    const qVideos = query(collection(db, videosPath));
+    const unsubscribeVideos = onSnapshot(qVideos, (querySnapshot) => {
+        const videoList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setVideos(videoList);
+    }, (error) => console.error("Erreur de lecture des vidéos: ", error));
+
+    return () => {
+        unsubscribeAppointments();
+        unsubscribeVideos();
+    };
+  }, [salesperson]);
+
+  const addAppointment = async (newAppointment) => {
+    if (!firebaseRef.current) return false;
+    const { db, appId } = firebaseRef.current;
+    const appointmentsPath = `/artifacts/${appId}/public/data/appointments`;
+    try {
+      await addDoc(collection(db, appointmentsPath), newAppointment);
+      return true;
+    } catch (error) {
+      console.error("Erreur d'ajout du RDV: ", error);
+      return false;
+    }
+  };
+
+  const updateAppointmentStatus = async (docId, newStatus) => {
+    if (!firebaseRef.current) return;
+    const { db, appId } = firebaseRef.current;
+    const appointmentDocRef = doc(db, `/artifacts/${appId}/public/data/appointments`, docId);
+    try {
+      await updateDoc(appointmentDocRef, { status: newStatus });
+    } catch (error) {
+      console.error("Erreur de mise à jour du statut: ", error);
+      setModal({title: "Erreur", message: "Impossible de mettre à jour le statut."});
+    }
+  };
+
+  const handleLogin = async (name) => {
+    if (!firebaseRef.current) {
+        return { success: false, message: "La connexion à la base de données n'est pas encore établie. Veuillez patienter." };
+    }
+    const { db, appId } = firebaseRef.current;
+    const salespersonsPath = `/artifacts/${appId}/public/data/salespersons`;
+    const q = query(collection(db, salespersonsPath), where("name", "==", name));
+    
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            setSalesperson(name);
+            setCurrentView('home');
+            return { success: true };
+        } else {
+            return { success: false, message: 'Commercial non reconnu. Veuillez vérifier le nom.' };
+        }
+    } catch (error) {
+        console.error("Erreur de vérification du commercial:", error);
+        return { success: false, message: "Une erreur est survenue lors de la vérification." };
+    }
+  };
+
+  const startNewQuote = (initialClientData = null) => {
+    const initialData = {
+      step: initialClientData ? 2 : 1, 
+      salesperson: salesperson,
+      client: initialClientData || { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
+      type: 'residentiel', offer: null, packs: [], extraItems: [], installationDate: null, followUpDate: null,
+    };
+    setQuoteData(initialData);
+    setCurrentView('quote');
+  };
+  
+  const handleBackToHome = () => {
+      setCurrentView('home');
+      setQuoteData(null); 
+  }
+
+  const viewAppointment = (appointment) => {
+      setSelectedAppointment(appointment);
+      setCurrentView('appointmentDetail');
+  }
+
+  const renderCurrentView = () => {
+    switch(currentView) {
+        case 'login': return <SalespersonLogin onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />;
+        case 'home': return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />;
+        case 'quote': return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} sendDocumentByEmail={sendDocumentByEmail} />;
+        case 'appointmentList': return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
+        case 'appointmentDetail': return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
+        case 'newAppointment':
+            return <NewAppointment 
+                salesperson={salesperson} 
+                onBack={() => setCurrentView('home')} 
+                onAppointmentCreated={async (newApp) => {
+                    const success = await addAppointment(newApp);
+                    if (success) setCurrentView('appointmentList');
+                    return success;
+                }} 
+            />;
+        case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
+        case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
+        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} sendDocumentByEmail={sendDocumentByEmail} />;
+        default: return <div>Vue non reconnue</div>;
+    }
+  }
+  
+  return (
+    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-6 md:p-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
+            {renderCurrentView()}
+        </div>
+    </main>
+  );
 }
