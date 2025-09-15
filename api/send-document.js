@@ -35,63 +35,65 @@ export default async function handler(req, res) {
     <head>
         <meta charset="UTF-8">
         <style>
-            body { font-family: sans-serif; margin: 40px; color: #333; }
-            h1 { color: #1a73e8; }
-            .section { border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-            .section h2 { margin-top: 0; color: #333; }
-            .photo-gallery img { max-width: 100%; border-radius: 4px; margin-bottom: 10px; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 40px; color: #333; background-color: #f7f7f7; }
+            .container { background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+            h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+            .section { border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+            .section h2 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+            .photo-gallery img { max-width: 100%; border-radius: 4px; margin-bottom: 10px; border: 1px solid #ddd; }
             p { line-height: 1.6; }
+            strong { color: #1a73e8; }
         </style>
     </head>
     <body>
-        <h1>${subject}</h1>
-        <div class="section">
-            <h2>Client</h2>
-            <p>${client.prenom} ${client.nom}</p>
-            <p>${client.adresse}</p>
-            <p>${client.email} | ${client.telephone}</p>
+        <div class="container">
+            <h1>${subject}</h1>
+            <div class="section">
+                <h2>Client</h2>
+                <p>${client.prenom} ${client.nom}</p>
+                <p>${client.adresse || 'Adresse non renseignée'}</p>
+                <p>${client.email} | ${client.telephone}</p>
+            </div>
+            
+            ${documentType === 'rapport' ? `
+            <div class="section">
+                <h2>Détails du Rapport</h2>
+                <p><strong>Date d'intervention:</strong> ${new Date(documentData.interventionDate).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Nuisibles constatés:</strong> ${documentData.nuisiblesConstates.join(', ') || 'Aucun'}</p>
+                <p><strong>Zones inspectées:</strong> ${documentData.zonesInspectees.join(', ') || 'Aucune'}</p>
+                <h2>Observations</h2>
+                ${formatTextForHTML(documentData.observations) || '<p>Aucune observation.</p>'}
+                <h2>Actions menées</h2>
+                ${formatTextForHTML(documentData.actionsMenees.join('\n')) || '<p>Aucune action menée.</p>'}
+                <h2>Recommandations</h2>
+                ${formatTextForHTML(documentData.recommandations) || '<p>Aucune recommandation.</p>'}
+            </div>
+            ${documentData.photos && documentData.photos.length > 0 ? `
+            <div class="section photo-gallery">
+                <h2>Photos</h2>
+                ${documentData.photos.map(p => `<div><img src="${p.dataUrl}" alt="${p.caption || ''}"><p><em>${p.caption || ''}</em></p></div>`).join('')}
+            </div>
+            ` : ''}
+            ` : `
+            <div class="section">
+                 <h2>Détails du Devis</h2>
+                 <p><strong>Offre principale:</strong> ${offerName}</p>
+                 <p><strong>Total à payer:</strong> ${documentData.calculation?.oneTimeTotal?.toFixed(2) || '0.00'} €</p>
+                 <p><strong>Total mensuel:</strong> ${documentData.calculation?.monthlyTotal?.toFixed(2) || '0.00'} €</p>
+            </div>
+            `}
         </div>
-        
-        ${documentType === 'rapport' ? `
-        <div class="section">
-            <h2>Détails du Rapport</h2>
-            <p><strong>Date d'intervention:</strong> ${new Date(documentData.interventionDate).toLocaleDateString()}</p>
-            <p><strong>Nuisibles constatés:</strong> ${documentData.nuisiblesConstates.join(', ') || 'N/A'}</p>
-            <p><strong>Zones inspectées:</strong> ${documentData.zonesInspectees.join(', ') || 'N/A'}</p>
-            <h2>Observations</h2>
-            ${formatTextForHTML(documentData.observations)}
-            <h2>Actions menées</h2>
-            ${formatTextForHTML(documentData.actionsMenees.join('\n'))}
-            <h2>Recommandations</h2>
-            ${formatTextForHTML(documentData.recommandations)}
-        </div>
-        ${documentData.photos && documentData.photos.length > 0 ? `
-        <div class="section photo-gallery">
-            <h2>Photos</h2>
-            ${documentData.photos.map(p => `<div><img src="${p.dataUrl}" alt="${p.caption || ''}"><p>${p.caption || ''}</p></div>`).join('')}
-        </div>
-        ` : ''}
-        ` : `
-        <div class="section">
-             <h2>Détails du Devis (Version simplifiée)</h2>
-             <p><strong>Offre principale:</strong> ${offerName}</p>
-             <p><strong>Total à payer:</strong> ${documentData.calculation?.oneTimeTotal?.toFixed(2) || '0.00'} €</p>
-             <p><strong>Total mensuel:</strong> ${documentData.calculation?.monthlyTotal?.toFixed(2) || '0.00'} €</p>
-        </div>
-        `}
     </body>
     </html>
     `;
     
-    // Pour l'instant, nous n'envoyons pas de PDF réel, mais un email simple pour tester
+    // Création de l'objet message pour SendGrid
     const msg = {
         to: client.email,
         from: process.env.SENDGRID_FROM_EMAIL, // Utilise l'email configuré sur Vercel
         subject: `${subject} pour ${client.prenom} ${client.nom}`,
-        html: `<p>Bonjour ${client.prenom},</p><p>Veuillez trouver les informations concernant votre ${documentType}.</p><p>Ce message confirme que notre système d'envoi est fonctionnel.</p>
-        <hr>
-        <h3>Contenu brut (pour débogage):</h3>
-        <pre>${JSON.stringify(documentData, null, 2)}</pre>`,
+        // On utilise notre HTML stylisé comme corps de l'email
+        html: htmlContent,
     };
 
     try {
