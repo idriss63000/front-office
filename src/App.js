@@ -5,49 +5,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel, onSnapshot } from 'firebase/firestore';
 
-// --- MODIFICATION : DÉBUT DE L'INTÉGRATION DES BIBLIOTHÈQUES ---
-// Pour contourner les restrictions de sécurité (CSP) qui bloquent le chargement de scripts externes,
-// le code minifié de jsPDF et html2canvas est stocké dans cette constante.
-// CORRECTION : Les caractères ` (backticks) dans le code minifié ont été échappés (remplacés par \`) 
-// pour éviter les erreurs de syntaxe JavaScript lors de l'utilisation d'un template literal.
-const VENDOR_LIBS_CODE = `
-/* html2canvas 1.4.1 */
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t=t||self).html2canvas=e()}(this,(function(){"use strict";var t=function(t,e,n,r,o,i,a,s){return new Promise((function(c,l){s.onclone&&s.onclone(n);var u=n.defaultView.pageXOffset,p=n.defaultView.pageYOffset;t.scrollTo(i,a);var f=(s.backgroundColor||"transparent").toString(),d=t.renderer.render(e,r,o,i,a,f);c(d.then((function(t){t.getContext("2d").setTransform(1,0,0,1,0,0),t.getContext("2d").translate(-u,-p),s.onrendered&&s.onrendered(t)})))}));var e=function(t){return"string"==typeof t};var n=function(t){for(var e=[],n=0,r=t.length;n<r;n++)e.push(t[n]);return e};var r=/([\\s\\S])\\1+/,o=function(t){return e(t)?t.replace(r,"$1"):t};var i=/^([a-z0-9]*):/i;var a=function(t){var e=t.getPropertyValue("content");return"string"==typeof e&&"none"!==e?e.substr(1,e.length-2):""};var s=function(t,e){var n=a(t);if(n){var r=n.split(",");r.forEach((function(t){var n=t.match(i);n&&("open-quote"===n[1]?e.push(n[2]):"close-quote"===n[1]&&e.pop())}))}return e};var c=["normal","none","counter","open-quote","close-quote","no-open-quote","no-close-quote","initial","inherit","unset"],l=/^((?:-moz-)?|cursor:)(.*?)\\s*,\\s*(.*?)$/,u=function(t){var e=t.getPropertyValue("cursor"),n=e.match(l);return n?{prefix:n[1],value:n[2],fallback:n[3]}:e};var p=function(t){var e={};return e.clip=t.clip,e.display=t.display,e.float=t.float,e.position=t.position,e.opacity=t.opacity,e.pointerEvents=t.pointerEvents,e.transform=t.transform,e.transformOrigin=t.transformOrigin,e.webkitTransform=t.webkitTransform,e.webkitTransformOrigin=t.webkitTransformOrigin,e.mozTransform=t.mozTransform,e.mozTransformOrigin=t.mozTransformOrigin,e.msTransform=t.msTransform,e.msTransformOrigin=t.msTransformOrigin,e.oTransform=t.oTransform,e.oTransformOrigin=t.oTransformOrigin,e.visibility=t.visibility,e};
-// ... Le reste du code minifié de html2canvas est volontairement omis pour la lisibilité ...
-
-/* jspdf 2.5.1 */
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):((t="undefined"!=typeof globalThis?globalThis:t||self).jspdf=e()).jsPDF=t.jspdf}(this,(function(){"use strict";class t{constructor(t){this.subscribe=this.subscribe.bind(this),this.unsubscribe=this.unsubscribe.bind(this),this.publish=this.publish.bind(this),this.events=t||{}}}
-// ... Le reste du code minifié de jspdf est volontairement omis pour la lisibilité ...
-`.replace(/`/g, '\\`'); // Échapper tous les backticks
-
-// Ce composant injecte le code des bibliothèques dans une balise <script> une seule fois au montage de l'application.
-const InjectVendorLibs = () => {
-    useEffect(() => {
-        // Vérifie si les bibliothèques ne sont pas déjà chargées pour éviter les doublons.
-        if (window.jspdf && window.html2canvas) {
-            return;
-        }
-        
-        const scriptId = 'injected-pdf-libs';
-        if (document.getElementById(scriptId)) {
-            return;
-        }
-
-        try {
-            const script = document.createElement('script');
-            script.id = scriptId;
-            script.innerHTML = VENDOR_LIBS_CODE;
-            document.body.appendChild(script);
-        } catch (error) {
-            console.error("Failed to inject vendor PDF libraries:", error);
-        }
-
-    }, []);
-    return null;
-};
-// --- MODIFICATION : FIN DE L'INTÉGRATION DES BIBLIOTHÈQUES ---
-
-
 // --- Icônes (SVG) ---
 const UserIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
@@ -60,8 +17,6 @@ const CalendarIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="h
 const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
-const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
-const CameraIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -129,57 +84,36 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
   );
 };
 
-const CustomerInfo = ({ data, setData, nextStep, prevStep, isReport = false }) => {
-  const handleClientChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-  const handleReportDataChange = (e) => setData({ ...data, [e.target.name]: e.target.value });
+const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
+  const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">
-        {isReport ? "Rapport d'Intervention" : "Informations du Devis"}
-      </h2>
-      
-      {isReport && (
-        <div>
-          <label htmlFor="interventionDate" className="block text-sm font-medium text-slate-600 mb-1">Date de l'intervention</label>
-          <input
-              type="date"
-              id="interventionDate"
-              name="interventionDate"
-              value={data.interventionDate}
-              onChange={handleReportDataChange}
-              className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-          />
-        </div>
-      )}
-
-      <h3 className="text-lg font-semibold text-slate-700 pt-4 border-t mt-6">
-          Informations du Client
-      </h3>
+      <h2 className="text-2xl font-bold text-slate-800 text-center">Informations du Client</h2>
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="nom" className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
-                <input id="nom" name="nom" value={data.client.nom} onChange={handleClientChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
             <div>
                 <label htmlFor="prenom" className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
-                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleClientChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
         </div>
         <div>
             <label htmlFor="adresse" className="block text-sm font-medium text-slate-600 mb-1">Adresse</label>
-            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleClientChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="telephone" className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
-                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleClientChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
             <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <input id="email" type="email" name="email" value={data.client.email} onChange={handleClientChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <input id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
             </div>
         </div>
       </div>
@@ -458,7 +392,6 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
   </>
 );
 
-
 const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculation, appliedDiscounts, db, appId }) => {
   const [status, setStatus] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -470,6 +403,15 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
     if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
     if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
   };
+
+  const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Script load error for ${src}`));
+      document.body.appendChild(script);
+  });
   
   const formatDateForGoogle = (dateString) => {
     if (!dateString) return '';
@@ -481,15 +423,16 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
   };
 
   const handleGenerateAndSend = async () => {
-    // CORRECTION : Vérifier que les bibliothèques sont bien chargées
-    if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
-        setModal({title: "Erreur de chargement", message: "Les bibliothèques PDF ne sont pas prêtes. Veuillez rafraîchir la page."});
-        return;
-    }
-    
     setIsGenerating(true);
     try {
+      await Promise.all([
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+      ]);
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const { jsPDF } = window.jspdf;
+      const html2canvas = window.html2canvas;
       const input = pdfRef.current;
       if (!input) throw new Error("L'élément pour le PDF n'a pas été trouvé.");
 
@@ -497,42 +440,34 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
       const quoteToSave = { ...data, calculation, appliedDiscounts, createdAt: serverTimestamp() };
       await addDoc(collection(db, quotesPath), quoteToSave);
 
+      const canvas = await html2canvas(input, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      // CORRECTION : Utilisation de la méthode .html() de jsPDF pour une meilleure qualité et gestion des pages
-      pdf.html(input, {
-          callback: function (pdf) {
-              pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = imgWidth / (canvas.width / canvas.height);
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      pdf.save(`Devis-${data.client.nom}-${data.client.prenom}.pdf`);
 
-              if (data.installationDate || data.followUpDate) {
-                  const eventDate = data.installationDate || data.followUpDate;
-                  const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
-                  const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
-                  const formattedDate = formatDateForGoogle(eventDate);
-                  const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
-                  window.open(calendarUrl, '_blank');
-              }
-      
-              const subject = encodeURIComponent(`Votre devis`);
-              const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
-              window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
-              
-              setIsGenerating(false);
-              nextStep();
-          },
-          margin: [10, 10, 10, 10],
-          autoPaging: 'text',
-          x: 0,
-          y: 0,
-          width: 190, // Largeur A4 moins les marges
-          windowWidth: pdfRef.current.scrollWidth,
-          html2canvas: { scale: 0.25, useCORS: true }
-      });
+      if (data.installationDate || data.followUpDate) {
+        const eventDate = data.installationDate || data.followUpDate;
+        const title = data.installationDate ? `Installation - ${data.client.prenom} ${data.client.nom}` : `Relance - ${data.client.prenom} ${data.client.nom}`;
+        const details = `Client: ${data.client.prenom} ${data.client.nom}\nTéléphone: ${data.client.telephone}\nEmail: ${data.client.email}\nAdresse: ${data.client.adresse}`;
+        const formattedDate = formatDateForGoogle(eventDate);
+        const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(data.client.adresse)}`;
+        window.open(calendarUrl, '_blank');
+      }
 
+      const subject = encodeURIComponent(`Votre devis`);
+      const body = encodeURIComponent(`Bonjour ${data.client.prenom},\n\nVeuillez trouver ci-joint votre devis.\n\nCordialement,`);
+      window.location.href = `mailto:${data.client.email}?subject=${subject}&body=${body}`;
+      nextStep();
     } catch(error) {
         console.error("Erreur:", error);
         setModal({title: "Erreur", message: "Une erreur est survenue lors de la génération du devis."});
+    } finally {
         setIsGenerating(false);
-    } 
+    }
   };
 
   return (
@@ -567,7 +502,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
             {isGenerating ? 'En cours...' : 'Valider et envoyer'}
         </button>
       </div>
-      <div className="absolute left-[-9999px] top-0 w-[210mm] bg-white p-4">
+      <div className="absolute left-[-9999px] top-0 w-[210mm]">
           <div ref={pdfRef}>
               <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={() => {}} />
           </div>
@@ -575,7 +510,6 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, config, calculati
     </div>
   );
 };
-
 
 const Confirmation = ({ reset }) => (
     <div className="text-center space-y-6">
@@ -691,8 +625,8 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
-    const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
-    if (GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
+    const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS';
+    if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
         console.warn("L'autocomplete d'adresse est désactivé. Veuillez insérer une clé API Google Maps.");
         return;
     }
@@ -837,401 +771,6 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
-const ReportForPDF = ({ data }) => (
-    <div className="p-8 font-sans text-sm bg-white" style={{ width: '210mm' }}>
-        <div className="flex justify-between items-start mb-8">
-            <h1 className="text-3xl font-bold text-slate-800">Rapport d'Intervention Sanitaire</h1>
-            <div className="text-right">
-                <p><strong>Date :</strong> {new Date(data.interventionDate).toLocaleDateString('fr-FR')}</p>
-                <p><strong>Technicien :</strong> {data.salesperson}</p>
-            </div>
-        </div>
-
-        <div className="p-4 bg-slate-50 rounded-lg border">
-            <h2 className="font-bold text-lg mb-2">Informations Client</h2>
-            <p><strong>Client :</strong> {data.client.prenom} {data.client.nom}</p>
-            <p><strong>Adresse :</strong> {data.client.adresse}</p>
-            <p><strong>Contact :</strong> {data.client.telephone} | {data.client.email}</p>
-        </div>
-
-        <div className="mt-6">
-            <h2 className="font-bold text-lg mb-2">Diagnostic</h2>
-            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
-                <div><strong>Nuisibles constatés:</strong> <span className="font-normal">{data.nuisiblesConstates.join(', ') || 'N/A'}</span></div>
-                <div><strong>Zones inspectées:</strong> <span className="font-normal">{data.zonesInspectees.join(', ') || 'N/A'}</span></div>
-                <div><strong>Niveau d'infestation:</strong> <span className="font-normal">{data.infestationLevel}%</span></div>
-                <div><strong>Consommation des appâts:</strong> <span className="font-normal">{data.consumptionLevel}%</span></div>
-                <div className="col-span-2"><strong>Observations:</strong><br/><p className="font-normal whitespace-pre-wrap">{data.observations || 'Aucune'}</p></div>
-            </div>
-        </div>
-
-        <div className="mt-6">
-            <h2 className="font-bold text-lg mb-2">Actions et Traitements</h2>
-            <div className="p-4 border rounded-lg">
-                <p><strong>Actions menées:</strong> <span className="font-normal">{data.actionsMenees.join(', ') || 'N/A'}</span></p>
-                <p><strong>Produits utilisés:</strong> <span className="font-normal">{data.produitsUtilises.join(', ') || 'N/A'}</span></p>
-                {data.produitsAutres && <p><strong>Autres produits:</strong> <span className="font-normal">{data.produitsAutres}</span></p>}
-            </div>
-        </div>
-        
-        {data.photos.length > 0 && (
-            <div className="mt-6" style={{ pageBreakBefore: 'always' }}>
-                <h2 className="font-bold text-lg mb-2">Photos de l'intervention</h2>
-                <div className="grid grid-cols-2 gap-4">
-                    {data.photos.map(photo => (
-                        <div key={photo.id} className="border p-2 rounded-lg break-inside-avoid">
-                            <img src={photo.dataUrl} alt={photo.caption || 'Photo d\'intervention'} className="w-full h-auto rounded-md mb-2"/>
-                            <p className="text-xs text-center italic">{photo.caption}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
-
-        <div className="mt-6">
-            <h2 className="font-bold text-lg mb-2">Recommandations</h2>
-            <div className="p-4 border rounded-lg">
-                <p className="font-normal whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
-            </div>
-        </div>
-    </div>
-);
-
-const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
-    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} isReport={true} />;
-};
-
-const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
-    };
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
-            
-            <div>
-                <label className="font-semibold text-slate-700">Nuisibles constatés</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.nuisibles?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.nuisiblesConstates.includes(item)} onChange={() => handleCheckboxChange('nuisiblesConstates', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
-
-             <div>
-                <label className="font-semibold text-slate-700">Zones inspectées</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.zones?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.zonesInspectees.includes(item)} onChange={() => handleCheckboxChange('zonesInspectees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
-            
-            <div>
-                <label htmlFor="infestationLevel" className="font-semibold text-slate-700">Niveau d'infestation: <span className="font-bold text-blue-600">{data.infestationLevel}%</span></label>
-                <input id="infestationLevel" type="range" min="0" max="100" step="5" value={data.infestationLevel} onChange={e => setData(prev => ({...prev, infestationLevel: e.target.value}))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-            </div>
-
-            <div>
-                <label htmlFor="consumptionLevel" className="font-semibold text-slate-700">Consommation des appâts: <span className="font-bold text-blue-600">{data.consumptionLevel}%</span></label>
-                <input id="consumptionLevel" type="range" min="0" max="100" step="5" value={data.consumptionLevel} onChange={e => setData(prev => ({...prev, consumptionLevel: e.target.value}))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
-                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs..."></textarea>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-            </div>
-        </div>
-    );
-};
-
-const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
-    
-    const handlePhotoUpload = (e) => {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (upload) => {
-                const newPhoto = {
-                    id: `photo_${Date.now()}_${Math.random()}`,
-                    dataUrl: upload.target.result,
-                    caption: ''
-                };
-                setData(prev => ({...prev, photos: [...prev.photos, newPhoto]}));
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-    
-    const updateCaption = (id, caption) => {
-        setData(prev => ({
-            ...prev,
-            photos: prev.photos.map(p => p.id === id ? {...p, caption} : p)
-        }));
-    };
-
-    const removePhoto = (id) => {
-        setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
-    };
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des Photos</h2>
-            
-            <div className="p-6 border-2 border-dashed rounded-xl text-center">
-                <label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-sm text-slate-700 hover:bg-slate-50">
-                    <CameraIcon className="h-5 w-5"/>
-                    Importer depuis l'appareil
-                </label>
-                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
-                <p className="text-xs text-slate-500 mt-2">Vous pouvez sélectionner plusieurs photos.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.photos.map(photo => (
-                    <div key={photo.id} className="border rounded-lg p-2 space-y-2">
-                        <img src={photo.dataUrl} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
-                        <input 
-                            type="text"
-                            value={photo.caption}
-                            onChange={(e) => updateCaption(photo.id, e.target.value)}
-                            placeholder="Ajouter une légende..."
-                            className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button onClick={() => removePhoto(photo.id)} className="text-xs text-red-600 hover:underline">Supprimer</button>
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-            </div>
-        </div>
-    );
-};
-
-const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
-    };
-    
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
-
-            <div>
-                <label className="font-semibold text-slate-700">Actions menées</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {config?.actions?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.actionsMenees.includes(item)} onChange={() => handleCheckboxChange('actionsMenees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
-
-            <div>
-                <label className="font-semibold text-slate-700">Produits utilisés</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.produits?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.produitsUtilises.includes(item)} onChange={() => handleCheckboxChange('produitsUtilises', item)} className="h-4 w-4 rounded text-blue-600"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucun produit configuré.</p>}
-                </div>
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Autres produits ou détails</label>
-                 <textarea value={data.produitsAutres} onChange={e => setData(prev => ({...prev, produitsAutres: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Si un produit non listé a été utilisé..."></textarea>
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
-                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier..."></textarea>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Finaliser</button>
-            </div>
-        </div>
-    );
-};
-
-
-const ReportStep5_Finalize = ({ onGenerate, prevStep, isGenerating }) => (
-     <div className="text-center space-y-6">
-        <CheckCircleIcon className="mx-auto h-16 w-16 text-blue-500" />
-        <h2 className="text-2xl font-bold text-slate-800">Prêt à finaliser ?</h2>
-        <p className="text-slate-600">Le rapport va être sauvegardé, le PDF sera téléchargé et une fenêtre d'email s'ouvrira pour l'envoi.</p>
-        <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
-            <button onClick={onGenerate} disabled={isGenerating} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-400">
-                {isGenerating ? 'Génération en cours...' : 'Générer et Terminer'}
-            </button>
-            <button onClick={prevStep} disabled={isGenerating} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
-        </div>
-    </div>
-);
-
-const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId }) => {
-    const [step, setStep] = useState(1);
-    const [reportData, setReportData] = useState({
-        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-        interventionDate: new Date().toISOString().split('T')[0],
-        motif: '',
-        nuisiblesConstates: [],
-        zonesInspectees: [],
-        infestationLevel: 50,
-        consumptionLevel: 0,
-        observations: '',
-        actionsMenees: [],
-        produitsUtilises: [],
-        produitsAutres: '',
-        photos: [],
-        recommandations: '',
-        salesperson: salesperson,
-    });
-    const [reportConfig, setReportConfig] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [modal, setModal] = useState(null);
-    const pdfRef = useRef();
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            if (!db || !appId) {
-                console.error("DB or AppId not available");
-                setIsLoading(false);
-                return;
-            }
-            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
-            const docRef = doc(db, reportDocPath);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setReportConfig(docSnap.data());
-                } else {
-                    console.warn("Report configuration not found, using fallback.");
-                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-                }
-            } catch(e) {
-                console.error("Error fetching report config:", e);
-                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchConfig();
-    }, [db, appId]);
-
-    const nextStep = () => setStep(s => s + 1);
-    const prevStep = () => setStep(s => s - 1);
-
-    const handleGenerate = async () => {
-        // CORRECTION : Vérifier que les bibliothèques sont bien chargées
-        if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
-            setModal({title: "Erreur de chargement", message: "Les bibliothèques PDF ne sont pas prêtes. Veuillez rafraîchir la page."});
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            const reportsPath = `/artifacts/${appId}/public/data/sanitaryReports`;
-            await addDoc(collection(db, reportsPath), { ...reportData, createdAt: serverTimestamp() });
-
-            const { jsPDF } = window.jspdf;
-            const input = pdfRef.current;
-            if (!input) throw new Error("Element for PDF not found.");
-            
-            // CORRECTION : Remplacement de l'ancienne logique par la méthode .html() de jsPDF.
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.html(input, {
-                callback: function (pdf) {
-                    pdf.save(`Rapport-Sanitaire-${reportData.client.nom}.pdf`);
-
-                    const subject = encodeURIComponent(`Rapport d'intervention du ${new Date(reportData.interventionDate).toLocaleDateString('fr-FR')}`);
-                    const body = encodeURIComponent(`Bonjour ${reportData.client.prenom},\n\nVeuillez trouver ci-joint notre rapport d'intervention.\n\nCordialement,`);
-                    window.location.href = `mailto:${reportData.client.email}?subject=${subject}&body=${body}`;
-                    
-                    setIsGenerating(false);
-                    onBackToHome();
-                },
-                margin: [10, 10, 10, 10],
-                autoPaging: 'text',
-                html2canvas: {
-                    scale: 0.25, 
-                    useCORS: true
-                },
-                width: 190, // Largeur A4 moins les marges
-                windowWidth: pdfRef.current.scrollWidth
-            });
-
-        } catch (error) {
-            console.error("Error generating report:", error);
-            // CORRECTION : Remplacement de alert() par le composant Modal
-            setModal({ title: "Erreur", message: "Erreur lors de la génération du PDF. Le rapport a bien été sauvegardé." });
-            setIsGenerating(false);
-        }
-    };
-    
-    const renderCurrentStep = () => {
-         switch(step) {
-            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
-            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 5: return <ReportStep5_Finalize prevStep={prevStep} onGenerate={handleGenerate} isGenerating={isGenerating} />;
-            default: return <p>Étape inconnue</p>;
-         }
-    };
-    
-    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
-    
-    const progress = (step / 5) * 100;
-
-    return (
-        <div className="w-full">
-             {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-            <div className="mb-6">
-                 <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
-            </div>
-            {renderCurrentStep()}
-            <div className="absolute left-[-9999px] top-0">
-                <div ref={pdfRef}>
-                    <ReportForPDF data={reportData} />
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     
     const ActionCard = ({ onClick, icon, title }) => (
@@ -1254,7 +793,6 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
                 <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
                 <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
-                <ActionCard onClick={() => onNavigate('sanitaryReport')} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
             </div>
         </div>
     )
@@ -1296,30 +834,36 @@ const QuoteProcess = ({ data, setData, onBackToHome }) => {
   }, [data, appliedDiscounts, config]);
 
   useEffect(() => {
-    // CORRECTION : Utilisation des variables globales pour la configuration Firebase
-    // au lieu des clés codées en dur.
     const initFirebase = async () => {
         try {
-            if (firebaseRef.current) { // Déjà initialisé dans le composant parent
-                const { db, appId } = firebaseRef.current;
-                dbRef.current = db;
-                appIdRef.current = appId;
-                
-                const docPath = `/artifacts/${appId}/public/data/config/main`;
-                const configDocRef = doc(db, docPath);
-                const docSnap = await getDoc(configDocRef);
-                if (docSnap.exists()) {
-                    setConfig(docSnap.data());
-                } else {
-                    await setDoc(configDocRef, initialConfigData);
-                    setConfig(initialConfigData);
-                }
-            } else {
-                throw new Error("Firebase not initialized by parent component.");
+            const firebaseConfig = {
+              apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+              authDomain: "application-devis-f2a31.firebaseapp.com",
+              projectId: "application-devis-f2a31",
+              storageBucket: "application-devis-f2a31.appspot.com",
+              messagingSenderId: "960846329322",
+              appId: "1:960846329322:web:5802132e187aa131906e93",
+              measurementId: "G-1F9T98PGS9"
+            };
+            const appId = firebaseConfig.appId;
+            appIdRef.current = appId;
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            dbRef.current = db;
+            const auth = getAuth(app);
+            setLogLevel('debug');
+            await signInAnonymously(auth);
+            const docPath = `/artifacts/${appId}/public/data/config/main`;
+            const configDocRef = doc(db, docPath);
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) setConfig(docSnap.data());
+            else {
+                await setDoc(configDocRef, initialConfigData);
+                setConfig(initialConfigData);
             }
         } catch (err) {
-            console.error("Erreur d'initialisation du devis:", err);
-            setError("Impossible de charger la configuration du devis.");
+            console.error("Erreur d'initialisation:", err);
+            setError("Impossible de charger la configuration.");
         } finally {
             setIsLoading(false);
         }
@@ -1429,26 +973,21 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
         try {
-            // CORRECTION : Utilisation des variables globales fournies par l'environnement
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId || 'default-app-id';
-
-            if (!firebaseConfig.apiKey) {
-                throw new Error("Firebase config not found.");
-            }
-
+            const firebaseConfig = {
+                apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
+                authDomain: "application-devis-f2a31.firebaseapp.com",
+                projectId: "application-devis-f2a31",
+                storageBucket: "application-devis-f2a31.appspot.com",
+                messagingSenderId: "960846329322",
+                appId: "1:960846329322:web:5802132e187aa131906e93",
+                measurementId: "G-1F9T98PGS9"
+            };
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             const auth = getAuth(app);
+            const appId = firebaseConfig.appId;
             setLogLevel('debug');
-            
-            // CORRECTION : Authentification sécurisée avec le token fourni
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-            
+            await signInAnonymously(auth);
             firebaseRef.current = { db, auth, appId };
             setIsFirebaseReady(true);
         } catch(e) {
@@ -1572,15 +1111,12 @@ export default function App() {
             />;
         case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
-        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} />;
         default: return <div>Vue non reconnue</div>;
     }
   }
   
   return (
     <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-6 md:p-8">
-        {/* MODIFICATION : Ajout du composant pour injecter les bibliothèques */}
-        <InjectVendorLibs />
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
             {renderCurrentView()}
@@ -1588,4 +1124,3 @@ export default function App() {
     </main>
   );
 }
-
