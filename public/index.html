@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
     <!--
-      NOUVELLE LIGNE : C'est la règle de sécurité qui autorise le chargement
-      des scripts depuis le domaine externe cdnjs.cloudflare.com.
+      CORRECTION : La balise de sécurité est maintenant placée
+      tout en haut de la section <head>, comme il se doit.
     -->
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com;">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com;">
 
+    <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
@@ -47,3 +47,4 @@
     -->
   </body>
 </html>
+
