@@ -162,13 +162,16 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-slate-800 text-center">Choisissez votre offre</h2>
-      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
+       {/* CONTENEUR FLEX POUR UN ALIGNEMENT CORRECT */}
+      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4 md:items-stretch">
         {Object.entries(config.offers).map(([key, offer]) => {
           const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
           return (
-            <div key={key} onClick={() => selectOffer(key)} className="p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
+            // CORRECTION: Ajout de flex et flex-col pour que les cartes s'étirent
+            <div key={key} onClick={() => selectOffer(key)} className="flex flex-col p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
               <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-              <p className="text-sm text-slate-600 mt-2 h-12">{offer.description}</p>
+              {/* CORRECTION: flex-grow pour pousser le prix en bas */}
+              <p className="text-sm text-slate-600 mt-2 flex-grow">{offer.description}</p>
               <div className="mt-4">
                   <p className="text-3xl font-light text-slate-800">{priceInfo.price} €</p>
                   <p className="text-lg font-semibold text-slate-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
@@ -733,12 +736,11 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
         motif: '',
         nuisiblesConstates: [],
         zonesInspectees: [],
-        // NOUVELLES VALEURS PAR DEFAUT
-        niveauInfestation: 50, // 50% par défaut
-        consommationProduits: 50, // 50% par défaut
+        niveauInfestation: 50,
+        consommationProduits: 50,
         observations: '',
         actionsMenees: [],
-        produitsUtilises: '',
+        produitsUtilises: [],
         photos: [],
         recommandations: '',
         salesperson: salesperson,
@@ -825,7 +827,6 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
         setData(prev => ({ ...prev, [field]: newValues }));
     };
 
-    // Fonction pour afficher le label du curseur
     const getInfestationLabel = (value) => {
         if (value < 33) return 'Faible';
         if (value < 66) return 'Modérée';
@@ -836,7 +837,6 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
             
-            {/* CHAMP DE DATE D'INTERVENTION */}
             <div>
                 <label htmlFor="interventionDate" className="block text-sm font-medium text-slate-700 mb-1">Date d'intervention</label>
                 <input 
@@ -848,7 +848,6 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
                 />
             </div>
             
-            {/* CURSEUR NIVEAU D'INFESTATION */}
             <div>
                  <label htmlFor="infestationLevel" className="block text-sm font-medium text-slate-700 mb-1">
                     Niveau d'infestation : <span className="font-bold text-blue-600">{getInfestationLabel(data.niveauInfestation)}</span>
@@ -864,7 +863,6 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
                  />
             </div>
             
-            {/* CURSEUR CONSOMMATION PRODUITS */}
             <div>
                  <label htmlFor="productConsumption" className="block text-sm font-medium text-slate-700 mb-1">
                     Consommation des produits : <span className="font-bold text-blue-600">{data.consommationProduits}%</span>
@@ -1009,9 +1007,17 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
                 </div>
             </div>
 
+            {/* MODIFICATION: CHAMP PRODUITS UTILISES */}
             <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Produits utilisés</label>
-                 <textarea value={data.produitsUtilises} onChange={e => setData(prev => ({...prev, produitsUtilises: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Lister les produits et matières actives..."></textarea>
+                <label className="font-semibold text-slate-700">Produits utilisés</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {config?.produits?.map(item => (
+                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" checked={data.produitsUtilises.includes(item)} onChange={() => handleCheckboxChange('produitsUtilises', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
+                            <span className="ml-3 text-sm">{item}</span>
+                        </label>
+                    )) || <p className="text-xs text-slate-500">Aucune option de produit configurée.</p>}
+                </div>
             </div>
 
             <div>

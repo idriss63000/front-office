@@ -9,7 +9,6 @@ const formatTextForHTML = (text) => {
     return text.split('\n').map(line => `<p style="margin: 0 0 10px 0;">${line}</p>`).join('');
 };
 
-// NOUVELLE fonction utilitaire pour traduire le niveau d'infestation
 const getInfestationLabel = (value) => {
     const numValue = parseInt(value, 10);
     if (isNaN(numValue)) return 'Non précisé';
@@ -73,6 +72,8 @@ export default async function handler(req, res) {
             .photo-gallery { }
             p { line-height: 1.6; margin: 0 0 10px 0; }
             strong { color: #1a73e8; }
+            ul { padding-left: 20px; }
+            li { margin-bottom: 5px; }
         </style>
     </head>
     <body>
@@ -97,6 +98,8 @@ export default async function handler(req, res) {
                 ${formatTextForHTML(documentData.observations) || '<p>Aucune observation.</p>'}
                 <h2>Actions menées</h2>
                 ${formatTextForHTML(documentData.actionsMenees.join('\n')) || '<p>Aucune action menée.</p>'}
+                <h2>Produits utilisés</h2>
+                ${(documentData.produitsUtilises && documentData.produitsUtilises.length > 0) ? `<ul>${documentData.produitsUtilises.map(p => `<li>${p}</li>`).join('')}</ul>` : '<p>Aucun produit utilisé.</p>'}
                 <h2>Recommandations</h2>
                 ${formatTextForHTML(documentData.recommandations) || '<p>Aucune recommandation.</p>'}
             </div>
