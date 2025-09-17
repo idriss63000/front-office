@@ -162,15 +162,12 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-slate-800 text-center">Choisissez votre offre</h2>
-       {/* CONTENEUR FLEX POUR UN ALIGNEMENT CORRECT */}
-      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4 md:items-stretch">
+      <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch pt-4">
         {Object.entries(config.offers).map(([key, offer]) => {
           const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
           return (
-            // CORRECTION: Ajout de flex et flex-col pour que les cartes s'étirent
             <div key={key} onClick={() => selectOffer(key)} className="flex flex-col p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
               <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-              {/* CORRECTION: flex-grow pour pousser le prix en bas */}
               <p className="text-sm text-slate-600 mt-2 flex-grow">{offer.description}</p>
               <div className="mt-4">
                   <p className="text-3xl font-light text-slate-800">{priceInfo.price} €</p>
@@ -733,11 +730,11 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
     const [reportData, setReportData] = useState({
         client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
         interventionDate: new Date().toISOString().split('T')[0],
+        niveauInfestation: 50, // Default to 50%
+        consommationProduits: 50, // Default to 50%
         motif: '',
         nuisiblesConstates: [],
         zonesInspectees: [],
-        niveauInfestation: 50,
-        consommationProduits: 50,
         observations: '',
         actionsMenees: [],
         produitsUtilises: [],
@@ -814,6 +811,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
 };
 
 const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
+    // On réutilise le composant existant pour les informations client
     return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
 };
 
@@ -827,55 +825,13 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
         setData(prev => ({ ...prev, [field]: newValues }));
     };
 
-    const getInfestationLabel = (value) => {
-        if (value < 33) return 'Faible';
-        if (value < 66) return 'Modérée';
-        return 'Élevée';
-    };
-
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
             
             <div>
                 <label htmlFor="interventionDate" className="block text-sm font-medium text-slate-700 mb-1">Date d'intervention</label>
-                <input 
-                    id="interventionDate"
-                    type="date" 
-                    value={data.interventionDate} 
-                    onChange={(e) => setData(prev => ({ ...prev, interventionDate: e.target.value }))} 
-                    className="w-full p-3 border border-slate-300 rounded-lg"
-                />
-            </div>
-            
-            <div>
-                 <label htmlFor="infestationLevel" className="block text-sm font-medium text-slate-700 mb-1">
-                    Niveau d'infestation : <span className="font-bold text-blue-600">{getInfestationLabel(data.niveauInfestation)}</span>
-                 </label>
-                 <input
-                    id="infestationLevel"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={data.niveauInfestation}
-                    onChange={(e) => setData(prev => ({...prev, niveauInfestation: parseInt(e.target.value, 10)}))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                 />
-            </div>
-            
-            <div>
-                 <label htmlFor="productConsumption" className="block text-sm font-medium text-slate-700 mb-1">
-                    Consommation des produits : <span className="font-bold text-blue-600">{data.consommationProduits}%</span>
-                 </label>
-                 <input
-                    id="productConsumption"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={data.consommationProduits}
-                    onChange={(e) => setData(prev => ({...prev, consommationProduits: parseInt(e.target.value, 10)}))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                 />
+                <input id="interventionDate" type="date" value={data.interventionDate} onChange={e => setData(prev => ({ ...prev, interventionDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
             </div>
 
             <div>
@@ -900,6 +856,16 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
                         </label>
                     )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
                 </div>
+            </div>
+            
+            <div>
+                <label htmlFor="infestationLevel" className="block font-medium text-slate-700 mb-2">Niveau d'infestation ({data.niveauInfestation}%)</label>
+                <input id="infestationLevel" type="range" min="0" max="100" step="5" value={data.niveauInfestation} onChange={e => setData(prev => ({ ...prev, niveauInfestation: parseInt(e.target.value) }))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
+                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
@@ -991,11 +957,6 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
             <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
 
             <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
-                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
-            </div>
-
-            <div>
                 <label className="font-semibold text-slate-700">Actions menées</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {config?.actions?.map(item => (
@@ -1007,17 +968,21 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
                 </div>
             </div>
 
-            {/* MODIFICATION: CHAMP PRODUITS UTILISES */}
             <div>
                 <label className="font-semibold text-slate-700">Produits utilisés</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {config?.produits?.map(item => (
                         <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
                             <input type="checkbox" checked={data.produitsUtilises.includes(item)} onChange={() => handleCheckboxChange('produitsUtilises', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
                             <span className="ml-3 text-sm">{item}</span>
                         </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option de produit configurée.</p>}
+                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
                 </div>
+            </div>
+
+             <div>
+                <label htmlFor="productConsumption" className="block font-medium text-slate-700 mb-2">Consommation des produits ({data.consommationProduits}%)</label>
+                <input id="productConsumption" type="range" min="0" max="100" step="5" value={data.consommationProduits} onChange={e => setData(prev => ({ ...prev, consommationProduits: parseInt(e.target.value) }))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
             </div>
 
             <div>
@@ -1069,6 +1034,7 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
                 <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
                 <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
+                {/* NOUVELLE CARTE D'ACTION */}
                 <ActionCard onClick={() => onNavigate('sanitaryReport')} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
             </div>
         </div>
@@ -1192,7 +1158,8 @@ const ContractGenerator = ({ onBack }) => {
 
     const contractUrls = {
         prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
-        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609'
+        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609',
+        maintenanceAlarme: 'https://yousign.app/workflows/forms/418760b5-3c2f-4c26-bf48-eeb7b32b03c1'
     };
 
     return (
@@ -1205,6 +1172,7 @@ const ContractGenerator = ({ onBack }) => {
             </div>
 
             <div className="space-y-8 mt-6">
+                {/* Option 1 : Contrat Sanisecurité */}
                 <div className="text-center space-y-4 p-6 border rounded-xl">
                     <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
                     <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
@@ -1219,6 +1187,7 @@ const ContractGenerator = ({ onBack }) => {
                     </button>
                 </div>
 
+                {/* Option 2 : Contrat Sanitaire */}
                 <div className="text-center space-y-4 p-6 border rounded-xl">
                     <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
                     <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
@@ -1230,6 +1199,21 @@ const ContractGenerator = ({ onBack }) => {
                         className="w-full sm:w-auto px-6 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
                     >
                         Ouvrir Contrat Sanitaire
+                    </button>
+                </div>
+                
+                {/* Option 3 : Contrat Maintenance Alarme */}
+                <div className="text-center space-y-4 p-6 border rounded-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-green-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat de Maintenance Alarme</h2>
+                    <p className="text-slate-600">
+                        contrat de maintenance alarme videosurveillance
+                    </p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.maintenanceAlarme)} 
+                        className="w-full sm:w-auto px-6 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+                    >
+                        Ouvrir Contrat Maintenance Alarme
                     </button>
                 </div>
             </div>
@@ -1249,12 +1233,16 @@ export default function App() {
   const firebaseRef = useRef(null);
   const configRef = useRef(null);
 
+  // --- NOUVELLE FONCTION D'ENVOI CENTRALISÉE ---
+
   const sendDocumentByEmail = async (documentData, configData, documentType) => {
     try {
+        // Sauvegarder le document sur Firestore d'abord
         const collectionName = documentType === 'devis' ? 'devis' : 'sanitaryReports';
         const docPath = `/artifacts/${firebaseRef.current.appId}/public/data/${collectionName}`;
         await addDoc(collection(firebaseRef.current.db, docPath), { ...documentData, createdAt: serverTimestamp() });
         
+        // Préparer les données pour la fonction Vercel
         const payload = {
             documentData,
             configData,
@@ -1276,6 +1264,7 @@ export default function App() {
 
     } catch (error) {
         console.error(`Erreur lors de la création ou l'envoi du ${documentType}:`, error);
+        // Logique de secours : le document a été sauvegardé, mais l'email a échoué.
         setModal({
             title: `Erreur d'envoi`,
             message: `L'envoi de l'email a échoué. Le ${documentType} a été sauvegardé, mais pas envoyé.`
@@ -1305,6 +1294,7 @@ export default function App() {
             await signInAnonymously(auth);
             firebaseRef.current = { db, auth, appId };
 
+            // Charger et stocker la configuration globale une seule fois
             const docPath = `/artifacts/${appId}/public/data/config/main`;
             const configDocRef = doc(db, docPath);
             const docSnap = await getDoc(configDocRef);
