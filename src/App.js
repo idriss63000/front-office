@@ -5,6 +5,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+// La librairie d'optimisation sera chargée dynamiquement
 
 // --- Icônes (SVG) ---
 const UserIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
@@ -726,7 +727,7 @@ const PresentationMode = ({ onBack, videos }) => {
 
 // --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
 
-const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, config }) => {
+const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, config, firebaseApp }) => {
     const [step, setStep] = useState(1);
     const [reportData, setReportData] = useState({
         client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
@@ -797,8 +798,8 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
          switch(step) {
             case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
             case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} firebaseRef={db.app} salesperson={salesperson} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={config} />;
+            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} firebaseApp={firebaseApp} salesperson={salesperson} />;
+            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 5: return <ReportStep5_Finalize prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
             case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
             default: return <p>Étape inconnue</p>;
@@ -882,20 +883,60 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
     );
 };
 
-const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseRef, salesperson }) => {
+const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, salesperson }) => {
     
     const [storage, setStorage] = useState(null);
 
-    useEffect(() => {
-        if(firebaseRef) {
-            setStorage(getStorage(firebaseRef));
-        }
-    }, [firebaseRef]);
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Script load error for ${src}`));
+      document.head.appendChild(script);
+    });
 
-    const uploadPhoto = (id, file) => {
+    useEffect(() => {
+        if(firebaseApp) {
+            setStorage(getStorage(firebaseApp));
+        }
+    }, [firebaseApp]);
+
+    const handlePhotoUpload = async (event) => {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+        
+        await loadScript("https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js");
+
+        const compressionOptions = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+        };
+
+        for (const file of files) {
+            const id = `photo_${Date.now()}_${Math.random()}`;
+            const preview = URL.createObjectURL(file);
+            
+            setData(prev => ({
+                ...prev,
+                photos: [...prev.photos, { id, file, caption: '', uploadProgress: 0, url: null, error: null, preview }]
+            }));
+
+            try {
+                const compressedFile = await window.imageCompression(file, compressionOptions);
+                uploadPhoto(id, compressedFile, file.name);
+            } catch (error) {
+                console.error("Image compression failed:", error);
+                updatePhotoState(id, { error: "Erreur de compression" });
+            }
+        }
+    };
+    
+    const uploadPhoto = (id, file, originalName) => {
         if (!storage) return;
 
-        const storageRef = ref(storage, `reports/${salesperson}/${Date.now()}_${file.name}`);
+        const storageRef = ref(storage, `reports/${salesperson}/${Date.now()}_${originalName}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         uploadTask.on('state_changed', 
@@ -921,22 +962,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseRef, sa
             photos: prev.photos.map(p => p.id === id ? {...p, ...newState} : p)
         }));
     };
-
-    const handlePhotoUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newPhotos = files.map(file => ({
-            id: `photo_${Date.now()}_${Math.random()}`,
-            file: file,
-            caption: '',
-            uploadProgress: 0,
-            url: null,
-            error: null,
-            preview: URL.createObjectURL(file) // For instant preview
-        }));
-        
-        setData(prev => ({...prev, photos: [...prev.photos, ...newPhotos]}));
-        newPhotos.forEach(p => uploadPhoto(p.id, p.file));
-    };
     
     const removePhoto = (id) => {
         // Here you might want to add logic to delete from Firebase Storage if already uploaded
@@ -955,7 +980,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseRef, sa
                     Importer depuis l'appareil
                 </label>
                 <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
-                <p className="text-xs text-slate-500 mt-2">Les photos seront envoyées vers le serveur.</p>
+                <p className="text-xs text-slate-500 mt-2">Les photos seront optimisées et envoyées vers le serveur.</p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -963,7 +988,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseRef, sa
                     <div key={photo.id} className="border rounded-lg p-2 space-y-2">
                         <div className="relative">
                            <img src={photo.preview} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
-                           {photo.uploadProgress < 100 && !photo.error &&
+                           {photo.uploadProgress > 0 && photo.uploadProgress < 100 && !photo.error &&
                                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                                     <div className="w-11/12 bg-gray-200 rounded-full h-2.5">
                                         <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${photo.uploadProgress}%`}}></div>
@@ -1491,7 +1516,7 @@ export default function App() {
             />;
         case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
-        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} onSend={(data, config) => sendDocumentByEmail(data, config, 'rapport')} config={configRef.current} />;
+        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} onSend={(data, config) => sendDocumentByEmail(data, config, 'rapport')} config={configRef.current} firebaseApp={firebaseRef.current?.app}/>;
         default: return <div>Vue non reconnue</div>;
     }
   }
