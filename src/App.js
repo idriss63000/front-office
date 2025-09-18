@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, updateDoc, serverTimestamp, setLogLevel, onSnapshot } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 // --- Icônes (SVG) ---
 const UserIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
@@ -778,7 +779,12 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
 
     const handleFinalize = async () => {
         setIsSending(true);
-        await onSend(reportData, config);
+        // We only send the photo URLs, not the full data
+        const finalReportData = {
+            ...reportData,
+            photos: reportData.photos.map(p => ({ url: p.url, caption: p.caption })),
+        };
+        await onSend(finalReportData, config);
         setIsSending(false);
         nextStep();
     };
@@ -791,7 +797,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
          switch(step) {
             case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
             case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
+            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} firebaseRef={db.app} salesperson={salesperson} />;
             case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={config} />;
             case 5: return <ReportStep5_Finalize prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
             case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
@@ -876,34 +882,68 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
     );
 };
 
-const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
+const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseRef, salesperson }) => {
     
-    const handlePhotoUpload = (e) => {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (upload) => {
-                const newPhoto = {
-                    id: `photo_${Date.now()}_${Math.random()}`,
-                    dataUrl: upload.target.result,
-                    caption: ''
-                };
-                setData(prev => ({...prev, photos: [...prev.photos, newPhoto]}));
-            };
-            reader.readAsDataURL(file);
-        });
+    const [storage, setStorage] = useState(null);
+
+    useEffect(() => {
+        if(firebaseRef) {
+            setStorage(getStorage(firebaseRef));
+        }
+    }, [firebaseRef]);
+
+    const uploadPhoto = (id, file) => {
+        if (!storage) return;
+
+        const storageRef = ref(storage, `reports/${salesperson}/${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                updatePhotoState(id, { uploadProgress: progress });
+            }, 
+            (error) => {
+                console.error("Upload failed:", error);
+                updatePhotoState(id, { error: "Échec de l'envoi" });
+            }, 
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    updatePhotoState(id, { url: downloadURL, uploadProgress: 100 });
+                });
+            }
+        );
     };
-    
-    const updateCaption = (id, caption) => {
+
+    const updatePhotoState = (id, newState) => {
         setData(prev => ({
             ...prev,
-            photos: prev.photos.map(p => p.id === id ? {...p, caption} : p)
+            photos: prev.photos.map(p => p.id === id ? {...p, ...newState} : p)
         }));
     };
 
+    const handlePhotoUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const newPhotos = files.map(file => ({
+            id: `photo_${Date.now()}_${Math.random()}`,
+            file: file,
+            caption: '',
+            uploadProgress: 0,
+            url: null,
+            error: null,
+            preview: URL.createObjectURL(file) // For instant preview
+        }));
+        
+        setData(prev => ({...prev, photos: [...prev.photos, ...newPhotos]}));
+        newPhotos.forEach(p => uploadPhoto(p.id, p.file));
+    };
+    
     const removePhoto = (id) => {
+        // Here you might want to add logic to delete from Firebase Storage if already uploaded
         setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
     };
+
+    const allPhotosUploaded = data.photos.every(p => p.uploadProgress === 100);
 
     return (
         <div className="space-y-6">
@@ -915,17 +955,31 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
                     Importer depuis l'appareil
                 </label>
                 <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload}/>
-                <p className="text-xs text-slate-500 mt-2">Vous pouvez sélectionner plusieurs photos.</p>
+                <p className="text-xs text-slate-500 mt-2">Les photos seront envoyées vers le serveur.</p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {data.photos.map(photo => (
                     <div key={photo.id} className="border rounded-lg p-2 space-y-2">
-                        <img src={photo.dataUrl} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
+                        <div className="relative">
+                           <img src={photo.preview} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
+                           {photo.uploadProgress < 100 && !photo.error &&
+                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <div className="w-11/12 bg-gray-200 rounded-full h-2.5">
+                                        <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${photo.uploadProgress}%`}}></div>
+                                    </div>
+                                </div>
+                           }
+                           {photo.error &&
+                               <div className="absolute inset-0 bg-red-800 bg-opacity-75 flex items-center justify-center">
+                                   <p className="text-white text-sm font-bold">{photo.error}</p>
+                               </div>
+                           }
+                        </div>
                         <input 
                             type="text"
                             value={photo.caption}
-                            onChange={(e) => updateCaption(photo.id, e.target.value)}
+                            onChange={(e) => updatePhotoState(photo.id, { caption: e.target.value })}
                             placeholder="Ajouter une légende..."
                             className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                         />
@@ -936,7 +990,9 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep }) => {
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+                <button onClick={nextStep} disabled={!allPhotosUploaded} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-400">
+                    {allPhotosUploaded ? 'Suivant' : 'Envoi en cours...'}
+                </button>
             </div>
         </div>
     );
@@ -1301,7 +1357,7 @@ export default function App() {
             const appId = firebaseConfig.appId;
             setLogLevel('debug');
             await signInAnonymously(auth);
-            firebaseRef.current = { db, auth, appId };
+            firebaseRef.current = { db, auth, appId, app }; // Pass app instance
 
             // Charger et stocker la configuration globale une seule fois
             const docPath = `/artifacts/${appId}/public/data/config/main`;
