@@ -792,7 +792,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
             case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
             case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
+            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={config} />;
             case 5: return <ReportStep5_Finalize prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
             case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
             default: return <p>Étape inconnue</p>;
@@ -1158,7 +1158,11 @@ const ContractGenerator = ({ onBack }) => {
 
     const contractUrls = {
         prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
-        maintenance: 'https://yousign.app/workflows/forms/23f92613-9b76-4b13-a7a8-c6cd2dada609',
+        sanitaireOptions: [
+            { name: 'Special', url: 'https://yousign.app/workflows/forms/da6b9dfb-0a3f-4b7f-b12e-91a81c43b4ef'},
+            { name: 'Standard', url: 'https://yousign.app/workflows/forms/fc9ce226-2a21-4767-8aa1-fff3a836637a'},
+            { name: 'Premium', url: 'https://yousign.app/workflows/forms/790fd387-eda7-4215-a0a2-4b9eac883a42'}
+        ],
         maintenanceAlarme: 'https://yousign.app/workflows/forms/418760b5-3c2f-4c26-bf48-eeb7b32b03c1'
     };
 
@@ -1192,14 +1196,19 @@ const ContractGenerator = ({ onBack }) => {
                     <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
                     <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
                     <p className="text-slate-600">
-                        Ouvrir le formulaire pour le contrat sanitaire.
+                        Choisir le type de contrat sanitaire à générer.
                     </p>
-                    <button 
-                        onClick={() => handleOpenLink(contractUrls.maintenance)} 
-                        className="w-full sm:w-auto px-6 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
-                    >
-                        Ouvrir Contrat Sanitaire
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        {contractUrls.sanitaireOptions.map(option => (
+                             <button 
+                                key={option.name}
+                                onClick={() => handleOpenLink(option.url)} 
+                                className="w-full sm:w-auto px-6 bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition"
+                            >
+                                Ouvrir Contrat {option.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 
                 {/* Option 3 : Contrat Maintenance Alarme */}
