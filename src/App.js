@@ -997,7 +997,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 }
 
                 logToScreen(`[${file.name}] Tentative de compression...`);
-                const compressedFile = await window.imageCompression(fileToProcess, compressionOptions);
+                const compressedFile = await imageCompression(fileToProcess, compressionOptions);
                 logToScreen(`[${file.name}] Compression réussie. Taille après compression : ${compressedFile.size}`);
                 
                 const finalFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
