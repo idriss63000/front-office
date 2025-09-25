@@ -20,7 +20,8 @@ const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" h
 const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
 const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
-const CameraIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
+const PlusCircleIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>;
+
 
 // --- Données par défaut ---
 const initialConfigData = {
@@ -725,6 +726,7 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
+
 // --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
 
 const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, config, firebaseApp }) => {
@@ -732,15 +734,15 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
     const [reportData, setReportData] = useState({
         client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
         interventionDate: new Date().toISOString().split('T')[0],
-        niveauInfestation: 50, // Default to 50%
-        consommationProduits: 50, // Default to 50%
+        niveauInfestation: 50,
+        consommationProduits: 50,
         motif: '',
         nuisiblesConstates: [],
         zonesInspectees: [],
+        trapLocations: [], // NOUVEAU: pour stocker les emplacements des pièges
         observations: '',
         actionsMenees: [],
         produitsUtilises: [],
-        photos: [],
         recommandations: '',
         salesperson: salesperson,
     });
@@ -763,11 +765,25 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
                     setReportConfig(docSnap.data());
                 } else {
                     console.warn("Report configuration not found, using fallback.");
-                    setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+                     const fallbackConfig = {
+                        nuisibles: ["Rats", "Souris", "Cafards", "Fourmis", "Punaises de lit", "Guêpes/Frelons"],
+                        zones: ["Cuisine", "Cave", "Garage", "Combles", "Chambres", "Extérieur"],
+                        actions: ["Pulvérisation", "Nébulisation", "Pose de gel", "Pose de pièges", "Rebouchage"],
+                        produits: ["Produit A (liquide)", "Produit B (gel)", "Produit C (poudre)"],
+                        trapLocationOptions: {
+                            'Cuisine': ['Sous l\'évier', 'Derrière le réfrigérateur', 'Près de la poubelle', 'Le long du mur Est', 'Autre'],
+                            'Salle de bain': ['Sous le lavabo', 'Derrière les toilettes', 'Près de la douche', 'Autre'],
+                            'Garage': ['Près de la porte principale', 'Dans le coin Nord-Ouest', 'Sous l\'établi', 'Autre'],
+                            'Cave': ['Près de la chaudière', 'Sous l\'escalier', 'Le long du mur humide', 'Autre'],
+                            'Combles': ['Près de la trappe d\'accès', 'Le long des poutres', 'Autre'],
+                            'Extérieur': ['Près du composteur', 'Le long du mur de la maison', 'Sous la terrasse', 'Autre']
+                        }
+                    };
+                    setReportConfig(fallbackConfig);
                 }
             } catch(e) {
                 console.error("Error fetching report config:", e);
-                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [] });
+                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [], trapLocationOptions: {} });
             } finally {
                 setIsLoading(false);
             }
@@ -780,12 +796,8 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
 
     const handleFinalize = async () => {
         setIsSending(true);
-        // We only send the photo URLs, not the full data
-        const finalReportData = {
-            ...reportData,
-            photos: reportData.photos.map(p => ({ url: p.url, caption: p.caption })),
-        };
-        await onSend(finalReportData, config);
+        // On envoie directement les données du rapport, sans traitement des photos
+        await onSend(reportData, config);
         setIsSending(false);
         nextStep();
     };
@@ -798,7 +810,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
          switch(step) {
             case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
             case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_Photos data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} firebaseApp={firebaseApp} salesperson={salesperson} />;
+            case 3: return <ReportStep3_TrapLocations data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 5: return <ReportStep5_Finalize prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
             case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
@@ -818,7 +830,6 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
 };
 
 const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
-    // On réutilise le composant existant pour les informations client
     return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
 };
 
@@ -883,191 +894,102 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
     );
 };
 
+
 // =========================================================================================
-// == DÉBUT DE LA SECTION MODIFIÉE : ReportStep3_Photos (avec la correction finale) ========
+// == NOUVEAU COMPOSANT : ReportStep3_TrapLocations ========================================
 // =========================================================================================
-const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, salesperson }) => {
-    const [storage, setStorage] = useState(null);
+const ReportStep3_TrapLocations = ({ data, setData, nextStep, prevStep, config }) => {
+    const locationOptions = config?.trapLocationOptions || {};
+    const availableZones = Object.keys(locationOptions);
 
-    const loadScript = (src) => new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-          resolve();
-          return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Le chargement du script a échoué pour ${src}`));
-      document.head.appendChild(script);
-    });
+    const addLocation = () => {
+        const newLocation = {
+            id: Date.now(),
+            zone: '',
+            emplacement: '',
+            customEmplacement: '',
+            note: ''
+        };
+        setData(prev => ({ ...prev, trapLocations: [...(prev.trapLocations || []), newLocation] }));
+    };
 
-    useEffect(() => {
-        if(firebaseApp) {
-            setStorage(getStorage(firebaseApp));
-        }
-    }, [firebaseApp]);
+    const removeLocation = (id) => {
+        setData(prev => ({ ...prev, trapLocations: prev.trapLocations.filter(loc => loc.id !== id) }));
+    };
 
-    const handlePhotoUpload = async (event) => {
-        try {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
-            
-            await Promise.all([
-                loadScript("https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js"),
-                loadScript("https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js")
-            ]);
-
-            const compressionOptions = {
-                maxSizeMB: 1,
-                maxWidthOrHeight: 1920,
-                useWebWorker: true,
-            };
-
-            for (let file of files) {
-                const id = `photo_${Date.now()}_${Math.random()}`;
-                const preview = URL.createObjectURL(file);
-                
-                setData(prev => ({
-                    ...prev,
-                    photos: [...prev.photos, { id, file, caption: '', uploadProgress: 0, url: null, error: null, preview }]
-                }));
-
-                let fileToProcess = file;
-                
-                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
-                if (isHeic) {
-                    try {
-                        updatePhotoState(id, { uploadProgress: 5 });
-                        const conversionResult = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
-                        fileToProcess = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
-                    } catch (convertError) {
-                        console.error(`[${file.name}] ERREUR de conversion HEIC:`, convertError);
-                        updatePhotoState(id, { error: "Conversion HEIC impossible" });
-                        continue;
-                    }
+    const handleLocationChange = (id, field, value) => {
+        const updatedLocations = data.trapLocations.map(loc => {
+            if (loc.id === id) {
+                const updatedLoc = { ...loc, [field]: value };
+                if (field === 'zone') {
+                    updatedLoc.emplacement = '';
+                    updatedLoc.customEmplacement = '';
                 }
-
-                try {
-                    const compressedFile = await window.imageCompression(fileToProcess, compressionOptions);
-                    const finalFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-                    uploadPhoto(id, compressedFile, finalFileName);
-                } catch (compressionError) {
-                    console.error(`[${file.name}] ERREUR de compression:`, compressionError);
-                    updatePhotoState(id, { error: "Erreur de compression" });
-                    continue;
-                }
+                return updatedLoc;
             }
-        } catch (error) {
-            console.error(`ERREUR GLOBALE dans handlePhotoUpload:`, error);
-            // Afficher l'erreur technique réelle plutôt qu'un message générique
-            const errorMessage = `Erreur: ${error.message}`;
-            setData(prev => {
-                // Pour éviter d'ajouter une "fausse" carte photo juste pour l'erreur,
-                // on peut l'afficher sur la dernière photo tentée si elle existe
-                if (prev.photos.length > 0) {
-                    const lastPhotoIndex = prev.photos.length - 1;
-                    const updatedPhotos = [...prev.photos];
-                    updatedPhotos[lastPhotoIndex].error = errorMessage;
-                    return { ...prev, photos: updatedPhotos };
-                }
-                // S'il n'y a aucune photo, on ne fait rien pour ne pas polluer l'UI
-                return prev;
-             });
-        }
+            return loc;
+        });
+        setData(prev => ({ ...prev, trapLocations: updatedLocations }));
     };
-    
-    const uploadPhoto = (id, file, originalName) => {
-        if (!storage) {
-            updatePhotoState(id, { error: "Storage non initialisé" });
-            return;
-        }
-        const storageRef = ref(storage, `reports/${salesperson}/${Date.now()}_${originalName}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                updatePhotoState(id, { uploadProgress: progress });
-            }, 
-            (error) => {
-                console.error(`[${originalName}] ERREUR d'upload:`, error);
-                updatePhotoState(id, { error: "Échec de l'envoi" });
-            }, 
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    updatePhotoState(id, { url: downloadURL, uploadProgress: 100 });
-                });
-            }
-        );
-    };
-
-    const updatePhotoState = (id, newState) => {
-        setData(prev => ({
-            ...prev,
-            photos: prev.photos.map(p => p.id === id ? {...p, ...newState} : p)
-        }));
-    };
-    
-    const removePhoto = (id) => {
-        setData(prev => ({...prev, photos: prev.photos.filter(p => p.id !== id)}));
-    };
-
-    const allPhotosUploaded = data.photos.every(p => p.uploadProgress === 100 || p.error);
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des Photos</h2>
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Emplacements des Dispositifs</h2>
             
-            <div className="p-6 border-2 border-dashed rounded-xl text-center">
-                <label htmlFor="photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-md font-semibold text-sm text-slate-700 hover:bg-slate-50">
-                    <CameraIcon className="h-5 w-5"/>
-                    Importer depuis l'appareil
-                </label>
-                <input id="photo-upload" type="file" multiple accept="image/*,.heic,.heif" className="hidden" onChange={handlePhotoUpload}/>
-                <p className="text-xs text-slate-500 mt-2">Les formats HEIC (iPhone) sont automatiquement convertis.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.photos.map(photo => (
-                    <div key={photo.id} className="border rounded-lg p-2 space-y-2">
-                        <div className="relative">
-                           <img src={photo.preview} alt="Aperçu" className="rounded-md w-full h-auto max-h-48 object-cover"/>
-                           {photo.uploadProgress > 0 && photo.uploadProgress < 100 && !photo.error &&
-                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                    <div className="w-11/12 bg-gray-200 rounded-full h-2.5">
-                                        <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${photo.uploadProgress}%`}}></div>
-                                    </div>
+            <div className="space-y-4">
+                {(data.trapLocations || []).map((location, index) => {
+                    const specificLocations = location.zone ? locationOptions[location.zone] : [];
+                    return (
+                        <div key={location.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-bold text-slate-700">Dispositif #{index + 1}</h3>
+                                <button onClick={() => removeLocation(location.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Zone</label>
+                                    <select value={location.zone} onChange={e => handleLocationChange(location.id, 'zone', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md bg-white">
+                                        <option value="">Sélectionner une zone</option>
+                                        {availableZones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                                    </select>
                                 </div>
-                           }
-                           {photo.error &&
-                               <div className="absolute inset-0 bg-red-800 bg-opacity-75 flex items-center justify-center p-2">
-                                   <p className="text-white text-sm font-bold text-center">{photo.error}</p>
-                               </div>
-                           }
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Emplacement</label>
+                                    <select value={location.emplacement} onChange={e => handleLocationChange(location.id, 'emplacement', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md bg-white" disabled={!location.zone}>
+                                        <option value="">Sélectionner un emplacement</option>
+                                        {specificLocations.map(spec => <option key={spec} value={spec}>{spec}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            {location.emplacement === 'Autre' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Préciser l'emplacement</label>
+                                    <input type="text" value={location.customEmplacement} onChange={e => handleLocationChange(location.id, 'customEmplacement', e.target.value)} placeholder="Ex: Sous l'escalier en bois" className="w-full p-2 border border-slate-300 rounded-md"/>
+                                </div>
+                            )}
+                             <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Note (optionnel)</label>
+                                <input type="text" value={location.note} onChange={e => handleLocationChange(location.id, 'note', e.target.value)} placeholder="Ex: Côté droit, près du siphon" className="w-full p-2 border border-slate-300 rounded-md"/>
+                            </div>
                         </div>
-                        <input 
-                            type="text"
-                            value={photo.caption}
-                            onChange={(e) => updatePhotoState(photo.id, { caption: e.target.value })}
-                            placeholder="Ajouter une légende..."
-                            className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button onClick={() => removePhoto(photo.id)} className="text-xs text-red-600 hover:underline">Supprimer</button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
+
+            <button onClick={addLocation} className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-700 py-2 rounded-lg font-semibold hover:bg-slate-200 transition-colors">
+                <PlusCircleIcon />
+                Ajouter un emplacement
+            </button>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} disabled={!allPhotosUploaded} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-400">
-                    {allPhotosUploaded ? 'Suivant' : 'Envoi des photos...'}
-                </button>
+                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
             </div>
         </div>
     );
 };
 // =========================================================================================
-// == FIN DE LA SECTION MODIFIÉE ===========================================================
+// == FIN DU NOUVEAU COMPOSANT =============================================================
 // =========================================================================================
 
 
