@@ -1,4 +1,4 @@
-/* global __firebase_config, __app_id, __initial_auth_token */
+/* global __firebase_config, __app_id, __initial_auth_token, imageCompression */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
@@ -884,7 +884,7 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
 };
 
 // =========================================================================================
-// == DÉBUT DE LA SECTION MODIFIÉE : ReportStep3_Photos (avec nouveau CDN et logs améliorés) ==
+// == DÉBUT DE LA SECTION MODIFIÉE : ReportStep3_Photos (avec la correction finale) ========
 // =========================================================================================
 const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, salesperson }) => {
     const [storage, setStorage] = useState(null);
@@ -929,7 +929,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             
             logToScreen('Chargement des librairies de traitement...');
             
-            // MODIFICATION: Tentative de chargement depuis un autre CDN (unpkg) et diagnostic amélioré.
             const scriptUrls = {
                 compression: "https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js",
                 heic: "https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"
@@ -957,7 +956,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             if (!scriptsLoaded) {
                  logToScreen('Au moins un script n\'a pas pu être chargé. Arrêt du traitement.');
                  updatePhotoState('global_error', { error: "Erreur de chargement des librairies." });
-                 return; // Arrête l'exécution si les scripts ne sont pas là
+                 return;
             }
 
             logToScreen('Toutes les librairies nécessaires sont chargées.');
@@ -997,6 +996,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 }
 
                 logToScreen(`[${file.name}] Tentative de compression...`);
+                // CORRECTION : Appel direct de la fonction sans 'window.'
                 const compressedFile = await imageCompression(fileToProcess, compressionOptions);
                 logToScreen(`[${file.name}] Compression réussie. Taille après compression : ${compressedFile.size}`);
                 
@@ -1005,7 +1005,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             }
         } catch (error) {
             logToScreen(`ERREUR GLOBALE dans handlePhotoUpload: ${error.message}`);
-            // Affiche l'erreur sur une photo factice si aucune n'est encore dans la liste
              const firstPhotoId = data.photos.length > 0 ? data.photos[0].id : 'global_error';
              updatePhotoState(firstPhotoId, { error: "Erreur de traitement" });
         }
@@ -1064,7 +1063,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 <p className="text-xs text-slate-500 mt-2">Les formats HEIC (iPhone) sont automatiquement convertis.</p>
             </div>
             
-            {/* Panneau de débogage amélioré */}
+            {/* Panneau de débogage (nous le laisserons pour le moment) */}
             {debugLog.length > 0 && (
                 <div className="mt-4 p-4 bg-slate-100 rounded-lg border border-slate-300">
                     <h3 className="font-bold text-sm text-slate-700">Log de débogage :</h3>
