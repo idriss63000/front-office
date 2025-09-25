@@ -884,21 +884,22 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
 };
 
 // =========================================================================================
-// == DÉBUT DE LA SECTION MODIFIÉE : ReportStep3_Photos (avec outil de diagnostic) ========
+// == DÉBUT DE LA SECTION MODIFIÉE : ReportStep3_Photos (avec nouveau CDN et logs améliorés) ==
 // =========================================================================================
 const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, salesperson }) => {
     const [storage, setStorage] = useState(null);
-    // NOUVEAU : État pour stocker les messages de débogage
     const [debugLog, setDebugLog] = useState([]);
 
-    // NOUVEAU : Fonction pour ajouter des messages au log visible
     const logToScreen = (message) => {
-        console.log(message); // On garde le log console
+        console.log(message);
         setDebugLog(prev => [...prev, message]);
     };
 
     const loadScript = (src) => new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+      }
       const script = document.createElement('script');
       script.src = src;
       script.onload = () => resolve();
@@ -915,7 +916,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
     const handlePhotoUpload = async (event) => {
         logToScreen('--- NOUVELLE TENTATIVE D\'UPLOAD ---');
         try {
-            // Log des informations brutes sur les fichiers reçus
             if (!event.target.files || event.target.files.length === 0) {
                 logToScreen('Aucun fichier reçu de l\'input.');
                 return;
@@ -928,11 +928,39 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             const files = Array.from(event.target.files);
             
             logToScreen('Chargement des librairies de traitement...');
-            await Promise.all([
-                loadScript("https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"),
-                loadScript("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js")
-            ]);
-            logToScreen('Librairies chargées.');
+            
+            // MODIFICATION: Tentative de chargement depuis un autre CDN (unpkg) et diagnostic amélioré.
+            const scriptUrls = {
+                compression: "https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js",
+                heic: "https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"
+            };
+
+            let scriptsLoaded = true;
+            try {
+                logToScreen(`Chargement de: ${scriptUrls.compression}`);
+                await loadScript(scriptUrls.compression);
+                logToScreen('OK: browser-image-compression chargé.');
+            } catch (error) {
+                logToScreen(`ERREUR: Échec du chargement de browser-image-compression. ${error.message}`);
+                scriptsLoaded = false;
+            }
+
+            try {
+                logToScreen(`Chargement de: ${scriptUrls.heic}`);
+                await loadScript(scriptUrls.heic);
+                logToScreen('OK: heic2any chargé.');
+            } catch (error) {
+                logToScreen(`ERREUR: Échec du chargement de heic2any. ${error.message}`);
+                scriptsLoaded = false;
+            }
+
+            if (!scriptsLoaded) {
+                 logToScreen('Au moins un script n\'a pas pu être chargé. Arrêt du traitement.');
+                 updatePhotoState('global_error', { error: "Erreur de chargement des librairies." });
+                 return; // Arrête l'exécution si les scripts ne sont pas là
+            }
+
+            logToScreen('Toutes les librairies nécessaires sont chargées.');
 
             const compressionOptions = {
                 maxSizeMB: 1,
@@ -977,7 +1005,9 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             }
         } catch (error) {
             logToScreen(`ERREUR GLOBALE dans handlePhotoUpload: ${error.message}`);
-            updatePhotoState('global_error', { error: "Erreur de traitement" });
+            // Affiche l'erreur sur une photo factice si aucune n'est encore dans la liste
+             const firstPhotoId = data.photos.length > 0 ? data.photos[0].id : 'global_error';
+             updatePhotoState(firstPhotoId, { error: "Erreur de traitement" });
         }
     };
     
@@ -1034,7 +1064,7 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 <p className="text-xs text-slate-500 mt-2">Les formats HEIC (iPhone) sont automatiquement convertis.</p>
             </div>
             
-            {/* NOUVEAU : Panneau de débogage */}
+            {/* Panneau de débogage amélioré */}
             {debugLog.length > 0 && (
                 <div className="mt-4 p-4 bg-slate-100 rounded-lg border border-slate-300">
                     <h3 className="font-bold text-sm text-slate-700">Log de débogage :</h3>
