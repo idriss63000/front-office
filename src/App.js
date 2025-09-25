@@ -948,7 +948,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 }
 
                 try {
-                    // CORRECTION FINALE : On utilise bien window.imageCompression
                     const compressedFile = await window.imageCompression(fileToProcess, compressionOptions);
                     const finalFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
                     uploadPhoto(id, compressedFile, finalFileName);
@@ -960,10 +959,20 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
             }
         } catch (error) {
             console.error(`ERREUR GLOBALE dans handlePhotoUpload:`, error);
-            setData(prev => ({
-                ...prev,
-                photos: [...prev.photos, { id: 'global_error', error: "Une erreur est survenue", preview:'' }]
-             }));
+            // Afficher l'erreur technique réelle plutôt qu'un message générique
+            const errorMessage = `Erreur: ${error.message}`;
+            setData(prev => {
+                // Pour éviter d'ajouter une "fausse" carte photo juste pour l'erreur,
+                // on peut l'afficher sur la dernière photo tentée si elle existe
+                if (prev.photos.length > 0) {
+                    const lastPhotoIndex = prev.photos.length - 1;
+                    const updatedPhotos = [...prev.photos];
+                    updatedPhotos[lastPhotoIndex].error = errorMessage;
+                    return { ...prev, photos: updatedPhotos };
+                }
+                // S'il n'y a aucune photo, on ne fait rien pour ne pas polluer l'UI
+                return prev;
+             });
         }
     };
     
