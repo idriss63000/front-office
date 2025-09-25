@@ -1,4 +1,4 @@
-/* global __firebase_config, __app_id, __initial_auth_token, imageCompression */
+/* global __firebase_config, __app_id, __initial_auth_token */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 // Importations Firebase
 import { initializeApp } from 'firebase/app';
@@ -888,12 +888,6 @@ const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) 
 // =========================================================================================
 const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, salesperson }) => {
     const [storage, setStorage] = useState(null);
-    const [debugLog, setDebugLog] = useState([]);
-
-    const logToScreen = (message) => {
-        console.log(message);
-        setDebugLog(prev => [...prev, message]);
-    };
 
     const loadScript = (src) => new Promise((resolve, reject) => {
       if (document.querySelector(`script[src="${src}"]`)) {
@@ -914,52 +908,14 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
     }, [firebaseApp]);
 
     const handlePhotoUpload = async (event) => {
-        logToScreen('--- NOUVELLE TENTATIVE D\'UPLOAD ---');
         try {
-            if (!event.target.files || event.target.files.length === 0) {
-                logToScreen('Aucun fichier reçu de l\'input.');
-                return;
-            }
-            logToScreen(`Nombre de fichiers reçus : ${event.target.files.length}`);
-            for (const file of event.target.files) {
-                logToScreen(`- Fichier: ${file.name}, Taille: ${file.size}, Type: ${file.type || 'Inconnu'}`);
-            }
-
             const files = Array.from(event.target.files);
+            if (files.length === 0) return;
             
-            logToScreen('Chargement des librairies de traitement...');
-            
-            const scriptUrls = {
-                compression: "https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js",
-                heic: "https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"
-            };
-
-            let scriptsLoaded = true;
-            try {
-                logToScreen(`Chargement de: ${scriptUrls.compression}`);
-                await loadScript(scriptUrls.compression);
-                logToScreen('OK: browser-image-compression chargé.');
-            } catch (error) {
-                logToScreen(`ERREUR: Échec du chargement de browser-image-compression. ${error.message}`);
-                scriptsLoaded = false;
-            }
-
-            try {
-                logToScreen(`Chargement de: ${scriptUrls.heic}`);
-                await loadScript(scriptUrls.heic);
-                logToScreen('OK: heic2any chargé.');
-            } catch (error) {
-                logToScreen(`ERREUR: Échec du chargement de heic2any. ${error.message}`);
-                scriptsLoaded = false;
-            }
-
-            if (!scriptsLoaded) {
-                 logToScreen('Au moins un script n\'a pas pu être chargé. Arrêt du traitement.');
-                 updatePhotoState('global_error', { error: "Erreur de chargement des librairies." });
-                 return;
-            }
-
-            logToScreen('Toutes les librairies nécessaires sont chargées.');
+            await Promise.all([
+                loadScript("https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js"),
+                loadScript("https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js")
+            ]);
 
             const compressionOptions = {
                 maxSizeMB: 1,
@@ -969,53 +925,53 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
 
             for (let file of files) {
                 const id = `photo_${Date.now()}_${Math.random()}`;
-                logToScreen(`[${file.name}] Création de l'aperçu...`);
                 const preview = URL.createObjectURL(file);
                 
                 setData(prev => ({
                     ...prev,
                     photos: [...prev.photos, { id, file, caption: '', uploadProgress: 0, url: null, error: null, preview }]
                 }));
-                logToScreen(`[${file.name}] Aperçu affiché.`);
 
                 let fileToProcess = file;
                 
                 const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
                 if (isHeic) {
-                    logToScreen(`[${file.name}] Format HEIC détecté. Tentative de conversion...`);
                     try {
                         updatePhotoState(id, { uploadProgress: 5 });
                         const conversionResult = await window.heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
                         fileToProcess = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
-                        logToScreen(`[${file.name}] Conversion HEIC réussie.`);
                     } catch (convertError) {
-                        logToScreen(`[${file.name}] ERREUR de conversion HEIC: ${convertError.message}`);
+                        console.error(`[${file.name}] ERREUR de conversion HEIC:`, convertError);
                         updatePhotoState(id, { error: "Conversion HEIC impossible" });
                         continue;
                     }
                 }
 
-                logToScreen(`[${file.name}] Tentative de compression...`);
-                // CORRECTION : Appel direct de la fonction sans 'window.'
-                const compressedFile = await imageCompression(fileToProcess, compressionOptions);
-                logToScreen(`[${file.name}] Compression réussie. Taille après compression : ${compressedFile.size}`);
-                
-                const finalFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-                uploadPhoto(id, compressedFile, finalFileName);
+                try {
+                    // CORRECTION FINALE : On utilise bien window.imageCompression
+                    const compressedFile = await window.imageCompression(fileToProcess, compressionOptions);
+                    const finalFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+                    uploadPhoto(id, compressedFile, finalFileName);
+                } catch (compressionError) {
+                    console.error(`[${file.name}] ERREUR de compression:`, compressionError);
+                    updatePhotoState(id, { error: "Erreur de compression" });
+                    continue;
+                }
             }
         } catch (error) {
-            logToScreen(`ERREUR GLOBALE dans handlePhotoUpload: ${error.message}`);
-             const firstPhotoId = data.photos.length > 0 ? data.photos[0].id : 'global_error';
-             updatePhotoState(firstPhotoId, { error: "Erreur de traitement" });
+            console.error(`ERREUR GLOBALE dans handlePhotoUpload:`, error);
+            setData(prev => ({
+                ...prev,
+                photos: [...prev.photos, { id: 'global_error', error: "Une erreur est survenue", preview:'' }]
+             }));
         }
     };
     
     const uploadPhoto = (id, file, originalName) => {
         if (!storage) {
-            logToScreen(`[${originalName}] ERREUR: Firebase Storage n'est pas initialisé.`);
+            updatePhotoState(id, { error: "Storage non initialisé" });
             return;
         }
-        logToScreen(`[${originalName}] Début de l'envoi vers Firebase Storage...`);
         const storageRef = ref(storage, `reports/${salesperson}/${Date.now()}_${originalName}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -1025,12 +981,11 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 updatePhotoState(id, { uploadProgress: progress });
             }, 
             (error) => {
-                logToScreen(`[${originalName}] ERREUR d'upload: ${error.code}`);
+                console.error(`[${originalName}] ERREUR d'upload:`, error);
                 updatePhotoState(id, { error: "Échec de l'envoi" });
             }, 
             () => {
                 getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    logToScreen(`[${originalName}] Envoi terminé avec succès.`);
                     updatePhotoState(id, { url: downloadURL, uploadProgress: 100 });
                 });
             }
@@ -1063,14 +1018,6 @@ const ReportStep3_Photos = ({ data, setData, nextStep, prevStep, firebaseApp, sa
                 <p className="text-xs text-slate-500 mt-2">Les formats HEIC (iPhone) sont automatiquement convertis.</p>
             </div>
             
-            {/* Panneau de débogage (nous le laisserons pour le moment) */}
-            {debugLog.length > 0 && (
-                <div className="mt-4 p-4 bg-slate-100 rounded-lg border border-slate-300">
-                    <h3 className="font-bold text-sm text-slate-700">Log de débogage :</h3>
-                    <pre className="text-xs whitespace-pre-wrap bg-white mt-2 p-2 rounded-md h-32 overflow-y-auto">{debugLog.join('\n')}</pre>
-                </div>
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {data.photos.map(photo => (
                     <div key={photo.id} className="border rounded-lg p-2 space-y-2">
