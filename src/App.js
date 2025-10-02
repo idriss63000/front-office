@@ -459,7 +459,7 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
        <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
         <button onClick={handleSend} disabled={isSending} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
-            {isSending ? 'Envoi en cours...' : 'Valider et envoyer au client'}
+            {isSending ? 'Préparation...' : "Valider & Préparer l'Email"}
         </button>
       </div>
     </div>
@@ -796,7 +796,6 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
 
     const handleFinalize = async () => {
         setIsSending(true);
-        // On envoie directement les données du rapport, sans traitement des photos
         await onSend(reportData, config);
         setIsSending(false);
         nextStep();
@@ -1102,7 +1101,7 @@ const ReportForPDF = ({ data, config }) => (
 const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending, data, config }) => (
      <div className="space-y-6">
         <h2 className="text-2xl font-bold text-slate-800 text-center">Prêt à finaliser ?</h2>
-        <p className="text-slate-600 text-center">Le rapport va être sauvegardé et envoyé par email au client. Voici un aperçu.</p>
+        <p className="text-slate-600 text-center">Le rapport va être sauvegardé. Cliquez ci-dessous pour télécharger le PDF et préparer l'e-mail.</p>
 
         {/* The div below will be captured for the PDF */}
         <div id="report-content" className="p-4 border rounded-lg bg-white">
@@ -1111,7 +1110,7 @@ const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending, data, config })
 
         <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
             <button onClick={onFinalize} disabled={isSending} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
-                {isSending ? 'Envoi en cours...' : 'Sauvegarder et Envoyer'}
+                {isSending ? 'Préparation...' : "Sauvegarder & Préparer l'Email"}
             </button>
             <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
         </div>
@@ -1237,7 +1236,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
       case 5: return <ExtraItems data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} config={config} />;
       case 6: return <Summary data={data} nextStep={nextStep} prevStep={prevStep} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} setAppliedDiscounts={setAppliedDiscounts} />;
       case 7: return <InstallationDate data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} onSend={handleSend} />;
-      case 8: return <Confirmation reset={onBackToHome} title="Devis Envoyé !" message="Le devis a été sauvegardé et envoyé au client." />;
+      case 8: return <Confirmation reset={onBackToHome} title="Email Préparé !" message="Le PDF a été téléchargé et votre application de messagerie est ouverte." />;
       default: return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={onBackToHome} />;
     }
   };
@@ -1350,7 +1349,7 @@ export default function App() {
   const configRef = useRef(null);
   const scriptsLoaded = useRef(false);
 
-  // --- NOUVELLE FONCTION POUR CHARGER LES SCRIPTS PDF ---
+  // --- MODIFICATION : Charge les scripts pour la génération de PDF ---
   const loadPdfScripts = () => {
       if (scriptsLoaded.current) return Promise.resolve();
 
@@ -1360,6 +1359,10 @@ export default function App() {
       ];
       
       const loadScript = (src) => new Promise((resolve, reject) => {
+          // Évite de charger plusieurs fois le même script
+          if (document.querySelector(`script[src="${src}"]`)) {
+              return resolve();
+          }
           const script = document.createElement('script');
           script.src = src;
           script.onload = resolve;
@@ -1372,80 +1375,72 @@ export default function App() {
       });
   };
 
-  // --- FONCTION D'ENVOI MISE À JOUR ---
-  const sendDocumentByEmail = async (documentData, configData, documentType) => {
+  // --- MODIFICATION : Anciennement sendDocumentByEmail, maintenant prepareDocumentForEmail ---
+  const prepareDocumentForEmail = async (documentData, configData, documentType) => {
     try {
-        await loadPdfScripts(); // Ensure scripts are loaded
+        // Étape 1 : Sauvegarde du document sur Firestore
+        const collectionName = documentType === 'devis' ? 'devis' : 'sanitaryReports';
+        const docPath = `/artifacts/${firebaseRef.current.appId}/public/data/${collectionName}`;
+        await addDoc(collection(firebaseRef.current.db, docPath), { ...documentData, createdAt: serverTimestamp() });
 
+        // Étape 2 : Chargement des librairies PDF
+        await loadPdfScripts(); 
         const { jsPDF } = window.jspdf;
         const html2canvas = window.html2canvas;
         
+        // Étape 3 : "Photographie" du composant React
         const elementId = documentType === 'devis' ? 'summary-content' : 'report-content';
         const input = document.getElementById(elementId);
-        
-        if (!input) {
-            throw new Error(`Element with id '${elementId}' not found.`);
-        }
+        if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable.`);
 
         const canvas = await html2canvas(input, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'px',
-            format: 'a4'
-        });
-        
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        const ratio = imgWidth / imgHeight;
+        const ratio = imgHeight / imgWidth;
+        const finalImgHeight = pdfWidth * ratio;
         
-        let finalImgWidth = pdfWidth;
-        let finalImgHeight = pdfWidth / ratio;
+        let heightLeft = finalImgHeight;
+        let position = 0;
+        
+        pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, finalImgHeight);
+        heightLeft -= pdfHeight;
 
-        if (finalImgHeight > pdfHeight) {
-            finalImgHeight = pdfHeight;
-            finalImgWidth = pdfHeight * ratio;
+        while (heightLeft > 0) {
+          position = heightLeft - finalImgHeight;
+          pdf.addPage();
+          pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, finalImgHeight);
+          heightLeft -= pdfHeight;
         }
 
-        pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
-        const pdfData = pdf.output('datauristring');
+        // Étape 4 : Téléchargement du PDF
+        const filename = `${documentType}_${documentData.client.nom.replace(/ /g, '_')}.pdf`;
+        pdf.save(filename);
 
-        // Save to Firestore
-        const collectionName = documentType === 'devis' ? 'devis' : 'sanitaryReports';
-        const docPath = `/artifacts/${firebaseRef.current.appId}/public/data/${collectionName}`;
-        await addDoc(collection(firebaseRef.current.db, docPath), { ...documentData, createdAt: serverTimestamp() });
+        // Étape 5 : Préparation et ouverture du client mail
+        const isQuote = documentType === 'devis';
+        const subject = isQuote 
+            ? `Votre devis - ${documentData.client.prenom} ${documentData.client.nom}`
+            : `Votre rapport d'intervention - ${documentData.client.prenom} ${documentData.client.nom}`;
+            
+        const body = `Bonjour ${documentData.client.prenom},\n\n` +
+                     `Veuillez trouver ci-joint ${isQuote ? 'votre devis personnalisé' : 'le rapport suite à notre intervention'}.\n\n` +
+                     `N'hésitez pas à y joindre des photos si nécessaire.\n\n` +
+                     `Cordialement,\n\n` +
+                     `${documentData.salesperson}`;
         
-        // Prepare payload for Vercel function
-        const payload = {
-            documentData,
-            configData,
-            documentType,
-            pdfData // NEW: Add Base64 PDF data
-        };
-
-        const response = await fetch('/api/send-document', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(errorResult.error || "L'API a retourné une erreur");
-        }
+        const mailtoLink = `mailto:${documentData.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
-        return { success: true };
+        window.location.href = mailtoLink;
 
     } catch (error) {
-        console.error(`Erreur lors de la création ou l'envoi du ${documentType}:`, error);
+        console.error(`Erreur lors de la préparation du ${documentType}:`, error);
         setModal({
-            title: `Erreur d'envoi`,
-            message: `L'envoi de l'email a échoué. Le ${documentType} a été sauvegardé, mais pas envoyé. Erreur: ${error.message}`
+            title: `Erreur`,
+            message: `Une erreur est survenue lors de la génération du document. Le document a été sauvegardé. Erreur: ${error.message}`
         });
-        return { success: false };
     }
   };
 
@@ -1587,7 +1582,7 @@ export default function App() {
     switch(currentView) {
         case 'login': return <SalespersonLogin onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />;
         case 'home': return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} />;
-        case 'quote': return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} onSend={(data, config) => sendDocumentByEmail(data, config, 'devis')} />;
+        case 'quote': return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} onSend={(data, config) => prepareDocumentForEmail(data, config, 'devis')} />;
         case 'appointmentList': return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
         case 'appointmentDetail': return <AppointmentDetail appointment={selectedAppointment} onBack={() => setCurrentView('appointmentList')} onStartQuote={startNewQuote} />;
         case 'newAppointment':
@@ -1602,7 +1597,7 @@ export default function App() {
             />;
         case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
-        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} onSend={(data, config) => sendDocumentByEmail(data, config, 'rapport')} config={configRef.current} firebaseApp={firebaseRef.current?.app}/>;
+        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} onSend={(data, config) => prepareDocumentForEmail(data, config, 'rapport')} config={configRef.current} firebaseApp={firebaseRef.current?.app}/>;
         default: return <div>Vue non reconnue</div>;
     }
   }
@@ -1616,3 +1611,4 @@ export default function App() {
     </main>
   );
 }
+
