@@ -91,7 +91,8 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
 
 const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
   const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-  const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone;
+  // --- MODIFICATION: L'adresse est maintenant obligatoire ---
+  const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone && data.client.adresse;
 
   return (
     <div className="space-y-6">
@@ -1396,25 +1397,26 @@ export default function App() {
         const canvas = await html2canvas(input, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         
-        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ["px_scaling"] });
+        // --- MODIFICATION: Logique de pagination améliorée ---
+        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = imgHeight / imgWidth;
-        const canvasHeightInPdf = pdfWidth * ratio;
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / pdfWidth;
+        const projectedCanvasHeight = canvasHeight / ratio;
 
         let position = 0;
-        let heightLeft = canvasHeightInPdf;
+        let heightLeft = projectedCanvasHeight;
 
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedCanvasHeight);
         heightLeft -= pdfHeight;
 
         while (heightLeft > 0) {
             position -= pdfHeight; // On déplace l'image vers le haut pour la page suivante
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedCanvasHeight);
             heightLeft -= pdfHeight;
         }
 
@@ -1429,6 +1431,7 @@ export default function App() {
             ? `Votre devis - ${documentData.client.prenom} ${documentData.client.nom}`
             : `Votre rapport d'intervention - ${documentData.client.prenom} ${documentData.client.nom}`;
             
+        // --- MODIFICATION: Email du client ajouté dans le corps ---
         const body = `Bonjour ${documentData.client.prenom},\n\n` +
                      `Veuillez trouver ci-joint ${isQuote ? 'votre devis personnalisé' : 'le rapport suite à notre intervention'}.\n\n` +
                      `Pour rappel, l'adresse e-mail du client est : ${documentData.client.email}\n\n`+
@@ -1438,7 +1441,7 @@ export default function App() {
         
         const mailtoLink = `mailto:${documentData.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
-        // Utiliser window.open pour une meilleure compatibilité sur mobile
+        // --- MODIFICATION: Utilisation de window.open pour une meilleure compatibilité ---
         window.open(mailtoLink, '_self');
 
 
