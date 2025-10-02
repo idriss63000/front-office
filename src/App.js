@@ -812,7 +812,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
             case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 3: return <ReportStep3_TrapLocations data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 5: return <ReportStep5_Finalize prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
+            case 5: return <ReportStep5_Finalize data={reportData} config={reportConfig} prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
             case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
             default: return <p>Étape inconnue</p>;
          }
@@ -1049,11 +1049,66 @@ const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, conf
     );
 };
 
-const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending }) => (
-     <div className="text-center space-y-6">
-        <CheckCircleIcon className="mx-auto h-16 w-16 text-blue-500" />
-        <h2 className="text-2xl font-bold text-slate-800">Prêt à finaliser ?</h2>
-        <p className="text-slate-600">Le rapport va être sauvegardé et envoyé par email au client.</p>
+// Composant pour afficher le rapport sanitaire formaté pour le PDF
+const ReportForPDF = ({ data, config }) => (
+    <div className="p-6 bg-white rounded-lg space-y-4">
+        <h2 className="text-xl font-bold text-center text-slate-800">Rapport d'Intervention Sanitaire</h2>
+        
+        <div className="p-4 bg-slate-50 rounded-xl border">
+            <h3 className="font-bold text-lg mb-2">Client & Intervention</h3>
+            <p><strong>Client:</strong> {data.client.prenom} {data.client.nom}</p>
+            <p><strong>Adresse:</strong> {data.client.adresse}</p>
+            <p><strong>Date:</strong> {new Date(data.interventionDate).toLocaleDateString('fr-FR')}</p>
+            <p><strong>Technicien:</strong> {data.salesperson}</p>
+        </div>
+
+        <div className="p-4 bg-white rounded-xl border">
+            <h3 className="font-bold text-lg mb-2">Diagnostic</h3>
+            <p><strong>Nuisibles constatés:</strong> {data.nuisiblesConstates.join(', ') || 'Aucun'}</p>
+            <p><strong>Zones inspectées:</strong> {data.zonesInspectees.join(', ') || 'Aucune'}</p>
+            <p><strong>Niveau d'infestation estimé:</strong> {data.niveauInfestation}%</p>
+            <p><strong>Observations:</strong> <em className="text-slate-600">{data.observations || 'Aucune'}</em></p>
+        </div>
+
+        {data.trapLocations && data.trapLocations.length > 0 && (
+            <div className="p-4 bg-white rounded-xl border">
+                <h3 className="font-bold text-lg mb-2">Emplacement des dispositifs</h3>
+                <ul className="list-disc list-inside space-y-1">
+                    {data.trapLocations.map(loc => (
+                        <li key={loc.id}>
+                            <strong>{loc.zone} - {loc.emplacement === 'Autre' ? loc.customEmplacement : loc.emplacement}:</strong> 
+                            <em className="text-slate-600"> {loc.note || ''}</em>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
+
+        <div className="p-4 bg-white rounded-xl border">
+            <h3 className="font-bold text-lg mb-2">Actions & Produits</h3>
+            <p><strong>Actions menées:</strong> {data.actionsMenees.join(', ') || 'Aucune'}</p>
+            <p><strong>Produits utilisés:</strong> {data.produitsUtilises.join(', ') || 'Aucun'}</p>
+            <p><strong>Consommation des produits:</strong> {data.consommationProduits}%</p>
+        </div>
+
+        <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <h3 className="font-bold text-lg mb-2 text-green-800">Recommandations</h3>
+            <p className="text-slate-700">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
+        </div>
+    </div>
+);
+
+
+const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending, data, config }) => (
+     <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-slate-800 text-center">Prêt à finaliser ?</h2>
+        <p className="text-slate-600 text-center">Le rapport va être sauvegardé et envoyé par email au client. Voici un aperçu.</p>
+
+        {/* The div below will be captured for the PDF */}
+        <div id="report-content" className="p-4 border rounded-lg bg-white">
+            <ReportForPDF data={data} config={config} />
+        </div>
+
         <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
             <button onClick={onFinalize} disabled={isSending} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
                 {isSending ? 'Envoi en cours...' : 'Sauvegarder et Envoyer'}
@@ -1062,6 +1117,7 @@ const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending }) => (
         </div>
     </div>
 );
+
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     
@@ -1292,21 +1348,82 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const firebaseRef = useRef(null);
   const configRef = useRef(null);
+  const scriptsLoaded = useRef(false);
 
-  // --- NOUVELLE FONCTION D'ENVOI CENTRALISÉE ---
+  // --- NOUVELLE FONCTION POUR CHARGER LES SCRIPTS PDF ---
+  const loadPdfScripts = () => {
+      if (scriptsLoaded.current) return Promise.resolve();
 
+      const scripts = [
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      ];
+      
+      const loadScript = (src) => new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+      });
+
+      return Promise.all(scripts.map(loadScript)).then(() => {
+          scriptsLoaded.current = true;
+      });
+  };
+
+  // --- FONCTION D'ENVOI MISE À JOUR ---
   const sendDocumentByEmail = async (documentData, configData, documentType) => {
     try {
-        // Sauvegarder le document sur Firestore d'abord
+        await loadPdfScripts(); // Ensure scripts are loaded
+
+        const { jsPDF } = window.jspdf;
+        const html2canvas = window.html2canvas;
+        
+        const elementId = documentType === 'devis' ? 'summary-content' : 'report-content';
+        const input = document.getElementById(elementId);
+        
+        if (!input) {
+            throw new Error(`Element with id '${elementId}' not found.`);
+        }
+
+        const canvas = await html2canvas(input, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'px',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        
+        let finalImgWidth = pdfWidth;
+        let finalImgHeight = pdfWidth / ratio;
+
+        if (finalImgHeight > pdfHeight) {
+            finalImgHeight = pdfHeight;
+            finalImgWidth = pdfHeight * ratio;
+        }
+
+        pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+        const pdfData = pdf.output('datauristring');
+
+        // Save to Firestore
         const collectionName = documentType === 'devis' ? 'devis' : 'sanitaryReports';
         const docPath = `/artifacts/${firebaseRef.current.appId}/public/data/${collectionName}`;
         await addDoc(collection(firebaseRef.current.db, docPath), { ...documentData, createdAt: serverTimestamp() });
         
-        // Préparer les données pour la fonction Vercel
+        // Prepare payload for Vercel function
         const payload = {
             documentData,
             configData,
             documentType,
+            pdfData // NEW: Add Base64 PDF data
         };
 
         const response = await fetch('/api/send-document', {
@@ -1324,10 +1441,9 @@ export default function App() {
 
     } catch (error) {
         console.error(`Erreur lors de la création ou l'envoi du ${documentType}:`, error);
-        // Logique de secours : le document a été sauvegardé, mais l'email a échoué.
         setModal({
             title: `Erreur d'envoi`,
-            message: `L'envoi de l'email a échoué. Le ${documentType} a été sauvegardé, mais pas envoyé.`
+            message: `L'envoi de l'email a échoué. Le ${documentType} a été sauvegardé, mais pas envoyé. Erreur: ${error.message}`
         });
         return { success: false };
     }
@@ -1352,7 +1468,7 @@ export default function App() {
             const appId = firebaseConfig.appId;
             setLogLevel('debug');
             await signInAnonymously(auth);
-            firebaseRef.current = { db, auth, appId, app }; // Pass app instance
+            firebaseRef.current = { db, auth, appId, app }; 
 
             // Charger et stocker la configuration globale une seule fois
             const docPath = `/artifacts/${appId}/public/data/config/main`;
@@ -1500,4 +1616,3 @@ export default function App() {
     </main>
   );
 }
-
