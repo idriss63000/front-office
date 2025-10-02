@@ -91,7 +91,7 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
 
 const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
   const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-  // --- MODIFICATION: L'adresse est maintenant obligatoire ---
+  // --- L'adresse est maintenant obligatoire ---
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone && data.client.adresse;
 
   return (
@@ -1093,7 +1093,7 @@ const ReportForPDF = ({ data, config }) => (
 
         <div className="p-4 bg-green-50 rounded-xl border border-green-200">
             <h3 className="font-bold text-lg mb-2 text-green-800">Recommandations</h3>
-            {/* --- MODIFICATION: Ajout de la classe pour le retour à la ligne --- */}
+            {/* --- Ajout de la classe pour le retour à la ligne --- */}
             <p className="text-slate-700 whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
         </div>
     </div>
@@ -1356,7 +1356,7 @@ export default function App() {
       if (scriptsLoaded.current) return Promise.resolve();
 
       const scripts = [
-          // On n'utilise plus html2canvas, seulement jspdf
+          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
           "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
       ];
       
@@ -1376,41 +1376,46 @@ export default function App() {
       });
   };
 
-  // --- MODIFICATION : Logique de génération de PDF entièrement revue ---
   const prepareDocumentForEmail = async (documentData, configData, documentType) => {
     try {
-        // Étape 1 : Sauvegarde du document sur Firestore
-        const collectionName = documentType === 'devis' ? 'devis' : 'sanitaryReports';
-        const docPath = `/artifacts/${firebaseRef.current.appId}/public/data/${collectionName}`;
-        await addDoc(collection(firebaseRef.current.db, docPath), { ...documentData, createdAt: serverTimestamp() });
+        await addDoc(collection(firebaseRef.current.db, `/artifacts/${firebaseRef.current.appId}/public/data/${documentType === 'devis' ? 'devis' : 'sanitaryReports'}`), { ...documentData, createdAt: serverTimestamp() });
 
-        // Étape 2 : Chargement des librairies PDF
         await loadPdfScripts(); 
         const { jsPDF } = window.jspdf;
+        const html2canvas = window.html2canvas;
         
-        // Étape 3 : Utilisation de la méthode .html() de jsPDF
         const elementId = documentType === 'devis' ? 'summary-content' : 'report-content';
         const input = document.getElementById(elementId);
         if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable.`);
         
-        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+        const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
         
+        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / pdfWidth;
+        const projectedImgHeight = imgHeight / ratio;
+
+        let position = 0;
+        let heightLeft = projectedImgHeight;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedImgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedImgHeight);
+            heightLeft -= pdfHeight;
+        }
+
         const filename = `${documentType}_${documentData.client.nom.replace(/ /g, '_')}.pdf`;
+        pdf.save(filename);
 
-        // La méthode .html() est asynchrone
-        await pdf.html(input, {
-            callback: function (doc) {
-                // Étape 4 : Téléchargement du PDF
-                doc.save(filename);
-            },
-            margin: [40, 40, 40, 40],
-            autoPaging: 'slice', // 'slice' gère mieux les sauts de page
-            width: 515, // Largeur du contenu (A4 - marges)
-            windowWidth: 700 // Simule une largeur de navigateur pour le rendu
-        });
-
-
-        // Étape 5 : Préparation et ouverture du client mail
         const isQuote = documentType === 'devis';
         const subject = isQuote 
             ? `Votre devis - ${documentData.client.prenom} ${documentData.client.nom}`
