@@ -812,7 +812,7 @@ const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, c
             case 3: return <ReportStep3_TrapLocations data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
             case 5: return <ReportStep5_Finalize data={reportData} config={reportConfig} prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
-            case 6: return <Confirmation reset={onBackToHome} title="Rapport Envoyé !" message="Le rapport sanitaire a été sauvegardé et envoyé au client." />;
+            case 6: return <Confirmation reset={onBackToHome} title="Email Préparé !" message="Le PDF du rapport a été téléchargé et votre application de messagerie est ouverte." />;
             default: return <p>Étape inconnue</p>;
          }
     };
@@ -1394,26 +1394,30 @@ export default function App() {
         if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable.`);
 
         const canvas = await html2canvas(input, { scale: 2 });
-        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', hotfixes: ["px_scaling"] });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
+        
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         const ratio = imgHeight / imgWidth;
-        const finalImgHeight = pdfWidth * ratio;
-        
-        let heightLeft = finalImgHeight;
+        const canvasHeightInPdf = pdfWidth * ratio;
+
         let position = 0;
-        
-        pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, finalImgHeight);
+        let heightLeft = canvasHeightInPdf;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
         heightLeft -= pdfHeight;
 
         while (heightLeft > 0) {
-          position = heightLeft - finalImgHeight;
-          pdf.addPage();
-          pdf.addImage(canvas, 'PNG', 0, position, pdfWidth, finalImgHeight);
-          heightLeft -= pdfHeight;
+            position -= pdfHeight; // On déplace l'image vers le haut pour la page suivante
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
+            heightLeft -= pdfHeight;
         }
+
 
         // Étape 4 : Téléchargement du PDF
         const filename = `${documentType}_${documentData.client.nom.replace(/ /g, '_')}.pdf`;
@@ -1427,13 +1431,16 @@ export default function App() {
             
         const body = `Bonjour ${documentData.client.prenom},\n\n` +
                      `Veuillez trouver ci-joint ${isQuote ? 'votre devis personnalisé' : 'le rapport suite à notre intervention'}.\n\n` +
+                     `Pour rappel, l'adresse e-mail du client est : ${documentData.client.email}\n\n`+
                      `N'hésitez pas à y joindre des photos si nécessaire.\n\n` +
                      `Cordialement,\n\n` +
                      `${documentData.salesperson}`;
         
         const mailtoLink = `mailto:${documentData.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
-        window.location.href = mailtoLink;
+        // Utiliser window.open pour une meilleure compatibilité sur mobile
+        window.open(mailtoLink, '_self');
+
 
     } catch (error) {
         console.error(`Erreur lors de la préparation du ${documentType}:`, error);
