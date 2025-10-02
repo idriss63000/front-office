@@ -1093,7 +1093,8 @@ const ReportForPDF = ({ data, config }) => (
 
         <div className="p-4 bg-green-50 rounded-xl border border-green-200">
             <h3 className="font-bold text-lg mb-2 text-green-800">Recommandations</h3>
-            <p className="text-slate-700">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
+            {/* --- MODIFICATION: Ajout de la classe pour le retour à la ligne --- */}
+            <p className="text-slate-700 whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
         </div>
     </div>
 );
@@ -1355,12 +1356,11 @@ export default function App() {
       if (scriptsLoaded.current) return Promise.resolve();
 
       const scripts = [
-          "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+          // On n'utilise plus html2canvas, seulement jspdf
           "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
       ];
       
       const loadScript = (src) => new Promise((resolve, reject) => {
-          // Évite de charger plusieurs fois le même script
           if (document.querySelector(`script[src="${src}"]`)) {
               return resolve();
           }
@@ -1376,7 +1376,7 @@ export default function App() {
       });
   };
 
-  // --- MODIFICATION : Anciennement sendDocumentByEmail, maintenant prepareDocumentForEmail ---
+  // --- MODIFICATION : Logique de génération de PDF entièrement revue ---
   const prepareDocumentForEmail = async (documentData, configData, documentType) => {
     try {
         // Étape 1 : Sauvegarde du document sur Firestore
@@ -1387,43 +1387,28 @@ export default function App() {
         // Étape 2 : Chargement des librairies PDF
         await loadPdfScripts(); 
         const { jsPDF } = window.jspdf;
-        const html2canvas = window.html2canvas;
         
-        // Étape 3 : "Photographie" du composant React
+        // Étape 3 : Utilisation de la méthode .html() de jsPDF
         const elementId = documentType === 'devis' ? 'summary-content' : 'report-content';
         const input = document.getElementById(elementId);
         if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable.`);
-
-        const canvas = await html2canvas(input, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
         
-        // --- MODIFICATION: Logique de pagination améliorée ---
         const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / pdfWidth;
-        const projectedCanvasHeight = canvasHeight / ratio;
-
-        let position = 0;
-        let heightLeft = projectedCanvasHeight;
-
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedCanvasHeight);
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-            position -= pdfHeight; // On déplace l'image vers le haut pour la page suivante
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, projectedCanvasHeight);
-            heightLeft -= pdfHeight;
-        }
-
-
-        // Étape 4 : Téléchargement du PDF
         const filename = `${documentType}_${documentData.client.nom.replace(/ /g, '_')}.pdf`;
-        pdf.save(filename);
+
+        // La méthode .html() est asynchrone
+        await pdf.html(input, {
+            callback: function (doc) {
+                // Étape 4 : Téléchargement du PDF
+                doc.save(filename);
+            },
+            margin: [40, 40, 40, 40],
+            autoPaging: 'slice', // 'slice' gère mieux les sauts de page
+            width: 515, // Largeur du contenu (A4 - marges)
+            windowWidth: 700 // Simule une largeur de navigateur pour le rendu
+        });
+
 
         // Étape 5 : Préparation et ouverture du client mail
         const isQuote = documentType === 'devis';
@@ -1431,7 +1416,6 @@ export default function App() {
             ? `Votre devis - ${documentData.client.prenom} ${documentData.client.nom}`
             : `Votre rapport d'intervention - ${documentData.client.prenom} ${documentData.client.nom}`;
             
-        // --- MODIFICATION: Email du client ajouté dans le corps ---
         const body = `Bonjour ${documentData.client.prenom},\n\n` +
                      `Veuillez trouver ci-joint ${isQuote ? 'votre devis personnalisé' : 'le rapport suite à notre intervention'}.\n\n` +
                      `Pour rappel, l'adresse e-mail du client est : ${documentData.client.email}\n\n`+
@@ -1441,7 +1425,6 @@ export default function App() {
         
         const mailtoLink = `mailto:${documentData.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         
-        // --- MODIFICATION: Utilisation de window.open pour une meilleure compatibilité ---
         window.open(mailtoLink, '_self');
 
 
