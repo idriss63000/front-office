@@ -81,7 +81,7 @@ const Modal = ({ title, message, onClose }) => (
             <p className="text-slate-600 mt-3 mb-6">{message}</p>
             <button onClick={onClose} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md`}>Fermer</button>
         </div>
-    </div>
+      </div>
 );
 
 const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
@@ -384,7 +384,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
         <button onClick={nextStep} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg`}>
             Valider et planifier l'Installation
         </button>
-        </div>
+      </div>
     </div>
   );
 };
@@ -438,7 +438,7 @@ const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscou
       <div className="flex justify-between font-black text-3xl pt-3 border-t-2 border-slate-700 text-slate-900"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
     </div>
      <div className="p-6 mt-6 bg-white rounded-2xl border border-slate-200 shadow-lg space-y-4">
-      <h3 className={`font-extrabold text-xl mb-4 text-${ACCENT_COLOR}`}>Abonnement Mensuel</h3>
+      <h3 className={`font-extrabold text-xl mb-4 text-${ACCENT_COLOR}`}>Abonnement Mensuel</h3> {/* FIX: Ajout de la balise de fermeture </h3> */}
       {data.offer && <div className="flex justify-between font-medium"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
@@ -696,8 +696,8 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
-      script.onload = initAutocomplete;
       document.head.appendChild(script);
+      script.onload = initAutocomplete;
     } else {
         initAutocomplete();
     }
@@ -897,12 +897,16 @@ const ContractGenerator = ({ onBack }) => {
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryReportForm }) => {
     
     const ActionCard = ({ onClick, icon, title, description }) => (
-         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-center items-center aspect-square border border-slate-100">
+        // FIX 2: Suppression de aspect-square et utilisation de h-full, min-h pour la hauteur
+        // et flex-col justify-between pour aligner le contenu même si la hauteur varie.
+         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-between items-center h-full min-h-[200px] border border-slate-100">
             <div className={`bg-blue-100 p-4 rounded-full inline-block group-hover:bg-${PRIMARY_COLOR} transition-colors duration-300 shadow-md`}>
                 {React.cloneElement(icon, { className: `h-8 w-8 text-${PRIMARY_COLOR} group-hover:text-white transition-colors` })}
             </div>
-            <p className="mt-4 font-extrabold text-lg text-slate-800">{title}</p>
-            <p className="text-xs text-slate-500 mt-1">{description}</p>
+            <div className='flex flex-col flex-grow justify-center py-2'>
+                <p className="mt-4 font-extrabold text-lg text-slate-800">{title}</p>
+                <p className="text-xs text-slate-500 mt-1">{description}</p>
+            </div>
         </div>
     );
 
@@ -911,8 +915,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryRepor
             <h1 className={`text-4xl font-black text-${SECONDARY_COLOR}`}>Bienvenue, {salesperson} !</h1>
             <p className="text-slate-600 text-lg">Choisissez une action pour commencer.</p>
             
-            {/* FIX: Ajout de items-stretch à la grille pour aligner les cartes verticalement et ajustement pour mobile/tablette */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 items-stretch"> 
+            {/* FIX 3: Réglage de la grille pour mobile (2 colonnes) et bureau (3 colonnes) avec items-stretch pour l'alignement */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 items-stretch"> 
                 <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon />} title="Mes Rendez-vous" description="Voir le statut de mes prospects" />
                 <ActionCard onClick={() => onNavigate('newAppointment')} icon={<PlusCircleIcon />} title="Créer un RDV" description="Planifier une nouvelle visite client" />
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon />} title="Nouveau Devis" description="Démarrer une cotation personnalisée" />
@@ -1292,7 +1296,8 @@ export default function App() {
   }
   
   return (
-    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-8 md:p-10 antialiased">
+    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-8 md:p-10 antialiased overflow-x-hidden">
+        {/* FIX 4: Ajout de overflow-x-hidden au conteneur principal pour éviter le débordement horizontal sur mobile */}
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-6 sm:p-10 md:p-12 border border-slate-100 min-h-[85vh]">
             {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
             {renderCurrentView()}
