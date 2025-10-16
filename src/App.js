@@ -62,14 +62,14 @@ const initialConfigData = {
     platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
   },
   extraItems: [
-    { id: 'camera', name: 'Caméra de surveillance HD', price: 150 },
-    { id: 'detecteur', name: 'Détecteur de fumée connecté', price: 80 },
-  ],
+    { id: 'camera', name: 'Caméra de surveillance HD', price: 150 },
+    { id: 'detecteur', name: 'Détecteur de fumée connecté', price: 80 },
+  ],
   discounts: [
-    { id: 'D1', code: 'PROMO10', type: 'materiel', value: 100, active: true },
-    { id: 'D2', code: 'INSTALLOFFERTE', type: 'installation_offerte', value: 350, active: true },
-    { id: 'D3', code: 'MOISGRATUIT', type: 'abonnement', value: 30, active: true },
-  ],
+    { id: 'D1', code: 'PROMO10', type: 'materiel', value: 100, active: true },
+    { id: 'D2', code: 'INSTALLOFFERTE', type: 'installation_offerte', value: 350, active: true },
+    { id: 'D3', code: 'MOISGRATUIT', type: 'abonnement', value: 30, active: true },
+  ],
   settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
 
@@ -91,9 +91,9 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
 
   const handleAttemptLogin = async () => {
     if (!salesperson || salesperson.trim() === '') {
-        setModal({ title: "Saisie requise", message: "Veuillez entrer votre nom." });
-        return;
-    }
+        setModal({ title: "Saisie requise", message: "Veuillez entrer votre nom." });
+        return;
+    }
     setModal(null);
     setIsLoading(true);
     const result = await onLogin(salesperson.trim());
@@ -113,7 +113,7 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
         value={salesperson} 
         onChange={(e) => setSalesperson(e.target.value)} 
         placeholder="Votre Prénom Nom" 
-        onKeyDown={(e) => { if (e.key === 'Enter' && salesperson.trim() && isFirebaseReady && !isLoading) handleAttemptLogin(); }}
+        onKeyDown={(e) => { if (e.key === 'Enter' && salesperson.trim() && isFirebaseReady && !isLoading) handleAttemptLogin(); }}
         className="text-center text-lg placeholder:text-slate-400" 
       />
       <button 
@@ -162,11 +162,11 @@ const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Retour
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Retour
+        </button>
         <button onClick={nextStep} disabled={!isFormValid()} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors duration-300 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg`}>
-            Passer à l'étape suivante
-        </button>
+            Passer à l'étape suivante
+        </button>
       </div>
     </div>
   );
@@ -196,8 +196,8 @@ const CustomerType = ({ setData, nextStep, prevStep }) => {
       </div>
       <div className="pt-6">
         <button onClick={prevStep} className="w-full sm:w-64 bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
       </div>
     </div>
   );
@@ -221,8 +221,8 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
               <div className="mt-auto">
                   <p className={`text-4xl font-black text-slate-900`}>{priceInfo.price.toFixed(2)} €</p>
                   <p className="text-lg font-bold text-slate-700 mt-1">
-                        + {priceInfo.mensualite.toFixed(2)} €<span className="text-sm font-normal text-slate-500">/mois</span>
-                    </p>
+                        + {priceInfo.mensualite.toFixed(2)} €<span className="text-sm font-normal text-slate-500">/mois</span>
+                    </p>
               </div>
             </div>
           )
@@ -230,8 +230,8 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
       </div>
       <div className="pt-6">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
       </div>
     </div>
   );
@@ -266,8 +266,8 @@ const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
                     <p className="text-lg font-bold mt-1 text-slate-900">{priceInfo.price.toFixed(2)} €</p>
                     <p className="text-sm font-semibold text-slate-600 mb-3">+ {priceInfo.mensualite.toFixed(2)} €/mois</p>
                     <span className={`inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md`}>
-                        <PlusCircleIcon className="w-4 h-4"/> Ajouter
-                    </span>
+                        <PlusCircleIcon className="w-4 h-4"/> Ajouter
+                    </span>
                 </div>
             )
             })}
@@ -299,11 +299,11 @@ const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
             </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
         <button onClick={nextStep} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg`}>
-            Passer aux options supplémentaires
-        </button>
+            Passer aux options supplémentaires
+        </button>
       </div>
     </div>
   );
@@ -330,11 +330,11 @@ const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
         <button onClick={nextStep} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg`}>
-            Passer au résumé et devis
-        </button>
+            Passer au résumé et devis
+        </button>
       </div>
     </div>
   );
@@ -371,7 +371,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
         <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
       </div>
         <div className="space-y-4 p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-700">Appliquer une Réduction</h3>
+            <h3 className="text-xl font-bold text-slate-700">Appliquer une Réduction</h3>
             <div className="flex gap-3">
                 <FormInput type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="CODEPROMO" className="uppercase"/>
                 <button onClick={applyDiscount} disabled={!discountCode.trim()} className={`bg-${ACCENT_COLOR} text-white px-8 py-3 rounded-xl font-bold hover:bg-teal-600 transition-colors shadow-md disabled:bg-slate-300`}>Appliquer</button>
@@ -379,11 +379,11 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
         </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
         <button onClick={nextStep} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg`}>
-            Valider et planifier l'Installation
-        </button>
+            Valider et planifier l'Installation
+        </button>
       </div>
     </div>
   );
@@ -463,12 +463,12 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
     if (newStatus === 'accepted') {
-        setData(prev => ({...prev, followUpDate: null}));
-    } else if (newStatus === 'thinking') {
-        setData(prev => ({...prev, installationDate: null}));
-    } else {
-        setData(prev => ({...prev, installationDate: null, followUpDate: null}));
-    }
+        setData(prev => ({...prev, followUpDate: null}));
+    } else if (newStatus === 'thinking') {
+        setData(prev => ({...prev, installationDate: null}));
+    } else {
+        setData(prev => ({...prev, installationDate: null, followUpDate: null}));
+    }
   };
 
   const formatDateForGoogle = (dateString) => {
@@ -502,32 +502,32 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
         <label className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all ${status === 'accepted' ? `bg-green-50 border-green-400 shadow-md` : 'hover:bg-slate-50 border-slate-200'}`}>
           <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className={`mt-1 h-5 w-5 text-green-600 focus:ring-green-500`}/>
           <div className="ml-4 flex-1">
-                <span className="font-bold text-slate-800">Devis Accepté</span>
-                {status === 'accepted' && (
-                    <div className="mt-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
-                        <FormInput type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} />
-                    </div>
-                )}
-            </div>
+                <span className="font-bold text-slate-800">Devis Accepté</span>
+                {status === 'accepted' && (
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
+                        <FormInput type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} />
+                    </div>
+                )}
+            </div>
         </label>
         <label className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all ${status === 'thinking' ? `bg-blue-50 border-blue-400 shadow-md` : 'hover:bg-slate-50 border-slate-200'}`}>
           <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className={`mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500`}/>
           <div className="ml-4 flex-1">
-                <span className="font-bold text-slate-800">En Attente de Décision</span>
-                {status === 'thinking' && (
-                    <div className="mt-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
-                        <FormInput type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} />
-                    </div>
-                )}
-            </div>
+                <span className="font-bold text-slate-800">En Attente de Décision</span>
+                {status === 'thinking' && (
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
+                        <FormInput type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} />
+                    </div>
+                )}
+            </div>
         </label>
       </div>
        <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
-            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
-        </button>
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
         <button onClick={handleSend} disabled={isSending || (status === 'accepted' && !data.installationDate) || (status === 'thinking' && !data.followUpDate)} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg`}>
             {isSending ? 'Préparation...' : "Sauvegarder & Préparer l'Email"}
         </button>
@@ -546,24 +546,24 @@ const Confirmation = ({ reset, title, message }) => (
 );
 
 const AppointmentCard = ({ app, onSelectAppointment, onUpdateStatus, getStatusClass }) => (
-    <div onClick={() => onSelectAppointment(app)} className="p-5 border border-slate-200 bg-white rounded-2xl hover:bg-blue-50 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer shadow-md">
-        <div className="flex-grow">
-            <p className="font-extrabold text-xl text-slate-800">{app.clientName}</p>
-            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 inline-block text-slate-400" />
-                Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}
-            </p>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-            <span className={`px-4 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusClass(app.status)}`}>{app.status}</span>
-            <FormSelect value={app.status} onChange={(e) => { e.stopPropagation(); onUpdateStatus(app.docId, e.target.value); }} onClick={(e) => e.stopPropagation()} className="p-2 text-sm bg-white shadow-inner">
-                <option value="en attente">En attente</option>
-                <option value="relance">Relance</option>
-                <option value="pas vendu">Pas vendu</option>
-                <option value="confirmé">Confirmé</option>
-            </FormSelect>
-        </div>
-    </div>
+    <div onClick={() => onSelectAppointment(app)} className="p-5 border border-slate-200 bg-white rounded-2xl hover:bg-blue-50 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer shadow-md">
+        <div className="flex-grow">
+            <p className="font-extrabold text-xl text-slate-800">{app.clientName}</p>
+            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 inline-block text-slate-400" />
+                Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}
+            </p>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+            <span className={`px-4 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusClass(app.status)}`}>{app.status}</span>
+            <FormSelect value={app.status} onChange={(e) => { e.stopPropagation(); onUpdateStatus(app.docId, e.target.value); }} onClick={(e) => e.stopPropagation()} className="p-2 text-sm bg-white shadow-inner">
+                <option value="en attente">En attente</option>
+                <option value="relance">Relance</option>
+                <option value="pas vendu">Pas vendu</option>
+                <option value="confirmé">Confirmé</option>
+            </FormSelect>
+        </div>
+    </div>
 );
 
 const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appointments, onUpdateStatus }) => {
@@ -606,16 +606,16 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
             </div>
           ) : (
             <div className="space-y-4">
-                {filteredAppointments.map(app => (
-                    <AppointmentCard 
-                        key={app.docId} 
-                        app={app} 
-                        onSelectAppointment={onSelectAppointment} 
-                        onUpdateStatus={onUpdateStatus} 
-                        getStatusClass={getStatusClass}
-                    />
-                ))}
-            </div>
+                {filteredAppointments.map(app => (
+                    <AppointmentCard 
+                        key={app.docId} 
+                        app={app} 
+                        onSelectAppointment={onSelectAppointment} 
+                        onUpdateStatus={onUpdateStatus} 
+                        getStatusClass={getStatusClass}
+                    />
+                ))}
+            </div>
           )}
         </div>
     </div>
@@ -641,10 +641,10 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
         <div className="mt-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-200">
           <h2 className={`text-3xl font-extrabold text-${PRIMARY_COLOR}`}>{appointment.clientName}</h2>
           <hr className="my-4 border-slate-200"/>
-          <p className="text-lg text-slate-700 font-medium flex items-center gap-3 mt-3">
-              <CalendarIcon className="h-6 w-6 text-slate-500" />
-              Date : <span className="font-semibold">{new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</span>
-          </p>
+          <p className="text-lg text-slate-700 font-medium flex items-center gap-3 mt-3">
+              <CalendarIcon className="h-6 w-6 text-slate-500" />
+              Date : <span className="font-semibold">{new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</span>
+          </p>
           <p className="text-lg text-slate-700 font-medium mt-3">Adresse : <span className="font-semibold">{appointment.address}</span></p>
           <p className="text-lg text-slate-700 font-medium mt-3">Téléphone : <span className="font-semibold">{appointment.phone}</span></p>
           <p className="text-lg text-slate-700 font-medium mt-3">Statut : <span className={`font-extrabold ${appointment.status === 'confirmé' ? 'text-green-600' : 'text-yellow-600'} capitalize`}>{appointment.status}</span></p>
@@ -762,7 +762,7 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Numéro de téléphone *</label>
                 <FormInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78"/>
             </div>
-            <div>
+            <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Email (Optionnel)</label>
                 <FormInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email.prospect@exemple.fr"/>
             </div>
@@ -897,16 +897,17 @@ const ContractGenerator = ({ onBack }) => {
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryReportForm }) => {
     
     const ActionCard = ({ onClick, icon, title, description }) => (
-        // FIX 2: Suppression de aspect-square et utilisation de h-full, min-h pour la hauteur
-        // et flex-col justify-between pour aligner le contenu même si la hauteur varie.
-         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-between items-center h-full min-h-[200px] border border-slate-100">
+        // CORRECTION MAJEURE: Suppression de aspect-square et utilisation de min-h-[180px]
+        // Utilisation de flex-col et items-center pour un alignement vertical parfait, et items-stretch sur la grille parente pour que les cartes aient la même hauteur.
+         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-between items-center h-full min-h-[180px] border border-slate-100">
             <div className={`bg-blue-100 p-4 rounded-full inline-block group-hover:bg-${PRIMARY_COLOR} transition-colors duration-300 shadow-md`}>
                 {React.cloneElement(icon, { className: `h-8 w-8 text-${PRIMARY_COLOR} group-hover:text-white transition-colors` })}
             </div>
-            <div className='flex flex-col flex-grow justify-center py-2'>
-                <p className="mt-4 font-extrabold text-lg text-slate-800">{title}</p>
-                <p className="text-xs text-slate-500 mt-1">{description}</p>
-            </div>
+            {/* Le flex-grow permet au contenu de prendre l'espace restant pour aligner les éléments */}
+            <div className='flex flex-col flex-grow justify-center py-2'>
+                <p className="mt-4 font-extrabold text-lg text-slate-800">{title}</p>
+                <p className="text-xs text-slate-500 mt-1">{description}</p>
+            </div>
         </div>
     );
 
@@ -915,8 +916,10 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryRepor
             <h1 className={`text-4xl font-black text-${SECONDARY_COLOR}`}>Bienvenue, {salesperson} !</h1>
             <p className="text-slate-600 text-lg">Choisissez une action pour commencer.</p>
             
-            {/* FIX 3: Réglage de la grille pour mobile (2 colonnes) et bureau (3 colonnes) avec items-stretch pour l'alignement */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 items-stretch"> 
+            {/* CORRECTION PRINCIPALE: Ajout de 'mx-auto' pour centrer la grille,
+              et s'assurer que 'items-stretch' est présent pour que toutes les cartes aient la même hauteur.
+              J'ai aussi ajouté 'w-full' pour s'assurer que la grille prend bien toute la largeur disponible. */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 items-stretch w-full mx-auto"> 
                 <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon />} title="Mes Rendez-vous" description="Voir le statut de mes prospects" />
                 <ActionCard onClick={() => onNavigate('newAppointment')} icon={<PlusCircleIcon />} title="Créer un RDV" description="Planifier une nouvelle visite client" />
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon />} title="Nouveau Devis" description="Démarrer une cotation personnalisée" />
@@ -935,23 +938,23 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
   const [appliedDiscounts, setAppliedDiscounts] = useState([]);
   const firebaseRef = useRef(null);
   const configRef = useRef(null);
-  
-  // Répétition de l'initialisation Firebase pour que le composant QuoteProcess fonctionne,
-  // bien que l'initialisation principale soit dans App.
-  // Dans un environnement React réel, ces refs seraient passées via Context.
-  useEffect(() => {
-    // Si la config globale a déjà été chargée par App, on l'utilise.
-    if (window.__global_config_ref && window.__global_config_ref.current) {
-        setConfig(window.__global_config_ref.current.config);
-        firebaseRef.current = window.__global_config_ref.current.firebase;
-        setIsLoading(false);
-        return;
-    }
-    // Sinon, chargement minimal (simulé ici car le chargement réel est dans App)
-    setConfig(initialConfigData); 
-    setIsLoading(false); 
-    // On suppose que firebaseRef.current est mis à jour dans le composant App.
-  }, []);
+  
+  // Répétition de l'initialisation Firebase pour que le composant QuoteProcess fonctionne,
+  // bien que l'initialisation principale soit dans App.
+  // Dans un environnement React réel, ces refs seraient passées via Context.
+  useEffect(() => {
+    // Si la config globale a déjà été chargée par App, on l'utilise.
+    if (window.__global_config_ref && window.__global_config_ref.current) {
+        setConfig(window.__global_config_ref.current.config);
+        firebaseRef.current = window.__global_config_ref.current.firebase;
+        setIsLoading(false);
+        return;
+    }
+    // Sinon, chargement minimal (simulé ici car le chargement réel est dans App)
+    setConfig(initialConfigData); 
+    setIsLoading(false); 
+    // On suppose que firebaseRef.current est mis à jour dans le composant App.
+  }, []);
 
   const calculation = useMemo(() => {
     if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0, offerPrice: 0, oneTimeSubtotal: 0, oneTimeDiscountAmount: 0, monthlySubtotal: 0, monthlyDiscountAmount: 0, installationFee: config?.settings.installationFee || 0 };
@@ -1011,8 +1014,8 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
         <div className="mb-8 p-4 bg-slate-50 rounded-xl shadow-inner border border-slate-200">
             <div className="flex justify-between mb-2"><span className={`text-base font-extrabold text-${PRIMARY_COLOR}`}>Progression Devis</span><span className="text-sm font-bold text-slate-700">Étape {data.step} sur 8</span></div>
             <div className="w-full bg-slate-200 rounded-full h-3">
-                <div className={`bg-${PRIMARY_COLOR} h-3 rounded-full transition-all duration-500`} style={{ width: `${progress}%` }}></div>
-            </div>
+                <div className={`bg-${PRIMARY_COLOR} h-3 rounded-full transition-all duration-500`} style={{ width: `${progress}%` }}></div>
+            </div>
             </div>
         <div>{renderStep()}</div>
       </div>
@@ -1036,10 +1039,10 @@ export default function App() {
   const SANITARY_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdykBNm7ZrVcaU4sbCS4dxk8vySpKtfwk6cJ_t5zxg1HVkZyA/viewform?usp=dialog";
 
   // Ajout d'une référence globale pour l'accès par d'autres composants (QuoteProcess)
-  if (typeof window !== 'undefined') {
-    // S'assurer que l'objet est initialisé même si les refs sont nulles initialement
-    window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
-  }
+  if (typeof window !== 'undefined') {
+    // S'assurer que l'objet est initialisé même si les refs sont nulles initialement
+    window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
+  }
 
   const loadPdfScripts = () => {
       if (scriptsLoaded.current) return Promise.resolve();
@@ -1161,9 +1164,9 @@ export default function App() {
             } else {
                 configRef.current = initialConfigData;
             }
-            
-            // Mise à jour de la référence globale
-            window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
+            
+            // Mise à jour de la référence globale
+            window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
             setIsFirebaseReady(true);
         } catch(e) {
             console.error("Firebase init failed", e);
@@ -1297,7 +1300,7 @@ export default function App() {
   
   return (
     <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-8 md:p-10 antialiased overflow-x-hidden">
-        {/* FIX 4: Ajout de overflow-x-hidden au conteneur principal pour éviter le débordement horizontal sur mobile */}
+        {/* Le max-w-4xl centre le contenu dans l'écran, ce qui est correct. */}
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-6 sm:p-10 md:p-12 border border-slate-100 min-h-[85vh]">
             {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
             {renderCurrentView()}
