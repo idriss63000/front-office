@@ -7,21 +7,43 @@ import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, 
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 // La librairie d'optimisation sera chargée dynamiquement
 
+// Configuration des styles : On utilise de meilleures couleurs et des ombres plus profondes
+const PRIMARY_COLOR = 'blue-600';
+const SECONDARY_COLOR = 'slate-800';
+const ACCENT_COLOR = 'teal-500';
+
 // --- Icônes (SVG) ---
 const UserIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
 const BuildingIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>;
 const CheckCircleIcon = ({ className = "h-16 w-16 text-green-500" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
-const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-const XCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+const TrashIcon = ({ className = "h-4 w-4" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+const XCircleIcon = ({ className = "h-4 w-4" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
 const LogInIcon = ({ className = "h-12 w-12 text-slate-400" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>;
 const FileTextIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
 const CalendarIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
-const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+const ArrowLeftIcon = ({ className="h-5 w-5" }) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
-// CORRECTION APPLIQUÉE ICI : Utilisation de la balise de fermeture SVG (</svg>)
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
-const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 0 0 1 2 2v14a2 0 0 1-2 2H6a2 0 0 1-2-2V6a2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
+const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
 const PlusCircleIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>;
+const FormInput = (props) => (
+    <input
+        {...props}
+        className="w-full p-3 border border-slate-200 bg-slate-50 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition shadow-inner"
+    />
+);
+const FormTextarea = (props) => (
+    <textarea
+        {...props}
+        className="w-full p-3 border border-slate-200 bg-slate-50 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition shadow-inner text-sm"
+    />
+);
+const FormSelect = (props) => (
+    <select
+        {...props}
+        className="w-full p-3 border border-slate-200 bg-slate-50 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition shadow-inner"
+    />
+);
 
 
 // --- Données par défaut ---
@@ -35,18 +57,25 @@ const initialConfigData = {
     or: { name: 'Pack Or', residentiel: { price: 1000, mensualite: 20 }, professionnel: { price: 1200, mensualite: 25 } },
     platine: { name: 'Pack Platine', residentiel: { price: 1500, mensualite: 30 }, professionnel: { price: 1800, mensualite: 35 } },
   },
-  extraItems: [],
-  discounts: [],
+  extraItems: [
+    { id: 'camera', name: 'Caméra de surveillance HD', price: 150 },
+    { id: 'detecteur', name: 'Détecteur de fumée connecté', price: 80 },
+  ],
+  discounts: [
+    { id: 'D1', code: 'PROMO10', type: 'materiel', value: 100, active: true },
+    { id: 'D2', code: 'INSTALLOFFERTE', type: 'installation_offerte', value: 350, active: true },
+    { id: 'D3', code: 'MOISGRATUIT', type: 'abonnement', value: 30, active: true },
+  ],
   settings: { installationFee: 350, vat: { residentiel: 0.10, professionnel: 0.20 } }
 };
 
 // --- Composants ---
 const Modal = ({ title, message, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-            <p className="text-slate-600 mt-2 mb-4">{message}</p>
-            <button onClick={onClose} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Fermer</button>
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform scale-100 transition-transform">
+            <h3 className="text-xl font-extrabold text-slate-800">{title}</h3>
+            <p className="text-slate-600 mt-3 mb-6">{message}</p>
+            <button onClick={onClose} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md`}>Fermer</button>
         </div>
     </div>
 );
@@ -57,34 +86,38 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
   const [modal, setModal] = useState(null);
 
   const handleAttemptLogin = async () => {
-    if (!salesperson || salesperson.trim() === '') return;
+    if (!salesperson || salesperson.trim() === '') {
+        setModal({ title: "Saisie requise", message: "Veuillez entrer votre nom." });
+        return;
+    }
     setModal(null);
     setIsLoading(true);
     const result = await onLogin(salesperson.trim());
     if (!result.success) {
-      setModal({ title: "Erreur", message: result.message });
+      setModal({ title: "Erreur d'Identification", message: result.message });
     }
     setIsLoading(false);
   };
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-8 text-center p-8 bg-slate-50 rounded-2xl shadow-lg">
       {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-      <LogInIcon className="mx-auto h-12 w-12 text-slate-400" />
-      <h2 className="text-3xl font-bold text-slate-800">Identification</h2>
-      <p className="text-slate-500">Veuillez entrer votre nom pour continuer.</p>
-      <input 
+      <LogInIcon className={`mx-auto h-16 w-16 text-${PRIMARY_COLOR}`} />
+      <h2 className="text-4xl font-extrabold text-slate-900">Espace Commercial</h2>
+      <p className="text-slate-600">Veuillez entrer votre nom pour accéder aux outils de vente.</p>
+      <FormInput
         value={salesperson} 
         onChange={(e) => setSalesperson(e.target.value)} 
-        placeholder="Prénom Nom" 
-        className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-center" 
+        placeholder="Votre Prénom Nom" 
+        onKeyDown={(e) => { if (e.key === 'Enter' && salesperson.trim() && isFirebaseReady && !isLoading) handleAttemptLogin(); }}
+        className="text-center text-lg placeholder:text-slate-400" 
       />
       <button 
         onClick={handleAttemptLogin} 
         disabled={isLoading || !salesperson.trim() || !isFirebaseReady} 
-        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed"
+        className={`w-full bg-${PRIMARY_COLOR} text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors duration-300 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg hover:shadow-xl`}
       >
-        {!isFirebaseReady ? 'Connexion...' : (isLoading ? 'Vérification...' : 'Accéder à mon espace')}
+        {!isFirebaseReady ? 'Connexion en cours...' : (isLoading ? 'Vérification...' : 'Accéder à l\'espace')}
       </button>
     </div>
   );
@@ -92,41 +125,44 @@ const SalespersonLogin = ({ onLogin, isFirebaseReady }) => {
 
 const CustomerInfo = ({ data, setData, nextStep, prevStep }) => {
   const handleChange = (e) => setData({ ...data, client: { ...data.client, [e.target.name]: e.target.value } });
-  // --- L'adresse est maintenant obligatoire ---
   const isFormValid = () => data.client.nom && data.client.prenom && data.client.email && data.client.telephone && data.client.adresse;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Informations du Client</h2>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-8">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Informations du Client</h2>
+      <div className="space-y-5 p-6 bg-white rounded-2xl shadow-md border border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-                <label htmlFor="nom" className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
-                <input id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <label htmlFor="nom" className="block text-sm font-semibold text-slate-700 mb-2">Nom *</label>
+                <FormInput id="nom" name="nom" value={data.client.nom} onChange={handleChange} placeholder="Dupont" />
             </div>
             <div>
-                <label htmlFor="prenom" className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
-                <input id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <label htmlFor="prenom" className="block text-sm font-semibold text-slate-700 mb-2">Prénom *</label>
+                <FormInput id="prenom" name="prenom" value={data.client.prenom} onChange={handleChange} placeholder="Jean" />
             </div>
         </div>
         <div>
-            <label htmlFor="adresse" className="block text-sm font-medium text-slate-600 mb-1">Adresse</label>
-            <input id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+            <label htmlFor="adresse" className="block text-sm font-semibold text-slate-700 mb-2">Adresse *</label>
+            <FormInput id="adresse" name="adresse" value={data.client.adresse} onChange={handleChange} placeholder="123 Rue de l'Exemple, 75001 Paris" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-                <label htmlFor="telephone" className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
-                <input id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <label htmlFor="telephone" className="block text-sm font-semibold text-slate-700 mb-2">Téléphone *</label>
+                <FormInput id="telephone" type="tel" name="telephone" value={data.client.telephone} onChange={handleChange} placeholder="06 12 34 56 78" />
             </div>
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                <input id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
+                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">Email *</label>
+                <FormInput id="email" type="email" name="email" value={data.client.email} onChange={handleChange} placeholder="jean.dupont@email.com" />
             </div>
         </div>
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-slate-300">Suivant</button>
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Retour
+        </button>
+        <button onClick={nextStep} disabled={!isFormValid()} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors duration-300 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg`}>
+            Passer à l'étape suivante
+        </button>
       </div>
     </div>
   );
@@ -139,21 +175,25 @@ const CustomerType = ({ setData, nextStep, prevStep }) => {
   };
 
   return (
-    <div className="space-y-6 text-center">
-      <h2 className="text-2xl font-bold text-slate-800">Type de Client</h2>
-      <p className="text-slate-500">S'agit-il d'un particulier ou d'un professionnel ?</p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-        <div onClick={() => setType('residentiel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
-          <UserIcon className="h-10 w-10 text-slate-500" />
-          <span className="mt-4 text-lg font-semibold text-slate-700">Résidentiel</span>
+    <div className="space-y-8 text-center">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR}`}>Type de Client</h2>
+      <p className="text-slate-600">Sélectionnez le statut du client pour appliquer la bonne tarification (TVA, etc.).</p>
+      <div className="flex flex-col md:flex-row gap-6 justify-center pt-4">
+        <div onClick={() => setType('residentiel')} className={`flex flex-col items-center justify-center p-8 border-4 border-transparent rounded-2xl hover:border-${PRIMARY_COLOR} hover:bg-blue-50 transition-all duration-300 w-full md:w-64 h-56 cursor-pointer shadow-lg hover:shadow-blue-300/50 bg-white`}>
+          <UserIcon className={`h-12 w-12 text-${PRIMARY_COLOR}`} />
+          <span className="mt-4 text-xl font-extrabold text-slate-800">Particulier</span>
+          <span className="text-sm text-slate-500 mt-1">Tarif Résidentiel (TVA 10%)</span>
         </div>
-        <div onClick={() => setType('professionnel')} className="flex flex-col items-center justify-center p-8 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 w-full sm:w-56 h-48 cursor-pointer">
-          <BuildingIcon className="h-10 w-10 text-slate-500" />
-          <span className="mt-4 text-lg font-semibold text-slate-700">Professionnel</span>
+        <div onClick={() => setType('professionnel')} className={`flex flex-col items-center justify-center p-8 border-4 border-transparent rounded-2xl hover:border-${PRIMARY_COLOR} hover:bg-blue-50 transition-all duration-300 w-full md:w-64 h-56 cursor-pointer shadow-lg hover:shadow-blue-300/50 bg-white`}>
+          <BuildingIcon className={`h-12 w-12 text-${PRIMARY_COLOR}`} />
+          <span className="mt-4 text-xl font-extrabold text-slate-800">Professionnel</span>
+          <span className="text-sm text-slate-500 mt-1">Tarif Commercial (TVA 20%)</span>
         </div>
       </div>
-      <div className="pt-4">
-        <button onClick={prevStep} className="w-full sm:w-auto sm:px-8 bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+      <div className="pt-6">
+        <button onClick={prevStep} className="w-full sm:w-64 bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
       </div>
     </div>
   );
@@ -165,25 +205,29 @@ const MainOffer = ({ data, setData, nextStep, prevStep, config }) => {
     nextStep();
   };
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Choisissez votre offre</h2>
+    <div className="space-y-8">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Choisissez l'Offre de Base</h2>
       <div className="flex flex-col md:flex-row gap-6 justify-center items-stretch pt-4">
         {Object.entries(config.offers).map(([key, offer]) => {
-          const priceInfo = offer[data.type] || offer.residentiel || { price: 0, mensualite: 0 };
+          const priceInfo = offer[data.type] || { price: 0, mensualite: 0 };
           return (
-            <div key={key} onClick={() => selectOffer(key)} className="flex flex-col p-6 border-2 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 w-full cursor-pointer">
-              <h3 className="text-xl font-bold text-blue-600">{offer.name}</h3>
-              <p className="text-sm text-slate-600 mt-2 flex-grow">{offer.description}</p>
-              <div className="mt-4">
-                  <p className="text-3xl font-light text-slate-800">{priceInfo.price} €</p>
-                  <p className="text-lg font-semibold text-slate-700 mt-1">+ {priceInfo.mensualite} €/mois</p>
+            <div key={key} onClick={() => selectOffer(key)} className={`flex flex-col p-8 border-4 border-transparent rounded-2xl text-left transition-all duration-300 w-full cursor-pointer bg-white shadow-xl hover:shadow-blue-400/50 transform hover:scale-[1.02] ${data.offer === key ? `border-${PRIMARY_COLOR} bg-blue-50` : 'hover:border-slate-200'}`}>
+              <h3 className={`text-2xl font-extrabold text-${PRIMARY_COLOR} mb-2`}>{offer.name}</h3>
+              <p className="text-sm text-slate-600 mb-6 flex-grow">{offer.description}</p>
+              <div className="mt-auto">
+                  <p className={`text-4xl font-black text-slate-900`}>{priceInfo.price.toFixed(2)} €</p>
+                  <p className="text-lg font-bold text-slate-700 mt-1">
+                        + {priceInfo.mensualite.toFixed(2)} €<span className="text-sm font-normal text-slate-500">/mois</span>
+                    </p>
               </div>
             </div>
           )
         })}
       </div>
-      <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
+      <div className="pt-6">
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
       </div>
     </div>
   );
@@ -207,48 +251,55 @@ const AddonPacks = ({ data, setData, nextStep, prevStep, config }) => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800 text-center">Ajouter des packs supplémentaires</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Packs d'Extension</h2>
+        <p className="text-slate-600 text-center mb-6">Ajoutez les packs optionnels à l'offre de base.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
             {Object.entries(config.packs).map(([key, pack]) => {
-            const priceInfo = pack[data.type] || pack.residentiel || { price: 0, mensualite: 0 };
+            const priceInfo = pack[data.type] || { price: 0, mensualite: 0 };
             return (
-                <div key={key} onClick={() => addPack(key)} className="p-4 border-2 rounded-xl text-center transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer">
-                    <h3 className="text-lg font-bold text-slate-800">{pack.name}</h3>
-                    <p className="text-md font-light mt-1">{priceInfo.price} €</p>
-                    <p className="text-sm font-semibold text-slate-600">+ {priceInfo.mensualite} €/mois</p>
-                    <span className="mt-3 inline-block bg-blue-100 text-blue-700 text-sm font-bold px-4 py-1 rounded-full">Ajouter</span>
+                <div key={key} onClick={() => addPack(key)} className="p-5 border border-slate-200 bg-white rounded-2xl text-center transition-all duration-300 hover:border-green-500 hover:bg-green-50 cursor-pointer shadow-md hover:shadow-lg">
+                    <h3 className="text-xl font-extrabold text-slate-800">{pack.name}</h3>
+                    <p className="text-lg font-bold mt-1 text-slate-900">{priceInfo.price.toFixed(2)} €</p>
+                    <p className="text-sm font-semibold text-slate-600 mb-3">+ {priceInfo.mensualite.toFixed(2)} €/mois</p>
+                    <span className={`inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md`}>
+                        <PlusCircleIcon className="w-4 h-4"/> Ajouter
+                    </span>
                 </div>
             )
             })}
         </div>
-      </div>
+            </div>
 
-      <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Packs sélectionnés</h3>
-        {data.packs.length === 0 ? (
-          <div className="text-center py-6 border-2 border-dashed rounded-xl">
-            <p className="text-slate-500">Aucun pack sélectionné.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {data.packs.map((pack) => {
-              const packInfo = config.packs[pack.key];
-              return (
-                <div key={pack.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-bold text-lg text-slate-700">{packInfo.name}</h4>
-                    <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                  </div>
-                  <textarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus..." className="w-full p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="2"></textarea>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+            <div>
+                <h3 className={`text-2xl font-bold text-${SECONDARY_COLOR} mb-4`}>Packs sélectionnés ({data.packs.length})</h3>
+                {data.packs.length === 0 ? (
+                    <div className="text-center py-8 border-4 border-dashed rounded-2xl border-slate-200 bg-slate-50">
+                        <p className="text-slate-500 font-medium">Aucun pack sélectionné pour le moment.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {data.packs.map((pack) => {
+                            const packInfo = config.packs[pack.key];
+                            return (
+                                <div key={pack.id} className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className={`font-extrabold text-lg text-${PRIMARY_COLOR}`}>{packInfo.name}</h4>
+                                        <button onClick={() => removePack(pack.id)} className="text-red-500 hover:text-red-700 transition p-1 rounded-full hover:bg-red-50" title="Supprimer le pack"><TrashIcon /></button>
+                                    </div>
+                                    <FormTextarea value={pack.details} onChange={(e) => handleDetailChange(pack.id, e.target.value)} placeholder="Détaillez les éléments inclus (ex: 5 détecteurs, 2 sirènes...)" rows="2"/>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
+        <button onClick={nextStep} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg`}>
+            Passer aux options supplémentaires
+        </button>
       </div>
     </div>
   );
@@ -262,20 +313,24 @@ const ExtraItems = ({ data, setData, nextStep, prevStep, config }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Éléments supplémentaires</h2>
-      <div className="space-y-3">
+    <div className="space-y-8">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Options & Équipements Supp.</h2>
+      <div className="space-y-4 p-6 bg-white rounded-2xl shadow-md border border-slate-100">
         {config.extraItems.map(item => (
-          <label key={item.id} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
-            <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="h-5 w-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-            <span className="ml-4 text-slate-700">{item.name}</span>
-            <span className="ml-auto font-semibold">{item.price} €</span>
+          <label key={item.id} className="flex items-center p-4 border rounded-xl cursor-pointer hover:bg-blue-50 transition-colors shadow-sm">
+            <input type="checkbox" checked={data.extraItems.includes(item.id)} onChange={() => toggleItem(item.id)} className={`h-6 w-6 rounded text-${PRIMARY_COLOR} border-slate-300 focus:ring-blue-500 focus:ring-offset-2`} />
+            <span className="ml-4 text-lg font-medium text-slate-700">{item.name}</span>
+            <span className="ml-auto font-extrabold text-lg text-slate-900">{item.price.toFixed(2)} €</span>
           </label>
         ))}
       </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
+        <button onClick={nextStep} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg`}>
+            Passer au résumé et devis
+        </button>
       </div>
     </div>
   );
@@ -290,14 +345,11 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
       const discount = config.discounts.find(d => d.code === code && d.active);
       
       if (discount) {
-          const newDiscounts = appliedDiscounts.filter(d => {
-              if (discount.type === 'prix_fixe' || discount.type === 'materiel') {
-                  return d.type !== 'prix_fixe' && d.type !== 'materiel';
-              }
-              return d.type !== discount.type;
-          });
+          // Logique pour éviter les doublons ou conflits (simple : on autorise un seul type de chaque)
+          const newDiscounts = appliedDiscounts.filter(d => d.type !== discount.type);
           setAppliedDiscounts([...newDiscounts, discount]);
           setDiscountCode('');
+          setModal({title: "Succès", message: `Le code ${code} a été appliqué.`});
       } else {
         setModal({title: "Erreur", message: "Code de réduction invalide ou inactif."});
       }
@@ -308,105 +360,111 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Résumé du devis </h2>
-      <div id="summary-content">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Résumé et Devis Client</h2>
+      <div id="summary-content" className="p-2">
         <QuoteForPDF data={data} config={config} calculation={calculation} appliedDiscounts={appliedDiscounts} removeDiscount={removeDiscount} />
       </div>
-        <div className="space-y-4">
-            <div className="flex gap-2">
-                <input type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="Code de réduction" className="p-3 border border-slate-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
-                <button onClick={applyDiscount} className="bg-slate-800 text-white px-6 rounded-lg font-semibold hover:bg-black transition-colors">Appliquer</button>
+        <div className="space-y-4 p-6 bg-slate-50 rounded-2xl shadow-inner border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-700">Appliquer une Réduction</h3>
+            <div className="flex gap-3">
+                <FormInput type="text" value={discountCode} onChange={(e) => setDiscountCode(e.target.value)} placeholder="CODEPROMO" className="uppercase"/>
+                <button onClick={applyDiscount} disabled={!discountCode.trim()} className={`bg-${ACCENT_COLOR} text-white px-8 py-3 rounded-xl font-bold hover:bg-teal-600 transition-colors shadow-md disabled:bg-slate-300`}>Appliquer</button>
             </div>
         </div>
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Valider et choisir la date</button>
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
+        <button onClick={nextStep} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg`}>
+            Valider et planifier l'Installation
+        </button>
       </div>
     </div>
   );
 };
 
 const QuoteForPDF = ({ data, config, calculation, appliedDiscounts, removeDiscount }) => (
-  <>
-    <div className="p-4 sm:p-6 bg-slate-50 rounded-xl border border-slate-200">
-      <h3 className="font-bold text-lg mb-4">Client</h3>
-      <p>{data.client.prenom} {data.client.nom}</p>
-      <p>{data.client.adresse}</p>
-      <p>{data.client.telephone} | {data.client.email}</p>
-      <p className="capitalize mt-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full inline-block">{data.type}</p>
+  <div className="space-y-6">
+    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
+      <h3 className={`font-extrabold text-xl mb-4 text-${SECONDARY_COLOR}`}>Client</h3>
+      <p className="font-semibold text-lg">{data.client.prenom} {data.client.nom}</p>
+      <p className="text-slate-600 mt-1">{data.client.adresse}</p>
+      <p className="text-slate-600">{data.client.telephone} | {data.client.email}</p>
+      <p className={`capitalize mt-3 text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full inline-block font-bold shadow-sm`}>{data.type}</p>
     </div>
-    <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
-      <h3 className="font-bold text-lg mb-4 text-blue-700">Paiement unique</h3>
+    <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-lg space-y-4">
+      <h3 className={`font-extrabold text-xl mb-4 text-${PRIMARY_COLOR}`}>Paiement Unique (Matériel & Installation)</h3>
       {data.offer && (
-        <div>
-            <div className="flex justify-between">
-                <span>{config.offers[data.offer].name}</span>
-                <span>{calculation.offerPrice.toFixed(2)} €</span>
+        <div className="border-l-4 border-blue-200 pl-4 py-1">
+            <div className="flex justify-between font-semibold">
+                <span className="text-slate-700">{config.offers[data.offer].name}</span>
+                <span className="text-slate-900">{calculation.offerPrice.toFixed(2)} €</span>
             </div>
-            <p className="text-xs text-slate-500 italic pl-4">{config.offers[data.offer].description}</p>
+            <p className="text-xs text-slate-500 italic">{config.offers[data.offer].description}</p>
         </div>
       )}
-      {data.packs.length > 0 && <p className="font-semibold pt-2">Packs supplémentaires :</p>}
+      {data.packs.length > 0 && <p className="font-bold pt-3 text-slate-700 border-t pt-4">Packs supplémentaires :</p>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
-          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-slate-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
+          return packInfo ? (<div key={packInstance.id} className="pl-4"><div className="flex justify-between text-sm"><span>{packInfo.name}</span><span>{packInfo[data.type]?.price.toFixed(2) || '0.00'} €</span></div>{packInstance.details && <p className="text-xs text-slate-500 italic whitespace-pre-wrap ml-2"> - {packInstance.details}</p>}</div>) : null;
       })}
-      {data.extraItems.length > 0 && <p className="font-semibold pt-2">Éléments supplémentaires :</p>}
+      {data.extraItems.length > 0 && <p className="font-bold pt-3 text-slate-700 border-t pt-4">Éléments supplémentaires :</p>}
       {data.extraItems.map(id => {
         const item = config.extraItems.find(i => i.id === id);
-        return item ? <div key={id} className="flex justify-between pl-4"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
+        return item ? <div key={id} className="flex justify-between pl-4 text-sm"><span>{item.name}</span><span>{item.price.toFixed(2)} €</span></div> : null;
       })}
-      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
+      <div className="border-t border-slate-300 pt-3 flex justify-between font-bold text-base"><span>Sous-total Matériel</span><span>{calculation.oneTimeSubtotal.toFixed(2)} €</span></div>
       {appliedDiscounts.map(discount => {
         if (discount.type === 'materiel' || discount.type === 'prix_fixe') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600 text-sm italic"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700 p-1"><XCircleIcon /></button> </div> <span>- {calculation.oneTimeDiscountAmount.toFixed(2)} €</span> </div> )
         }
         return null;
       })}
-      <hr className="my-2"/>
-      <div className="flex justify-between">
-        <span>Frais d'installation</span>
-        <span>{config.settings.installationFee.toFixed(2)} €</span>
-      </div>
+      <div className="flex justify-between font-semibold"><span>Frais d'installation</span><span>{config.settings.installationFee.toFixed(2)} €</span></div>
       {appliedDiscounts.map(discount => {
         if (discount.type === 'installation_offerte') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600 text-sm italic"> <div className="flex items-center gap-2"> <span>Installation Offerte ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700 p-1"><XCircleIcon /></button> </div> <span>- {config.settings.installationFee.toFixed(2)} €</span> </div> )
         }
         return null;
       })}
-      <div className="flex justify-between font-semibold"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
-      <div className="flex justify-between"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
-      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
+      <div className="flex justify-between font-bold border-t border-slate-300 pt-3"><span>Total HT</span><span>{calculation.totalWithInstall.toFixed(2)} €</span></div>
+      <div className="flex justify-between text-sm text-slate-600"><span>TVA ({(config.settings.vat[data.type] * 100)}%)</span><span>{calculation.vatAmount.toFixed(2)} €</span></div>
+      <div className="flex justify-between font-black text-3xl pt-3 border-t-2 border-slate-700 text-slate-900"><span>TOTAL À PAYER</span><span>{calculation.oneTimeTotal.toFixed(2)} €</span></div>
     </div>
-     <div className="p-4 sm:p-6 mt-4 bg-white rounded-xl border border-slate-200 space-y-2">
-      <h3 className="font-bold text-lg mb-4 text-blue-700">Abonnement mensuel</h3>
-      {data.offer && <div className="flex justify-between"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
+     <div className="p-6 mt-6 bg-white rounded-2xl border border-slate-200 shadow-lg space-y-4">
+      <h3 className={`font-extrabold text-xl mb-4 text-${ACCENT_COLOR}`}>Abonnement Mensuel</h3>
+      {data.offer && <div className="flex justify-between font-medium"><span>Abonnement {config.offers[data.offer].name}</span><span>{config.offers[data.offer][data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div>}
       {data.packs.map(packInstance => {
           const packInfo = config.packs[packInstance.key];
-          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
+          return packInfo ? <div key={packInstance.id} className="flex justify-between pl-4 text-sm text-slate-600"><span>Abonnement {packInfo.name}</span><span>{packInfo[data.type]?.mensualite.toFixed(2) || '0.00'} €</span></div> : null;
       })}
-      <hr className="my-2"/><div className="flex justify-between font-semibold"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
+      <div className="border-t border-slate-300 pt-3 flex justify-between font-bold text-base"><span>Sous-total mensuel</span><span>{calculation.monthlySubtotal.toFixed(2)} €</span></div>
       {appliedDiscounts.map(discount => {
         if (discount.type === 'abonnement') {
-            return ( <div key={discount.id} className="flex justify-between items-center text-green-600"> <div className="flex items-center gap-2"> <span>Réduction ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
+            return ( <div key={discount.id} className="flex justify-between items-center text-green-600 text-sm italic"> <div className="flex items-center gap-2"> <span>Réduction Abonnement ({discount.code})</span> <button onClick={() => removeDiscount(discount.id)} className="text-red-500 hover:text-red-700 p-1"><XCircleIcon /></button> </div> <span>- {calculation.monthlyDiscountAmount.toFixed(2)} €</span> </div> )
         }
         return null;
       })}
-      <hr className="my-2 border-t-2 border-slate-300"/><div className="flex justify-between font-bold text-2xl text-slate-800"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
+      <div className="flex justify-between font-black text-3xl pt-3 border-t-2 border-slate-700 text-slate-900"><span>TOTAL MENSUEL</span><span>{calculation.monthlyTotal.toFixed(2)} €</span></div>
     </div>
-  </>
+  </div>
 );
 
 const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(data.installationDate ? 'accepted' : (data.followUpDate ? 'thinking' : ''));
   const [isSending, setIsSending] = useState(false);
   
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
-    if (newStatus === 'accepted') setData(prev => ({...prev, followUpDate: null}));
-    if (newStatus === 'thinking') setData(prev => ({...prev, installationDate: null}));
+    if (newStatus === 'accepted') {
+        setData(prev => ({...prev, followUpDate: null}));
+    } else if (newStatus === 'thinking') {
+        setData(prev => ({...prev, installationDate: null}));
+    } else {
+        setData(prev => ({...prev, installationDate: null, followUpDate: null}));
+    }
   };
 
   const formatDateForGoogle = (dateString) => {
@@ -434,34 +492,40 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 text-center">Installation et Envoi</h2>
-      <div className="p-6 bg-slate-50 rounded-xl border space-y-4">
-        <label className="flex items-center cursor-pointer">
-          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
-          <span className="ml-3 text-slate-700">Le client a accepté le devis.</span>
+    <div className="space-y-8">
+      <h2 className={`text-3xl font-extrabold text-${SECONDARY_COLOR} text-center`}>Planification et Envoi</h2>
+      <div className="p-6 bg-white rounded-2xl shadow-lg border border-slate-200 space-y-5">
+        <label className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all ${status === 'accepted' ? `bg-green-50 border-green-400 shadow-md` : 'hover:bg-slate-50 border-slate-200'}`}>
+          <input type="radio" name="status" checked={status === 'accepted'} onChange={() => handleStatusChange('accepted')} className={`mt-1 h-5 w-5 text-green-600 focus:ring-green-500`}/>
+          <div className="ml-4 flex-1">
+                <span className="font-bold text-slate-800">Devis Accepté</span>
+                {status === 'accepted' && (
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
+                        <FormInput type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} />
+                    </div>
+                )}
+            </div>
         </label>
-        {status === 'accepted' && (
-          <div className="pl-7 mt-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date d'installation</label>
-            <input type="date" value={data.installationDate || ''} onChange={(e) => setData(prev => ({ ...prev, installationDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
-          </div>
-        )}
-        <label className="flex items-center cursor-pointer">
-          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className="h-4 w-4 text-blue-600 focus:ring-blue-500"/>
-          <span className="ml-3 text-slate-700">Le client souhaite réfléchir.</span>
+        <label className={`flex items-start p-4 border rounded-xl cursor-pointer transition-all ${status === 'thinking' ? `bg-blue-50 border-blue-400 shadow-md` : 'hover:bg-slate-50 border-slate-200'}`}>
+          <input type="radio" name="status" checked={status === 'thinking'} onChange={() => handleStatusChange('thinking')} className={`mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500`}/>
+          <div className="ml-4 flex-1">
+                <span className="font-bold text-slate-800">En Attente de Décision</span>
+                {status === 'thinking' && (
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
+                        <FormInput type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} />
+                    </div>
+                )}
+            </div>
         </label>
-        {status === 'thinking' && (
-          <div className="pl-7 mt-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date de relance</label>
-            <input type="date" value={data.followUpDate || ''} onChange={(e) => setData(prev => ({ ...prev, followUpDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
-          </div>
-        )}
       </div>
        <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-        <button onClick={handleSend} disabled={isSending} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
-            {isSending ? 'Préparation...' : "Valider & Préparer l'Email"}
+        <button onClick={prevStep} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-300 transition-colors shadow-md">
+            <ArrowLeftIcon className="inline-block mr-2" /> Précédent
+        </button>
+        <button onClick={handleSend} disabled={isSending || (status === 'accepted' && !data.installationDate) || (status === 'thinking' && !data.followUpDate)} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:bg-slate-300 disabled:text-slate-500 shadow-lg`}>
+            {isSending ? 'Préparation...' : "Sauvegarder & Préparer l'Email"}
         </button>
       </div>
     </div>
@@ -469,12 +533,33 @@ const InstallationDate = ({ data, setData, nextStep, prevStep, onSend }) => {
 };
 
 const Confirmation = ({ reset, title, message }) => (
-    <div className="text-center space-y-6">
-        <CheckCircleIcon className="mx-auto h-16 w-16 text-green-500" />
-        <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
-        <p className="text-slate-600">{message}</p>
-        <button onClick={reset} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Nouveau Document</button>
+    <div className="text-center space-y-6 p-8 bg-green-50 rounded-2xl shadow-xl border border-green-200">
+        <CheckCircleIcon className="mx-auto h-20 w-20 text-green-600" />
+        <h2 className="text-3xl font-extrabold text-slate-800">{title}</h2>
+        <p className="text-slate-600 text-lg">{message}</p>
+        <button onClick={reset} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg mt-6`}>Démarrer un Nouveau Document</button>
         </div>
+);
+
+const AppointmentCard = ({ app, onSelectAppointment, onUpdateStatus, getStatusClass }) => (
+    <div onClick={() => onSelectAppointment(app)} className="p-5 border border-slate-200 bg-white rounded-2xl hover:bg-blue-50 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 cursor-pointer shadow-md">
+        <div className="flex-grow">
+            <p className="font-extrabold text-xl text-slate-800">{app.clientName}</p>
+            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 inline-block text-slate-400" />
+                Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}
+            </p>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+            <span className={`px-4 py-1 text-xs font-bold rounded-full shadow-sm ${getStatusClass(app.status)}`}>{app.status}</span>
+            <FormSelect value={app.status} onChange={(e) => { e.stopPropagation(); onUpdateStatus(app.docId, e.target.value); }} onClick={(e) => e.stopPropagation()} className="p-2 text-sm bg-white shadow-inner">
+                <option value="en attente">En attente</option>
+                <option value="relance">Relance</option>
+                <option value="pas vendu">Pas vendu</option>
+                <option value="confirmé">Confirmé</option>
+            </FormSelect>
+        </div>
+    </div>
 );
 
 const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appointments, onUpdateStatus }) => {
@@ -482,11 +567,11 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'confirmé': return 'bg-green-100 text-green-800';
-      case 'en attente': return 'bg-yellow-100 text-yellow-800';
-      case 'relance': return 'bg-blue-100 text-blue-800';
-      case 'pas vendu': return 'bg-red-100 text-red-800';
-      default: return 'bg-slate-100 text-slate-800';
+      case 'confirmé': return 'bg-green-500 text-white';
+      case 'en attente': return 'bg-yellow-400 text-slate-800';
+      case 'relance': return 'bg-blue-500 text-white';
+      case 'pas vendu': return 'bg-red-500 text-white';
+      default: return 'bg-slate-300 text-slate-800';
     }
   };
 
@@ -496,43 +581,37 @@ const AppointmentList = ({ salesperson, onNavigate, onSelectAppointment, appoint
   );
 
   return (
-    <div className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-          <h1 className="text-3xl font-bold text-slate-800">Mes rendez-vous</h1>
-          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors self-start">
-             <ArrowLeftIcon /> Retour
+    <div className="w-full space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-slate-200">
+          <h1 className={`text-3xl font-extrabold text-${SECONDARY_COLOR}`}>Mes Rendez-vous</h1>
+          <button onClick={() => onNavigate('home')} className="flex items-center gap-2 bg-slate-200 text-slate-700 py-2 px-4 rounded-xl font-bold hover:bg-slate-300 transition-colors self-start shadow-md">
+             <ArrowLeftIcon /> Retour à l'accueil
           </button>
         </div>
         <div className="space-y-4">
-          <input
+          <FormInput
             type="text"
-            placeholder="Rechercher un prospect par nom ou téléphone..."
+            placeholder="Rechercher par client ou téléphone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-3 border border-slate-300 rounded-lg w-full mb-4 focus:ring-2 focus:ring-blue-500"
+            className="p-4 w-full text-lg shadow-lg"
           />
           {filteredAppointments.length === 0 ? (
-            <div className="text-center text-slate-500 py-8 border-2 border-dashed rounded-xl">
-              <p>{appointments.length > 0 ? "Aucun rendez-vous ne correspond à votre recherche." : "Aucun rendez-vous pour le moment."}</p>
+            <div className="text-center text-slate-500 py-12 border-4 border-dashed rounded-2xl bg-slate-50">
+              <p className="text-lg font-medium">{appointments.length > 0 ? "Aucun rendez-vous ne correspond à votre recherche." : "Vous n'avez aucun rendez-vous planifié."}</p>
             </div>
           ) : (
-            filteredAppointments.map(app => (
-              <div key={app.id} className="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div onClick={() => onSelectAppointment(app)} className="cursor-pointer flex-grow">
-                  <p className="font-bold text-lg text-slate-800">{app.clientName}</p>
-                  <p className="text-sm text-slate-500">Le {new Date(app.date).toLocaleDateString()} {app.time ? `à ${app.time}` : ''}</p>
-                </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusClass(app.status)}`}>{app.status}</span>
-                  <select value={app.status} onChange={(e) => onUpdateStatus(app.docId, e.target.value)} onClick={(e) => e.stopPropagation()} className="p-1 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500">
-                    <option value="en attente">En attente</option>
-                    <option value="relance">Relance</option>
-                    <option value="pas vendu">Pas vendu</option>
-                    <option value="confirmé">Confirmé</option>
-                  </select>
-                </div>
-              </div>
-            ))
+            <div className="space-y-4">
+                {filteredAppointments.map(app => (
+                    <AppointmentCard 
+                        key={app.docId} 
+                        app={app} 
+                        onSelectAppointment={onSelectAppointment} 
+                        onUpdateStatus={onUpdateStatus} 
+                        getStatusClass={getStatusClass}
+                    />
+                ))}
+            </div>
           )}
         </div>
     </div>
@@ -545,42 +624,48 @@ const AppointmentDetail = ({ appointment, onBack, onStartQuote }) => {
   const clientDataForQuote = {
       nom: appointment.clientName.split(' ').slice(1).join(' '),
       prenom: appointment.clientName.split(' ')[0],
-      email: '', 
+      email: appointment.email || '', 
       telephone: appointment.phone || '',
       adresse: appointment.address || ''
   };
 
   return (
-    <div className="w-full">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
+    <div className="w-full space-y-8">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold mb-4 bg-slate-100 p-2 rounded-xl transition">
           <ArrowLeftIcon /> Tous les rendez-vous
         </button>
-        <div className="mt-4">
-          <h2 className="text-2xl font-bold text-slate-800">{appointment.clientName}</h2>
-          <p className="text-slate-600 mt-2">Date : {new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</p>
-          <p className="mt-1">Adresse : {appointment.address}</p>
-          <p className="mt-1">Téléphone : {appointment.phone}</p>
-          <p className="mt-1">Statut : <span className="font-semibold">{appointment.status}</span></p>
-          <hr className="my-6" />
-          <button onClick={() => onStartQuote(clientDataForQuote)} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-            Créer un devis pour ce client
+        <div className="mt-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-200">
+          <h2 className={`text-3xl font-extrabold text-${PRIMARY_COLOR}`}>{appointment.clientName}</h2>
+          <hr className="my-4 border-slate-200"/>
+          <p className="text-lg text-slate-700 font-medium flex items-center gap-3 mt-3">
+              <CalendarIcon className="h-6 w-6 text-slate-500" />
+              Date : <span className="font-semibold">{new Date(appointment.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {appointment.time ? `à ${appointment.time}` : ''}</span>
+          </p>
+          <p className="text-lg text-slate-700 font-medium mt-3">Adresse : <span className="font-semibold">{appointment.address}</span></p>
+          <p className="text-lg text-slate-700 font-medium mt-3">Téléphone : <span className="font-semibold">{appointment.phone}</span></p>
+          <p className="text-lg text-slate-700 font-medium mt-3">Statut : <span className={`font-extrabold ${appointment.status === 'confirmé' ? 'text-green-600' : 'text-yellow-600'} capitalize`}>{appointment.status}</span></p>
+          <hr className="my-6 border-slate-200" />
+          <button onClick={() => onStartQuote(clientDataForQuote)} className={`w-full bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg`}>
+            Démarrer un devis pour ce client
           </button>
         </div>
-    </div>
+      </div>
   );
 };
 
-const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }) => {
+const NewAppointment = ({ salesperson, onBack, onAppointmentCreated }) => {
   const [clientName, setClientName] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [address, setAddress] = useState(''); 
   const [phone, setPhone] = useState(''); 
+  const [email, setEmail] = useState(''); 
   const [modal, setModal] = useState(null);
 
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
 
+  // Pas de changement esthétique majeur ici, on utilise FormInput
   useEffect(() => {
     const GOOGLE_MAPS_API_KEY = 'VOTRE_CLE_API_GOOGLE_MAPS';
     if (GOOGLE_MAPS_API_KEY === 'VOTRE_CLE_API_GOOGLE_MAPS') {
@@ -623,11 +708,11 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   };
 
   const handleSave = async () => {
-    const newAppointmentData = { salesperson, clientName, date, time, address, phone, status: 'en attente', createdAt: serverTimestamp() };
+    const newAppointmentData = { salesperson, clientName, date, time, address, phone, email, status: 'en attente', createdAt: serverTimestamp() };
     const success = await onAppointmentCreated(newAppointmentData);
     if(success) {
         const title = `Rendez-vous - ${clientName}`;
-        const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nCommercial: ${salesperson}`;
+        const details = `Prospect: ${clientName}\nTéléphone: ${phone}\nEmail: ${email}\nCommercial: ${salesperson}`;
         const formattedDateTime = formatDateTimeForGoogle(date, time);
         const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${formattedDateTime}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(address)}`;
         window.open(calendarUrl, '_blank');
@@ -639,43 +724,46 @@ const NewAppointment = ({ salesperson, onBack, onAppointmentCreated, db, appId }
   const isFormValid = () => clientName && date && time && address && phone;
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-8">
         {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold mb-4">
-            <ArrowLeftIcon /> Accueil
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold mb-4 bg-slate-100 p-2 rounded-xl transition">
+            <ArrowLeftIcon /> Retour à l'accueil
         </button>
-        <div className="space-y-6 mt-4">
-            <h2 className="text-2xl font-bold text-slate-800">Créer un nouveau rendez-vous</h2>
+        <div className="space-y-6 mt-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-200">
+            <h2 className={`text-3xl font-extrabold text-${PRIMARY_COLOR}`}>Planifier un Nouveau Rendez-vous</h2>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nom du prospect</label>
-                <input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont" className="w-full p-3 border border-slate-300 rounded-lg"/>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Nom du prospect *</label>
+                <FormInput value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Jean Dupont"/>
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Date du rendez-vous</label>
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Date *</label>
+                    <FormInput type="date" value={date} onChange={(e) => setDate(e.target.value)}/>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Heure</label>
-                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-lg"/>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Heure *</label>
+                    <FormInput type="time" value={time} onChange={(e) => setTime(e.target.value)}/>
                 </div>
             </div>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Adresse du rendez-vous</label>
-                <input 
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Adresse *</label>
+                <FormInput 
                 ref={addressInputRef}
                 value={address} 
                 onChange={(e) => setAddress(e.target.value)} 
                 placeholder="123 Rue de l'Exemple, 75001 Paris" 
-                className="w-full p-3 border border-slate-300 rounded-lg"
                 />
             </div>
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Numéro de téléphone du prospect</label>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full p-3 border border-slate-300 rounded-lg"/>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Numéro de téléphone *</label>
+                <FormInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78"/>
             </div>
-            <button onClick={handleSave} disabled={!isFormValid()} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-slate-300">
-                Enregistrer le rendez-vous
+            <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Email (Optionnel)</label>
+                <FormInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email.prospect@exemple.fr"/>
+            </div>
+            <button onClick={handleSave} disabled={!isFormValid()} className={`w-full bg-${ACCENT_COLOR} text-white py-3 rounded-xl font-bold hover:bg-teal-600 transition-colors shadow-lg disabled:bg-slate-300`}>
+                Enregistrer le rendez-vous & Ajouter au Calendrier
             </button>
         </div>
     </div>
@@ -696,23 +784,24 @@ const PresentationMode = ({ onBack, videos }) => {
     };
 
     return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-800">Présentation Client</h1>
-                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300">
+        <div className="w-full space-y-8">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+                <h1 className={`text-3xl font-extrabold text-${SECONDARY_COLOR}`}>Mode Présentation Client</h1>
+                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-700 py-2 px-4 rounded-xl font-bold hover:bg-slate-300 shadow-md">
                     <ArrowLeftIcon /> Retour
                 </button>
             </div>
             {videos.length > 0 ? (
-                <div className="space-y-8">
+                <div className="space-y-8 p-6 bg-white rounded-2xl shadow-xl border border-slate-200">
                     {videos.map(video => (
-                        <div key={video.id}>
+                        <div key={video.id} className="pb-4 border-b border-slate-100 last:border-b-0">
                             <h2 className="text-xl font-bold text-slate-800 mb-4">{video.title}</h2>
-                            <div className="aspect-w-16 aspect-h-9 bg-slate-200 rounded-xl overflow-hidden">
+                            <div className="relative pt-[56.25%] rounded-xl overflow-hidden shadow-xl">
                                 <iframe
+                                    title={video.title}
                                     src={getEmbedUrl(video.url)}
-                                    allow="autoplay"
-                                    className="w-full h-full"
+                                    allow="autoplay; encrypted-media"
+                                    className="absolute top-0 left-0 w-full h-full"
                                     frameBorder="0"
                                 ></iframe>
                             </div>
@@ -720,433 +809,111 @@ const PresentationMode = ({ onBack, videos }) => {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-12 border-2 border-dashed rounded-xl">
-                    <p className="text-slate-500">Aucune vidéo de présentation n'a été configurée.</p>
+                <div className="text-center py-12 border-4 border-dashed rounded-2xl bg-slate-50">
+                    <p className="text-slate-500 font-medium text-lg">Aucune vidéo de présentation n'a été configurée.</p>
                 </div>
             )}
         </div>
     );
 };
 
-
-// --- NOUVEAUX COMPOSANTS POUR LE RAPPORT SANITAIRE ---
-
-const SanitaryReportProcess = ({ salesperson, onBackToHome, db, appId, onSend, config, firebaseApp }) => {
-    // NOTE: Ce composant n'est plus utilisé dans l'application principale
-    // mais est conservé pour la rétrocompatibilité si la navigation devait être rétablie.
-    const [step, setStep] = useState(1);
-    const [reportData, setReportData] = useState({
-        client: { nom: '', prenom: '', adresse: '', telephone: '', email: '' },
-        interventionDate: new Date().toISOString().split('T')[0],
-        niveauInfestation: 50,
-        consommationProduits: 50,
-        motif: '',
-        nuisiblesConstates: [],
-        zonesInspectees: [],
-        trapLocations: [],
-        observations: '',
-        actionsMenees: [],
-        produitsUtilises: [],
-        recommandations: '',
-        salesperson: salesperson,
-    });
-    const [reportConfig, setReportConfig] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSending, setIsSending] = useState(false);
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            if (!db || !appId) {
-                console.error("DB or AppId not available");
-                setIsLoading(false);
-                return;
-            }
-            const reportDocPath = `/artifacts/${appId}/public/data/reportConfig/main`;
-            const docRef = doc(db, reportDocPath);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setReportConfig(docSnap.data());
-                } else {
-                    console.warn("Report configuration not found, using fallback.");
-                     const fallbackConfig = {
-                        nuisibles: ["Rats", "Souris", "Cafards", "Fourmis", "Punaises de lit", "Guêpes/Frelons"],
-                        zones: ["Cuisine", "Cave", "Garage", "Combles", "Chambres", "Extérieur"],
-                        actions: ["Pulvérisation", "Nébulisation", "Pose de gel", "Pose de pièges", "Rebouchage"],
-                        produits: ["Produit A (liquide)", "Produit B (gel)", "Produit C (poudre)"],
-                        trapLocationOptions: {
-                            'Cuisine': ['Sous l\'évier', 'Derrière le réfrigérateur', 'Près de la poubelle', 'Le long du mur Est', 'Autre'],
-                            'Salle de bain': ['Sous le lavabo', 'Derrière les toilettes', 'Près de la douche', 'Autre'],
-                            'Garage': ['Près de la porte principale', 'Dans le coin Nord-Ouest', 'Sous l\'établi', 'Autre'],
-                            'Cave': ['Près de la chaudière', 'Sous l\'escalier', 'Le long du mur humide', 'Autre'],
-                            'Combles': ['Près de la trappe d\'accès', 'Le long des poutres', 'Autre'],
-                            'Extérieur': ['Près du composteur', 'Le long du mur de la maison', 'Sous la terrasse', 'Autre']
-                        }
-                    };
-                    setReportConfig(fallbackConfig);
-                }
-            } catch(e) {
-                console.error("Error fetching report config:", e);
-                 setReportConfig({ nuisibles: [], zones: [], actions: [], produits: [], trapLocationOptions: {} });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchConfig();
-    }, [db, appId]);
-
-    const nextStep = () => setStep(s => s + 1);
-    const prevStep = () => setStep(s => s - 1);
-
-    const handleFinalize = async () => {
-        setIsSending(true);
-        await onSend(reportData, config);
-        setIsSending(false);
-        nextStep();
+const ContractGenerator = ({ onBack }) => {
+    const handleOpenLink = (url) => {
+        window.open(url, '_blank');
     };
 
-    if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration des rapports...</p>;
-
-    const progress = (step / 5) * 100;
-    
-    const renderCurrentStep = () => {
-         switch(step) {
-            case 1: return <ReportStep1_ClientInfo data={reportData} setData={setReportData} nextStep={nextStep} prevStep={onBackToHome} />;
-            case 2: return <ReportStep2_Diagnostics data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 3: return <ReportStep3_TrapLocations data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 4: return <ReportStep4_ActionsAndSummary data={reportData} setData={setReportData} nextStep={nextStep} prevStep={prevStep} config={reportConfig} />;
-            case 5: return <ReportStep5_Finalize data={reportData} config={reportConfig} prevStep={prevStep} onFinalize={handleFinalize} isSending={isSending}/>;
-            case 6: return <Confirmation reset={onBackToHome} title="Email Préparé !" message="Le PDF du rapport a été téléchargé et votre application de messagerie est ouverte." />;
-            default: return <p>Étape inconnue</p>;
-         }
-    };
-    
-    return (
-        <div className="w-full">
-            <div className="mb-6">
-                <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression Rapport</span><span className="text-sm font-medium text-blue-700">Étape {step} sur 5</span></div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
-            </div>
-            {renderCurrentStep()}
-        </div>
-    );
-};
-
-const ReportStep1_ClientInfo = ({ data, setData, nextStep, prevStep }) => {
-    return <CustomerInfo data={data} setData={setData} nextStep={nextStep} prevStep={prevStep} />;
-};
-
-const ReportStep2_Diagnostics = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
+    const contractUrls = {
+        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
+        sanitaireOptions: [
+            { name: 'Special', url: 'https://yousign.app/workflows/forms/da6b9dfb-0a3f-4b7f-b12e-91a81c43b4ef'},
+            { name: 'Standard', url: 'https://yousign.app/workflows/forms/fc9ce226-2a21-4767-8aa1-fff3a836637a'},
+            { name: 'Premium', url: 'https://yousign.app/workflows/forms/790fd387-eda7-4215-a0a2-4b9eac883a42'}
+        ],
+        maintenanceAlarme: 'https://yousign.app/workflows/forms/418760b5-3c2f-4c26-bf48-eeb7b32b03c1'
     };
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Diagnostic de l'Intervention</h2>
-            
-            <div>
-                <label htmlFor="interventionDate" className="block text-sm font-medium text-slate-700 mb-1">Date d'intervention</label>
-                <input id="interventionDate" type="date" value={data.interventionDate} onChange={e => setData(prev => ({ ...prev, interventionDate: e.target.value }))} className="p-3 border border-slate-300 rounded-lg w-full"/>
+        <div className="w-full space-y-8">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+                <h1 className={`text-3xl font-extrabold text-${SECONDARY_COLOR}`}>Générer un Contrat (YouSign)</h1>
+                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-700 py-2 px-4 rounded-xl font-bold hover:bg-slate-300 shadow-md">
+                    <ArrowLeftIcon /> Retour
+                </button>
             </div>
 
-            <div>
-                <label className="font-semibold text-slate-700">Nuisibles constatés</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.nuisibles?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.nuisiblesConstates.includes(item)} onChange={() => handleCheckboxChange('nuisiblesConstates', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+            <div className="space-y-6 mt-6">
+                {/* Option 1 : Contrat Sanisecurité */}
+                <div className="text-center space-y-4 p-8 border border-slate-200 bg-white rounded-2xl shadow-xl">
+                    <ContractIcon className={`mx-auto h-12 w-12 text-${PRIMARY_COLOR}`} />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
+                    <p className="text-slate-600">Ouvrir le formulaire pour un contrat de prestation de services standard.</p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.prestation)} 
+                        className={`w-full sm:w-auto px-8 bg-${PRIMARY_COLOR} text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg`}
+                    >
+                        Ouvrir Contrat Sanisecurité
+                    </button>
                 </div>
-            </div>
 
-             <div>
-                <label className="font-semibold text-slate-700">Zones inspectées</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                    {config?.zones?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.zonesInspectees.includes(item)} onChange={() => handleCheckboxChange('zonesInspectees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
+                {/* Option 2 : Contrat Sanitaire */}
+                <div className="text-center space-y-4 p-8 border border-slate-200 bg-white rounded-2xl shadow-xl">
+                    <ContractIcon className={`mx-auto h-12 w-12 text-${ACCENT_COLOR}`} />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire (Dératisation, etc.)</h2>
+                    <p className="text-slate-600">Choisir le type de contrat sanitaire à générer.</p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        {contractUrls.sanitaireOptions.map(option => (
+                             <button 
+                                key={option.name}
+                                onClick={() => handleOpenLink(option.url)} 
+                                className={`w-full px-6 bg-${ACCENT_COLOR} text-white py-2 rounded-xl font-bold hover:bg-teal-600 transition shadow-md text-sm sm:text-base`}
+                            >
+                                {option.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
-            
-            <div>
-                <label htmlFor="infestationLevel" className="block font-medium text-slate-700 mb-2">Niveau d'infestation ({data.niveauInfestation}%)</label>
-                <input id="infestationLevel" type="range" min="0" max="100" step="5" value={data.niveauInfestation} onChange={e => setData(prev => ({ ...prev, niveauInfestation: parseInt(e.target.value) }))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Observations générales</label>
-                 <textarea value={data.observations} onChange={e => setData(prev => ({...prev, observations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Traces de passage le long des murs, déjections fraîches trouvées sous l'évier..."></textarea>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
+                
+                {/* Option 3 : Contrat Maintenance Alarme */}
+                <div className="text-center space-y-4 p-8 border border-slate-200 bg-white rounded-2xl shadow-xl">
+                    <ContractIcon className="mx-auto h-12 w-12 text-green-500" />
+                    <h2 className="text-2xl font-bold text-slate-800">Contrat de Maintenance Alarme</h2>
+                    <p className="text-slate-600">Maintenance et vidéosurveillance.</p>
+                    <button 
+                        onClick={() => handleOpenLink(contractUrls.maintenanceAlarme)} 
+                        className="w-full sm:w-auto px-8 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition shadow-lg"
+                    >
+                        Ouvrir Contrat Maintenance
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
-
-
-// =========================================================================================
-// == NOUVEAU COMPOSANT : ReportStep3_TrapLocations ========================================
-// =========================================================================================
-const ReportStep3_TrapLocations = ({ data, setData, nextStep, prevStep, config }) => {
-    const locationOptions = config?.trapLocationOptions || {};
-    const availableZones = Object.keys(locationOptions);
-
-    const addLocation = () => {
-        const newLocation = {
-            id: Date.now(),
-            zone: '',
-            emplacement: '',
-            customEmplacement: '',
-            note: ''
-        };
-        setData(prev => ({ ...prev, trapLocations: [...(prev.trapLocations || []), newLocation] }));
-    };
-
-    const removeLocation = (id) => {
-        setData(prev => ({ ...prev, trapLocations: prev.trapLocations.filter(loc => loc.id !== id) }));
-    };
-
-    const handleLocationChange = (id, field, value) => {
-        const updatedLocations = data.trapLocations.map(loc => {
-            if (loc.id === id) {
-                const updatedLoc = { ...loc, [field]: value };
-                if (field === 'zone') {
-                    updatedLoc.emplacement = '';
-                    updatedLoc.customEmplacement = '';
-                }
-                return updatedLoc;
-            }
-            return loc;
-        });
-        setData(prev => ({ ...prev, trapLocations: updatedLocations }));
-    };
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Emplacements des Dispositifs</h2>
-            
-            <div className="space-y-4">
-                {(data.trapLocations || []).map((location, index) => {
-                    const specificLocations = location.zone ? locationOptions[location.zone] : [];
-                    return (
-                        <div key={location.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                            <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-slate-700">Dispositif #{index + 1}</h3>
-                                <button onClick={() => removeLocation(location.id)} className="text-red-500 hover:text-red-700"><TrashIcon /></button>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Zone</label>
-                                    <select value={location.zone} onChange={e => handleLocationChange(location.id, 'zone', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md bg-white">
-                                        <option value="">Sélectionner une zone</option>
-                                        {availableZones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Emplacement</label>
-                                    <select value={location.emplacement} onChange={e => handleLocationChange(location.id, 'emplacement', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md bg-white" disabled={!location.zone}>
-                                        <option value="">Sélectionner un emplacement</option>
-                                        {specificLocations.map(spec => <option key={spec} value={spec}>{spec}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                            {location.emplacement === 'Autre' && (
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Préciser l'emplacement</label>
-                                    <input type="text" value={location.customEmplacement} onChange={e => handleLocationChange(location.id, 'customEmplacement', e.target.value)} placeholder="Ex: Sous l'escalier en bois" className="w-full p-2 border border-slate-300 rounded-md"/>
-                                </div>
-                            )}
-                             <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-1">Note (optionnel)</label>
-                                <input type="text" value={location.note} onChange={e => handleLocationChange(location.id, 'note', e.target.value)} placeholder="Ex: Côté droit, près du siphon" className="w-full p-2 border border-slate-300 rounded-md"/>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            <button onClick={addLocation} className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-700 py-2 rounded-lg font-semibold hover:bg-slate-200 transition-colors">
-                <PlusCircleIcon />
-                Ajouter un emplacement
-            </button>
-
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Suivant</button>
-            </div>
-        </div>
-    );
-};
-// =========================================================================================
-// == FIN DU NOUVEAU COMPOSANT =============================================================
-// =========================================================================================
-
-
-const ReportStep4_ActionsAndSummary = ({ data, setData, nextStep, prevStep, config }) => {
-    
-    const handleCheckboxChange = (field, value) => {
-        const currentValues = data[field] || [];
-        const newValues = currentValues.includes(value)
-            ? currentValues.filter(item => item !== value)
-            : [...currentValues, value];
-        setData(prev => ({ ...prev, [field]: newValues }));
-    };
-    
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-slate-800 text-center">Actions et Recommandations</h2>
-
-            <div>
-                <label className="font-semibold text-slate-700">Actions menées</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {config?.actions?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.actionsMenees.includes(item)} onChange={() => handleCheckboxChange('actionsMenees', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
-
-            <div>
-                <label className="font-semibold text-slate-700">Produits utilisés</label>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                    {config?.produits?.map(item => (
-                        <label key={item} className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                            <input type="checkbox" checked={data.produitsUtilises.includes(item)} onChange={() => handleCheckboxChange('produitsUtilises', item)} className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"/>
-                            <span className="ml-3 text-sm">{item}</span>
-                        </label>
-                    )) || <p className="text-xs text-slate-500">Aucune option configurée.</p>}
-                </div>
-            </div>
-
-             <div>
-                <label htmlFor="productConsumption" className="block font-medium text-slate-700 mb-2">Consommation des produits ({data.consommationProduits}%)</label>
-                <input id="productConsumption" type="range" min="0" max="100" step="5" value={data.consommationProduits} onChange={e => setData(prev => ({ ...prev, consommationProduits: parseInt(e.target.value) }))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Recommandations pour le client</label>
-                 <textarea value={data.recommandations} onChange={e => setData(prev => ({...prev, recommandations: e.target.value}))} className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="4" placeholder="Ex: Boucher les points d'entrée sous l'évier, ne pas laisser de nourriture accessible..."></textarea>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Précédent</button>
-                <button onClick={nextStep} className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Finaliser</button>
-            </div>
-        </div>
-    );
-};
-
-// Composant pour afficher le rapport sanitaire formaté pour le PDF
-const ReportForPDF = ({ data, config }) => (
-    <div className="p-6 bg-white rounded-lg space-y-4">
-        <h2 className="text-xl font-bold text-center text-slate-800">Rapport d'Intervention Sanitaire</h2>
-        
-        <div className="p-4 bg-slate-50 rounded-xl border">
-            <h3 className="font-bold text-lg mb-2">Client & Intervention</h3>
-            <p><strong>Client:</strong> {data.client.prenom} {data.client.nom}</p>
-            <p><strong>Adresse:</strong> {data.client.adresse}</p>
-            <p><strong>Date:</strong> {new Date(data.interventionDate).toLocaleDateString('fr-FR')}</p>
-            <p><strong>Technicien:</strong> {data.salesperson}</p>
-        </div>
-
-        <div className="p-4 bg-white rounded-xl border">
-            <h3 className="font-bold text-lg mb-2">Diagnostic</h3>
-            <p><strong>Nuisibles constatés:</strong> {data.nuisiblesConstates.join(', ') || 'Aucun'}</p>
-            <p><strong>Zones inspectées:</strong> {data.zonesInspectees.join(', ') || 'Aucune'}</p>
-            <p><strong>Niveau d'infestation estimé:</strong> {data.niveauInfestation}%</p>
-            <p><strong>Observations:</strong> <em className="text-slate-600">{data.observations || 'Aucune'}</em></p>
-        </div>
-
-        {data.trapLocations && data.trapLocations.length > 0 && (
-            <div className="p-4 bg-white rounded-xl border">
-                <h3 className="font-bold text-lg mb-2">Emplacement des dispositifs</h3>
-                <ul className="list-disc list-inside space-y-1">
-                    {data.trapLocations.map(loc => (
-                        <li key={loc.id}>
-                            <strong>{loc.zone} - {loc.emplacement === 'Autre' ? loc.customEmplacement : loc.emplacement}:</strong> 
-                            <em className="text-slate-600"> {loc.note || ''}</em>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        )}
-
-        <div className="p-4 bg-white rounded-xl border">
-            <h3 className="font-bold text-lg mb-2">Actions & Produits</h3>
-            <p><strong>Actions menées:</strong> {data.actionsMenees.join(', ') || 'Aucune'}</p>
-            <p><strong>Produits utilisés:</strong> {data.produitsUtilises.join(', ') || 'Aucun'}</p>
-            <p><strong>Consommation des produits:</strong> {data.consommationProduits}%</p>
-        </div>
-
-        <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-            <h3 className="font-bold text-lg mb-2 text-green-800">Recommandations</h3>
-            {/* --- Ajout de la classe pour le retour à la ligne --- */}
-            <p className="text-slate-700 whitespace-pre-wrap">{data.recommandations || 'Aucune recommandation spécifique.'}</p>
-        </div>
-    </div>
-);
-
-
-const ReportStep5_Finalize = ({ onFinalize, prevStep, isSending, data, config }) => (
-     <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-slate-800 text-center">Prêt à finaliser ?</h2>
-        <p className="text-slate-600 text-center">Le rapport va être sauvegardé. Cliquez ci-dessous pour télécharger le PDF et préparer l'e-mail.</p>
-
-        {/* The div below will be captured for the PDF */}
-        <div id="report-content" className="p-4 border rounded-lg bg-white">
-            <ReportForPDF data={data} config={config} />
-        </div>
-
-        <div className="flex flex-col sm:flex-row-reverse gap-4 mt-8">
-            <button onClick={onFinalize} disabled={isSending} className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-slate-400">
-                {isSending ? 'Préparation...' : "Sauvegarder & Préparer l'Email"}
-            </button>
-            <button onClick={prevStep} className="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300">Précédent</button>
-        </div>
-    </div>
-);
-
 
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryReportForm }) => {
     
-    const ActionCard = ({ onClick, icon, title }) => (
-         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-center items-center aspect-square">
-            <div className="bg-slate-100 p-4 rounded-full inline-block group-hover:bg-blue-100 transition-colors duration-300">
-                {icon}
+    const ActionCard = ({ onClick, icon, title, description }) => (
+         <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-200/50 hover:-translate-y-1 transition-all duration-300 text-center cursor-pointer group flex flex-col justify-center items-center aspect-square border border-slate-100">
+            <div className={`bg-blue-100 p-4 rounded-full inline-block group-hover:bg-${PRIMARY_COLOR} transition-colors duration-300 shadow-md`}>
+                {React.cloneElement(icon, { className: `h-8 w-8 text-${PRIMARY_COLOR} group-hover:text-white transition-colors` })}
             </div>
-            <p className="mt-4 font-semibold text-slate-700">{title}</p>
+            <p className="mt-4 font-extrabold text-lg text-slate-800">{title}</p>
+            <p className="text-xs text-slate-500 mt-1">{description}</p>
         </div>
     );
 
     return (
-        <div className="w-full text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Bienvenue, {salesperson}</h1>
-            <p className="text-slate-500 mt-2 mb-10">Que souhaitez-vous faire aujourd'hui ?</p>
+        <div className="w-full text-center space-y-8">
+            <h1 className={`text-4xl font-black text-${SECONDARY_COLOR}`}>Bienvenue, {salesperson} !</h1>
+            <p className="text-slate-600 text-lg">Choisissez une action pour commencer.</p>
             
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mes rendez-vous" />
-                <ActionCard onClick={() => onNavigate('newAppointment')} icon={<CalendarIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Créer un rendez-vous" />
-                <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Nouveau Devis" />
-                <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Mode Présentation" />
-                <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
-                {/* MODIFICATION : Utilise la nouvelle fonction pour ouvrir le formulaire Google */}
-                <ActionCard onClick={onOpenSanitaryReportForm} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
+                <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon />} title="Mes Rendez-vous" description="Voir le statut de mes prospects" />
+                <ActionCard onClick={() => onNavigate('newAppointment')} icon={<PlusCircleIcon />} title="Créer un RDV" description="Planifier une nouvelle visite client" />
+                <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon />} title="Nouveau Devis" description="Démarrer une cotation personnalisée" />
+                <ActionCard onClick={() => onNavigate('presentation')} icon={<VideoIcon />} title="Mode Présentation" description="Démarrer la vidéo de vente" />
+                <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon />} title="Générer Contrat" description="Accéder aux formulaires YouSign" />
+                <ActionCard onClick={onOpenSanitaryReportForm} icon={<ClipboardIcon />} title="Rapport Sanitaire" description="Remplir le rapport d'intervention (Lien Externe)" />
             </div>
         </div>
     )
@@ -1157,11 +924,28 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [appliedDiscounts, setAppliedDiscounts] = useState([]);
-  const dbRef = useRef(null);
-  const appIdRef = useRef(null);
+  const firebaseRef = useRef(null);
+  const configRef = useRef(null);
+  
+  // Répétition de l'initialisation Firebase pour que le composant QuoteProcess fonctionne,
+  // bien que l'initialisation principale soit dans App.
+  // Dans un environnement React réel, ces refs seraient passées via Context.
+  useEffect(() => {
+    // Si la config globale a déjà été chargée par App, on l'utilise.
+    if (window.__global_config_ref && window.__global_config_ref.current) {
+        setConfig(window.__global_config_ref.current.config);
+        firebaseRef.current = window.__global_config_ref.current.firebase;
+        setIsLoading(false);
+        return;
+    }
+    // Sinon, chargement minimal (simulé ici car le chargement réel est dans App)
+    setConfig(initialConfigData); 
+    setIsLoading(false); 
+    // On suppose que firebaseRef.current est mis à jour dans le composant App.
+  }, []);
 
   const calculation = useMemo(() => {
-    if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0 };
+    if (!config || !data.type) return { oneTimeTotal: 0, monthlyTotal: 0, totalWithInstall: 0, vatAmount: 0, offerPrice: 0, oneTimeSubtotal: 0, oneTimeDiscountAmount: 0, monthlySubtotal: 0, monthlyDiscountAmount: 0, installationFee: config?.settings.installationFee || 0 };
     let offerPrice = 0;
     if (data.offer && config.offers[data.offer]) offerPrice = config.offers[data.offer][data.type]?.price || 0;
     const fixedPriceDiscount = appliedDiscounts.find(d => d.type === 'prix_fixe' && d.targetOffer === data.offer);
@@ -1171,7 +955,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
     data.extraItems.forEach(id => { const i = config.extraItems.find(it => it.id === id); if (i) oneTimeSubtotal += i.price; });
     const materialDiscount = appliedDiscounts.find(d => d.type === 'materiel');
     let oneTimeDiscountAmount = materialDiscount ? materialDiscount.value : 0;
-    const subtotalAfterDiscount = oneTimeSubtotal - oneTimeDiscountAmount;
+    const subtotalAfterDiscount = Math.max(0, oneTimeSubtotal - oneTimeDiscountAmount);
     const installDiscount = appliedDiscounts.find(d => d.type === 'installation_offerte');
     const installationFee = installDiscount ? 0 : config.settings.installationFee;
     const totalWithInstall = subtotalAfterDiscount + installationFee;
@@ -1183,47 +967,9 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
     data.packs.forEach(p => { if(config.packs[p.key]) monthlySubtotal += config.packs[p.key][data.type]?.mensualite || 0; });
     const subscriptionDiscount = appliedDiscounts.find(d => d.type === 'abonnement');
     let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
-    const monthlyTotal = monthlySubtotal - monthlyDiscountAmount;
+    const monthlyTotal = Math.max(0, monthlySubtotal - monthlyDiscountAmount);
     return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
-  }, [data, appliedDiscounts, config]);
-
-  useEffect(() => {
-    const initFirebase = async () => {
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyC19fhi-zWc-zlgZgjcQ7du2pK7CaywyO0",
-                authDomain: "application-devis-f2a31.firebaseapp.com",
-                projectId: "application-devis-f2a31",
-                storageBucket: "application-devis-f2a31.appspot.com",
-                messagingSenderId: "960846329322",
-                appId: "1:960846329322:web:5802132e187aa131906e93",
-                measurementId: "G-1F9T98PGS9"
-            };
-            const appId = firebaseConfig.appId;
-            appIdRef.current = appId;
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
-            dbRef.current = db;
-            const auth = getAuth(app);
-            setLogLevel('debug');
-            await signInAnonymously(auth);
-            const docPath = `/artifacts/${appId}/public/data/config/main`;
-            const configDocRef = doc(db, docPath);
-            const docSnap = await getDoc(configDocRef);
-            if (docSnap.exists()) setConfig(docSnap.data());
-            else {
-                await setDoc(configDocRef, initialConfigData);
-                setConfig(initialConfigData);
-            }
-        } catch (err) {
-            console.error("Erreur d'initialisation:", err);
-            setError("Impossible de charger la configuration.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    initFirebase();
-  }, []);
+  }, [data, data.offer, data.extraItems, appliedDiscounts, config]); // Ajout de data.offer et data.extraItems dans les dépendances pour plus de clarté.
 
   const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
@@ -1246,100 +992,23 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
     }
   };
 
-  if (isLoading) return <p className="animate-pulse text-center p-8">Chargement de la configuration...</p>;
-  if (error || !config) return <div className="bg-red-100 p-4 rounded-lg"><p className="text-red-700 text-center"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
+  if (isLoading || !config) return <p className="animate-pulse text-center p-8 text-xl font-semibold text-blue-600">Chargement de la configuration des tarifs...</p>;
+  if (error) return <div className="bg-red-100 p-4 rounded-xl"><p className="text-red-700 text-center font-semibold"><b>Erreur:</b> {error || "Config introuvable."}</p></div>;
 
   const progress = (data.step / 8) * 100;
 
   return (
     <div className="w-full">
-        <div className="mb-6">
-            <div className="flex justify-between mb-1"><span className="text-base font-medium text-blue-700">Progression</span><span className="text-sm font-medium text-blue-700">Étape {data.step} sur 8</span></div>
-            <div className="w-full bg-slate-200 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div></div>
-        </div>
+        <div className="mb-8 p-4 bg-slate-50 rounded-xl shadow-inner border border-slate-200">
+            <div className="flex justify-between mb-2"><span className={`text-base font-extrabold text-${PRIMARY_COLOR}`}>Progression Devis</span><span className="text-sm font-bold text-slate-700">Étape {data.step} sur 8</span></div>
+            <div className="w-full bg-slate-200 rounded-full h-3">
+                <div className={`bg-${PRIMARY_COLOR} h-3 rounded-full transition-all duration-500`} style={{ width: `${progress}%` }}></div>
+            </div>
+            </div>
         <div>{renderStep()}</div>
     </div>
   );
 }
-
-const ContractGenerator = ({ onBack }) => {
-    const handleOpenLink = (url) => {
-        window.open(url, '_blank');
-    };
-
-    const contractUrls = {
-        prestation: 'https://yousign.app/workflows/forms/159cde75-baab-4631-84df-a92a646f2c6c',
-        sanitaireOptions: [
-            { name: 'Special', url: 'https://yousign.app/workflows/forms/da6b9dfb-0a3f-4b7f-b12e-91a81c43b4ef'},
-            { name: 'Standard', url: 'https://yousign.app/workflows/forms/fc9ce226-2a21-4767-8aa1-fff3a836637a'},
-            { name: 'Premium', url: 'https://yousign.app/workflows/forms/790fd387-eda7-4215-a0a2-4b9eac883a42'}
-        ],
-        maintenanceAlarme: 'https://yousign.app/workflows/forms/418760b5-3c2f-4c26-bf48-eeb7b32b03c1'
-    };
-
-    return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-slate-800">Générer un Contrat</h1>
-                <button onClick={onBack} className="flex items-center gap-2 bg-slate-200 text-slate-800 py-2 px-4 rounded-lg font-semibold hover:bg-slate-300 transition-colors">
-                    <ArrowLeftIcon /> Retour
-                </button>
-            </div>
-
-            <div className="space-y-8 mt-6">
-                {/* Option 1 : Contrat Sanisecurité */}
-                <div className="text-center space-y-4 p-6 border rounded-xl">
-                    <ContractIcon className="mx-auto h-12 w-12 text-blue-500" />
-                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanisecurité</h2>
-                    <p className="text-slate-600">
-                        Ouvrir le formulaire pour un contrat de prestation de services standard.
-                    </p>
-                    <button 
-                        onClick={() => handleOpenLink(contractUrls.prestation)} 
-                        className="w-full sm:w-auto px-6 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-                    >
-                        Ouvrir Contrat Sanisecurité
-                    </button>
-                </div>
-
-                {/* Option 2 : Contrat Sanitaire */}
-                <div className="text-center space-y-4 p-6 border rounded-xl">
-                    <ContractIcon className="mx-auto h-12 w-12 text-teal-500" />
-                    <h2 className="text-2xl font-bold text-slate-800">Contrat Sanitaire</h2>
-                    <p className="text-slate-600">
-                        Choisir le type de contrat sanitaire à générer.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        {contractUrls.sanitaireOptions.map(option => (
-                             <button 
-                                key={option.name}
-                                onClick={() => handleOpenLink(option.url)} 
-                                className="w-full sm:w-auto px-6 bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition"
-                            >
-                                Ouvrir Contrat {option.name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                
-                {/* Option 3 : Contrat Maintenance Alarme */}
-                <div className="text-center space-y-4 p-6 border rounded-xl">
-                    <ContractIcon className="mx-auto h-12 w-12 text-green-500" />
-                    <h2 className="text-2xl font-bold text-slate-800">Contrat de Maintenance Alarme</h2>
-                    <p className="text-slate-600">
-                        contrat de maintenance alarme videosurveillance
-                    </p>
-                    <button 
-                        onClick={() => handleOpenLink(contractUrls.maintenanceAlarme)} 
-                        className="w-full sm:w-auto px-6 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
-                    >
-                        Ouvrir Contrat Maintenance Alarme
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); 
@@ -1353,11 +1022,16 @@ export default function App() {
   const firebaseRef = useRef(null);
   const configRef = useRef(null);
   const scriptsLoaded = useRef(false);
-  
+  
   // URL DU FORMULAIRE GOOGLE POUR LE RAPPORT SANITAIRE
   const SANITARY_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdykBNm7ZrVcaU4sbCS4dxk8vySpKtfwk6cJ_t5zxg1HVkZyA/viewform?usp=dialog";
 
-  // --- MODIFICATION : Charge les scripts pour la génération de PDF ---
+  // Ajout d'une référence globale pour l'accès par d'autres composants (QuoteProcess)
+  if (typeof window !== 'undefined') {
+    // S'assurer que l'objet est initialisé même si les refs sont nulles initialement
+    window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
+  }
+
   const loadPdfScripts = () => {
       if (scriptsLoaded.current) return Promise.resolve();
 
@@ -1384,7 +1058,8 @@ export default function App() {
 
   const prepareDocumentForEmail = async (documentData, configData, documentType) => {
     try {
-        await addDoc(collection(firebaseRef.current.db, `/artifacts/${firebaseRef.current.appId}/public/data/${documentType === 'devis' ? 'devis' : 'sanitaryReports'}`), { ...documentData, createdAt: serverTimestamp() });
+        const { db, appId } = firebaseRef.current;
+        await addDoc(collection(db, `/artifacts/${appId}/public/data/${documentType === 'devis' ? 'devis' : 'sanitaryReports'}`), { ...documentData, createdAt: serverTimestamp() });
 
         await loadPdfScripts(); 
         const { jsPDF } = window.jspdf;
@@ -1392,9 +1067,9 @@ export default function App() {
         
         const elementId = documentType === 'devis' ? 'summary-content' : 'report-content';
         const input = document.getElementById(elementId);
-        if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable.`);
+        if (!input) throw new Error(`L'élément avec l'ID '${elementId}' est introuvable. Veuillez réessayer.`);
         
-        const canvas = await html2canvas(input, { scale: 2, useCORS: true });
+        const canvas = await html2canvas(input, { scale: 2, useCORS: true, logging: false });
         const imgData = canvas.toDataURL('image/png');
         
         const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
@@ -1429,8 +1104,7 @@ export default function App() {
             
         const body = `Bonjour ${documentData.client.prenom},\n\n` +
                      `Veuillez trouver ci-joint ${isQuote ? 'votre devis personnalisé' : 'le rapport suite à notre intervention'}.\n\n` +
-                     `Pour rappel, l'adresse e-mail du client est : ${documentData.client.email}\n\n`+
-                     `N'hésitez pas à y joindre des photos si nécessaire.\n\n` +
+                     `Ceci est un email préparé automatiquement, merci d'y joindre le fichier ${filename} qui a été téléchargé, ainsi que toute autre pièce jointe nécessaire (ex: photos).\n\n` +
                      `Cordialement,\n\n` +
                      `${documentData.salesperson}`;
         
@@ -1442,8 +1116,8 @@ export default function App() {
     } catch (error) {
         console.error(`Erreur lors de la préparation du ${documentType}:`, error);
         setModal({
-            title: `Erreur`,
-            message: `Une erreur est survenue lors de la génération du document. Le document a été sauvegardé. Erreur: ${error.message}`
+            title: `Erreur de Génération`,
+            message: `Le document a été sauvegardé mais la génération PDF ou l'ouverture de l'email a échoué. Veuillez contacter le support. Erreur: ${error.message}`
         });
     }
   };
@@ -1478,7 +1152,9 @@ export default function App() {
             } else {
                 configRef.current = initialConfigData;
             }
-
+            
+            // Mise à jour de la référence globale
+            window.__global_config_ref = { firebase: firebaseRef.current, config: configRef.current };
             setIsFirebaseReady(true);
         } catch(e) {
             console.error("Firebase init failed", e);
@@ -1581,18 +1257,15 @@ export default function App() {
       setSelectedAppointment(appointment);
       setCurrentView('appointmentDetail');
   }
-  
-  // --- NOUVELLE FONCTION : Redirige vers le Google Form ---
+  
+  // Redirige vers le Google Form
   const handleOpenSanitaryReportForm = () => {
     window.open(SANITARY_REPORT_URL, '_blank');
-    // Retourne à l'accueil après l'ouverture (ou laisse l'utilisateur revenir manuellement)
-    // setCurrentView('home'); 
   };
 
   const renderCurrentView = () => {
     switch(currentView) {
         case 'login': return <SalespersonLogin onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />;
-        // MODIFICATION : Passe la nouvelle fonction au HomeScreen
         case 'home': return <HomeScreen salesperson={salesperson} onNavigate={setCurrentView} onStartQuote={startNewQuote} onOpenSanitaryReportForm={handleOpenSanitaryReportForm} />;
         case 'quote': return <QuoteProcess data={quoteData} setData={setQuoteData} onBackToHome={handleBackToHome} onSend={(data, config) => prepareDocumentForEmail(data, config, 'devis')} />;
         case 'appointmentList': return <AppointmentList appointments={appointments} salesperson={salesperson} onNavigate={setCurrentView} onSelectAppointment={viewAppointment} onUpdateStatus={updateAppointmentStatus} />;
@@ -1609,16 +1282,13 @@ export default function App() {
             />;
         case 'presentation': return <PresentationMode onBack={() => setCurrentView('home')} videos={videos} />;
         case 'contract': return <ContractGenerator onBack={() => setCurrentView('home')} />;
-        // MODIFICATION : La vue 'sanitaryReport' ne sera plus accessible via la navigation directe,
-        // mais on la laisse dans le switch au cas où. La redirection se fait dans handleOpenSanitaryReportForm.
-        case 'sanitaryReport': return <SanitaryReportProcess salesperson={salesperson} onBackToHome={handleBackToHome} db={firebaseRef.current?.db} appId={firebaseRef.current?.appId} onSend={(data, config) => prepareDocumentForEmail(data, config, 'rapport')} config={configRef.current} firebaseApp={firebaseRef.current?.app}/>;
         default: return <div>Vue non reconnue</div>;
     }
   }
   
   return (
-    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-6 md:p-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+    <main className="bg-slate-50 min-h-screen font-sans p-4 sm:p-8 md:p-10 antialiased">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-6 sm:p-10 md:p-12 border border-slate-100 min-h-[85vh]">
             {modal && <Modal title={modal.title} message={modal.message} onClose={() => setModal(null)} />}
             {renderCurrentView()}
         </div>
