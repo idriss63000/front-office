@@ -26,12 +26,16 @@ const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
 const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
 const PlusCircleIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>;
-const FormInput = (props) => (
+
+// FIX: Utilisation de React.forwardRef pour permettre le passage de la ref
+const FormInput = React.forwardRef((props, ref) => (
     <input
         {...props}
+        ref={ref} // Passage de la ref à l'élément natif
         className="w-full p-3 border border-slate-200 bg-slate-50 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition shadow-inner"
     />
-);
+));
+
 const FormTextarea = (props) => (
     <textarea
         {...props}
@@ -380,7 +384,7 @@ const Summary = ({ data, nextStep, prevStep, config, calculation, appliedDiscoun
         <button onClick={nextStep} className={`w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg`}>
             Valider et planifier l'Installation
         </button>
-      </div>
+        </div>
     </div>
   );
 };
@@ -907,7 +911,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote, onOpenSanitaryRepor
             <h1 className={`text-4xl font-black text-${SECONDARY_COLOR}`}>Bienvenue, {salesperson} !</h1>
             <p className="text-slate-600 text-lg">Choisissez une action pour commencer.</p>
             
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* FIX: Ajout de items-stretch à la grille pour aligner les cartes verticalement et ajustement pour mobile/tablette */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 items-stretch"> 
                 <ActionCard onClick={() => onNavigate('appointmentList')} icon={<CalendarIcon />} title="Mes Rendez-vous" description="Voir le statut de mes prospects" />
                 <ActionCard onClick={() => onNavigate('newAppointment')} icon={<PlusCircleIcon />} title="Créer un RDV" description="Planifier une nouvelle visite client" />
                 <ActionCard onClick={() => onStartQuote()} icon={<FileTextIcon />} title="Nouveau Devis" description="Démarrer une cotation personnalisée" />
@@ -969,7 +974,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
     let monthlyDiscountAmount = subscriptionDiscount ? subscriptionDiscount.value : 0;
     const monthlyTotal = Math.max(0, monthlySubtotal - monthlyDiscountAmount);
     return { oneTimeSubtotal, oneTimeDiscountAmount, totalWithInstall, vatAmount, oneTimeTotal, monthlySubtotal, monthlyDiscountAmount, monthlyTotal, offerPrice, installationFee };
-  }, [data, data.offer, data.extraItems, appliedDiscounts, config]); // Ajout de data.offer et data.extraItems dans les dépendances pour plus de clarté.
+  }, [data, data.offer, data.extraItems, appliedDiscounts, config]);
 
   const nextStep = () => setData(prev => ({ ...prev, step: prev.step + 1 }));
   const prevStep = () => setData(prev => ({ ...prev, step: prev.step - 1 }));
@@ -1006,7 +1011,7 @@ const QuoteProcess = ({ data, setData, onBackToHome, onSend }) => {
             </div>
             </div>
         <div>{renderStep()}</div>
-    </div>
+      </div>
   );
 }
 
