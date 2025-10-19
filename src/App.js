@@ -21,6 +21,7 @@ const VideoIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http
 const ContractIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m16 14-4-4-4 4"></path><path d="M12 10v9"></path></svg>;
 const ClipboardIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>;
 const PlusCircleIcon = ({ className="h-6 w-6" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>;
+const TrendingUpIcon = ({ className = "h-8 w-8 text-slate-600" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
 
 
 // --- Données par défaut ---
@@ -727,7 +728,7 @@ const PresentationMode = ({ onBack, videos }) => {
     );
 };
 
-// --- MODIFICATION : HomeScreen avec ouverture du lien Google Forms ---
+// --- MODIFICATION : HomeScreen avec nouvel onglet pour le suivi commercial ---
 const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
     
     const ActionCard = ({ onClick, icon, title }) => (
@@ -744,6 +745,11 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
         window.open('https://docs.google.com/forms/d/e/1FAIpQLSdykBNm7ZrVcaU4sbCS4dxk8vySpKtfwk6cJ_t5zxg1HVkZyA/viewform?usp=dialog', '_blank');
     };
 
+    // Fonction pour ouvrir le lien du suivi commercial
+    const openCommercialTracking = () => {
+        window.open('https://www.notion.so/Suivi-de-la-Performance-Commerciale-291bf73757ae803dbda1cbe4d341b561?source=copy_link', '_blank');
+    };
+
     return (
         <div className="w-full text-center">
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-800">Bienvenue, {salesperson}</h1>
@@ -757,6 +763,8 @@ const HomeScreen = ({ salesperson, onNavigate, onStartQuote }) => {
                 <ActionCard onClick={() => onNavigate('contract')} icon={<ContractIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Générer Contrat" />
                 {/* MODIFICATION : Remplacement de la navigation par l'ouverture du lien */}
                 <ActionCard onClick={openSanitaryReport} icon={<ClipboardIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Rapport Sanitaire" />
+                {/* NOUVELLE CARTE : Suivi commercial */}
+                <ActionCard onClick={openCommercialTracking} icon={<TrendingUpIcon className="h-8 w-8 text-slate-600 group-hover:text-blue-600 transition-colors" />} title="Suivi Commercial" />
             </div>
         </div>
     )
